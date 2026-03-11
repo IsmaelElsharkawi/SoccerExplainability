@@ -1,0 +1,842 @@
+[
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_45_06.mp4",
+        "caption": "corner",
+        "comments_text": "Raphael Guerreiro (Dortmund) launches a cross from the corner, but Bernd Leno is alert to thwart the effort.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) launches a cross from the corner, but [PLAYER] is alert to thwart the effort.",
+        "league": "germany_bundesliga_2016-2017",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_37_49.mp4",
+        "caption": "corner",
+        "comments_text": "The resulting corner from Raphael Guerreiro (Dortmund) only finds one of the defenders, who heads it out of danger.",
+        "comments_text_anonymized": "The resulting corner from [PLAYER] ([TEAM]) only finds one of the defenders, who heads it out of danger.",
+        "league": "germany_bundesliga_2016-2017",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_42_55.mp4",
+        "caption": "yellow card",
+        "comments_text": "A yellow card for a tackle by Hakan Calhanoglu (Bayer Leverkusen). Manuel Grafe doesn't hesitate at all to make this decision.",
+        "comments_text_anonymized": "A yellow card for a tackle by [PLAYER] ([TEAM]). [REFEREE] doesn't hesitate at all to make this decision.",
+        "league": "germany_bundesliga_2016-2017",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_28_16.mp4",
+        "caption": "yellow card",
+        "comments_text": "Matthias Ginter (Dortmund) can't expect anything else than a yellow card for his hard tackle. And a yellow it is. Manuel Grafe didn't think twice about pulling it out of his pocket.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) can't expect anything else than a yellow card for his hard tackle. And a yellow it is. [REFEREE] didn't think twice about pulling it out of his pocket.",
+        "league": "germany_bundesliga_2016-2017",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_33_10.mp4",
+        "caption": "goal",
+        "comments_text": "It's a goal! Hakan Calhanoglu plays a lovely pass into the box and finds Chicharito (Bayer Leverkusen). He tries his luck from close range and coolly strikes the ball into the back of the net. 2:0.",
+        "comments_text_anonymized": "It's a goal! [PLAYER] plays a lovely pass into the box and finds [PLAYER] ([TEAM]). He tries his luck from close range and coolly strikes the ball into the back of the net. 2:0.",
+        "league": "germany_bundesliga_2016-2017",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_32_19.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Hakan Calhanoglu (Bayer Leverkusen) knocks his opponent down with an over-the-top tackle.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) knocks his opponent down with an over-the-top tackle.",
+        "league": "germany_bundesliga_2016-2017",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_30_04.mp4",
+        "caption": "foul with no card",
+        "comments_text": "The referee blows his whistle as Benjamin Henrichs (Bayer Leverkusen) was too aggressive in his challenge.",
+        "comments_text_anonymized": "The referee blows his whistle as [PLAYER] ([TEAM]) was too aggressive in his challenge.",
+        "league": "germany_bundesliga_2016-2017",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_36_41.mp4",
+        "caption": "corner",
+        "comments_text": "Serge Gnabry (West Brom) quickly takes the corner kick with a short pass.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) quickly takes the corner kick with a short pass.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_31_04.mp4",
+        "caption": "corner",
+        "comments_text": "Chris Brunt (West Brom) sends in the corner, but fails to find the head of any of his teammates, allowing the defence to clear.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) sends in the corner, but fails to find the head of any of his teammates, allowing the defence to clear.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_13_13.mp4",
+        "caption": "penalty",
+        "comments_text": "James Morrison (West Brom) fails to beat the goalkeeper from the penalty spot with a shot low into the middle of the goal. Thibaut Courtois anticipates his intention perfectly, though, and doesn't have to move to stop the effort. West Brom have been awarded a corner kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) fails to beat the goalkeeper from the penalty spot with a shot low into the middle of the goal. [PLAYER] anticipates his intention perfectly, though, and doesn't have to move to stop the effort. [TEAM] have been awarded a corner kick.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_13_01.mp4",
+        "caption": "penalty",
+        "comments_text": "James Morrison (West Brom) is heading towards the penalty spot to take it.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is heading towards the penalty spot to take it.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_25_22.mp4",
+        "caption": "yellow card",
+        "comments_text": "Callum McManaman (West Brom) receives a yellow card from the referee for dissent.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) receives a yellow card from the referee for dissent.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_35_57.mp4",
+        "caption": "yellow card",
+        "comments_text": "James McClean (West Brom) can't expect anything else than a yellow card for his hard tackle. And a yellow it is. Mark Clattenburg didn't think twice about pulling it out of his pocket.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) can't expect anything else than a yellow card for his hard tackle. And a yellow it is. [REFEREE] didn't think twice about pulling it out of his pocket.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_13_33.mp4",
+        "caption": "goal",
+        "comments_text": "What a finish! James Morrison (West Brom) leaps high to meet a perfect cross from Callum McManaman and scores with a bullet header from around the penalty spot. His effort is planted precisely off the crossbar into the roof of the net, leaving Thibaut Courtois beaten. The score is now 1:3.",
+        "comments_text_anonymized": "What a finish! [PLAYER] ([TEAM]) leaps high to meet a perfect cross from [PLAYER] and scores with a bullet header from around the penalty spot. His effort is planted precisely off the crossbar into the roof of the net, leaving [PLAYER] beaten. The score is now 1:3.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_41_39.mp4",
+        "caption": "goal",
+        "comments_text": "Goal - 1:3! Cesar Azpilicueta (Chelsea) gets a shot away from the edge of the box and scores into the bottom left corner. Diego Costa provided an assist for the goal.",
+        "comments_text_anonymized": "Goal - 1:3! [PLAYER] ([TEAM]) gets a shot away from the edge of the box and scores into the bottom left corner. [PLAYER] provided an assist for the goal.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_23_23.mp4",
+        "caption": "throw in",
+        "comments_text": "The ball has crossed the sideline. Chelsea are taking a throw-in.",
+        "comments_text_anonymized": "The ball has crossed the sideline. [TEAM] are taking a throw-in.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_00_45.mp4",
+        "caption": "throw in",
+        "comments_text": "The ball is behind the touchline and West Brom will take a throw-in.",
+        "comments_text_anonymized": "The ball is behind the touchline and [TEAM] will take a throw-in.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_44_07.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Serge Gnabry (West Brom) commits a rough challenge and Mark Clattenburg blows his whistle for a foul. Chelsea are awarded a free kick. Let's see what they create from this.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) commits a rough challenge and [REFEREE] blows his whistle for a foul. [TEAM] are awarded a free kick. Let's see what they create from this.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_38_00.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Chris Brunt (West Brom) jumps into a tackle and Mark Clattenburg blows his whistle for a foul.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) jumps into a tackle and [REFEREE] blows his whistle for a foul.",
+        "league": "england_epl_2015-2016",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/2_25_38.mp4",
+        "caption": "corner",
+        "comments_text": "There's an opportunity for  to deliver the ball into the box from a corner.",
+        "comments_text_anonymized": "There's an opportunity for  to deliver the ball into the box from a corner.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/2_23_05.mp4",
+        "caption": "corner",
+        "comments_text": "Giacomo Bonaventura (AC Milan) steps up to send the ball in.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) steps up to send the ball in.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/1_40_56.mp4",
+        "caption": "yellow card",
+        "comments_text": "The whistle blows and Massimo Maccarone (Empoli) is booked for an infringement.",
+        "comments_text_anonymized": "The whistle blows and [PLAYER] ([TEAM]) is booked for an infringement.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/1_26_14.mp4",
+        "caption": "yellow card",
+        "comments_text": "Lorenzo Tonelli (Empoli) is punished with a yellow card for violating the rules.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is punished with a yellow card for violating the rules.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/2_23_07.mp4",
+        "caption": "goal",
+        "comments_text": "Luiz Adriano (AC Milan) meets the corner and displays his eye for goal as he coolly plants a header into the roof of the net from close range. The score is 2:1.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) meets the corner and displays his eye for goal as he coolly plants a header into the roof of the net from close range. The score is 2:1.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/1_18_58.mp4",
+        "caption": "goal",
+        "comments_text": "Goal! Massimo Maccarone displays great vision and sends a pass to Riccardo Saponara (Empoli), who shows brilliant composure inside the box to bury the ball into the back of the net. The score is 1:1.",
+        "comments_text_anonymized": "Goal! [PLAYER] displays great vision and sends a pass to [PLAYER] ([TEAM]), who shows brilliant composure inside the box to bury the ball into the back of the net. The score is 1:1.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/2_44_12.mp4",
+        "caption": "foul with no card",
+        "comments_text": "commits an ugly challenge. The referee sees it and immediately blows his whistle.",
+        "comments_text_anonymized": "commits an ugly challenge. The referee sees it and immediately blows his whistle.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "italy_serie-a_2015-2016/2015-08-29 - 21-45 AC Milan 2 - 1 Empoli/2_02_21.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Alessio Romagnoli (AC Milan) trips an opponent with a slide tackle. Piero Giacomelli stops the game and he could give him a card, but eventually decides on just a warning.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) trips an opponent with a slide tackle. [REFEREE] stops the game and he could give him a card, but eventually decides on just a warning.",
+        "league": "italy_serie-a_2015-2016",
+        "match": "2015-08-29 - 21-45 AC Milan 2 - 1 Empoli"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_46_54.mp4",
+        "caption": "corner",
+        "comments_text": "The resulting corner, taken by Christian Eriksen (Tottenham), comes to nothing.",
+        "comments_text_anonymized": "The resulting corner, taken by [PLAYER] ([TEAM]), comes to nothing.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_39_03.mp4",
+        "caption": "corner",
+        "comments_text": "Christian Eriksen (Tottenham) is about to take a corner kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is about to take a corner kick.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_42_45.mp4",
+        "caption": "penalty",
+        "comments_text": "James Milner (Liverpool) is heading towards the penalty spot to take it.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is heading towards the penalty spot to take it.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_41_54.mp4",
+        "caption": "penalty",
+        "comments_text": "Erik Lamela (Tottenham) brings his opponent down. Robert Madley has a clear sight of it and blows his whistle for a foul. Liverpool are awarded a penalty kick!",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. [TEAM] are awarded a penalty kick!",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_48_33.mp4",
+        "caption": "yellow card",
+        "comments_text": "Joel Matip (Liverpool) infringed the rules and goes into the book. Robert Madley pulls out a yellow card.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) infringed the rules and goes into the book. [REFEREE] pulls out a yellow card.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_39_48.mp4",
+        "caption": "yellow card",
+        "comments_text": "What was Jordan Henderson (Liverpool) thinking? He will not get away with that. The referee shows him a yellow card.",
+        "comments_text_anonymized": "What was [PLAYER] ([TEAM]) thinking? He will not get away with that. The referee shows him a yellow card.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_26_18.mp4",
+        "caption": "goal",
+        "comments_text": "Gooal! Danny Rose (Tottenham) scores with a shot from inside the box after latching onto a headed pass from Erik Lamela. He makes it 1:1.",
+        "comments_text_anonymized": "Gooal! [PLAYER] ([TEAM]) scores with a shot from inside the box after latching onto a headed pass from [PLAYER]. He makes it 1:1.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_42_47.mp4",
+        "caption": "goal",
+        "comments_text": "Goal! James Milner (Liverpool) slams home the penalty with a precise low shot into the bottom left corner.",
+        "comments_text_anonymized": "Goal! [PLAYER] ([TEAM]) slams home the penalty with a precise low shot into the bottom left corner.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_30_50.mp4",
+        "caption": "throw in",
+        "comments_text": "The referee and the linesman both signal a throw-in for Liverpool.",
+        "comments_text_anonymized": "The referee and the linesman both signal a throw-in for [TEAM].",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_22_04.mp4",
+        "caption": "throw in",
+        "comments_text": "The ball is behind the sideline. James Milner (Liverpool) takes a throw-in.",
+        "comments_text_anonymized": "The ball is behind the sideline. [PLAYER] ([TEAM]) takes a throw-in.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_46_18.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Adam Lallana (Liverpool) receives a good pass just outside the box, unleashes a strike from a promising position, but the shot is blocked by the defender. The referee blows his whistle, Liverpool are awarded a corner kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) receives a good pass just outside the box, unleashes a strike from a promising position, but the shot is blocked by the defender. The referee blows his whistle, [TEAM] are awarded a corner kick.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_09_42.mp4",
+        "caption": "foul with no card",
+        "comments_text": "A player from Liverpool brings down an opponent and commits a foul.",
+        "comments_text_anonymized": "A player from [TEAM] brings down an opponent and commits a foul.",
+        "league": "england_epl_2016-2017",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
+    },
+    {
+        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/2_46_06.mp4",
+        "caption": "corner",
+        "comments_text": "Faouzi Ghoulam (Napoli) puts a cross into the box from the corner but there is no panic from the opposition and they easily clear.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) puts a cross into the box from the corner but there is no panic from the opposition and they easily clear.",
+        "league": "italy_serie-a_2016-2017",
+        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
+    },
+    {
+        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/2_43_43.mp4",
+        "caption": "corner",
+        "comments_text": "Faouzi Ghoulam (Napoli) will deliver the corner kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) will deliver the corner kick.",
+        "league": "italy_serie-a_2016-2017",
+        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
+    },
+    {
+        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/2_18_24.mp4",
+        "caption": "yellow card",
+        "comments_text": "Franck Kessie (Atalanta) has to be very careful for the rest of the match after receiving a yellow card from the referee for a bad tackle on an opponent.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) has to be very careful for the rest of the match after receiving a yellow card from the referee for a bad tackle on an opponent.",
+        "league": "italy_serie-a_2016-2017",
+        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
+    },
+    {
+        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/2_24_01.mp4",
+        "caption": "goal",
+        "comments_text": "What a hit! Mattia Caldara (Atalanta) shows good composure inside the box to fire a first-time shot into the bottom left corner. 0:2.",
+        "comments_text_anonymized": "What a hit! [PLAYER] ([TEAM]) shows good composure inside the box to fire a first-time shot into the bottom left corner. 0:2.",
+        "league": "italy_serie-a_2016-2017",
+        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
+    },
+    {
+        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/1_27_47.mp4",
+        "caption": "goal",
+        "comments_text": "Mattia Caldara (Atalanta) scores a goal with a fine header that goes inside the left post, giving the goalkeeper no chance.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) scores a goal with a fine header that goes inside the left post, giving the goalkeeper no chance.",
+        "league": "italy_serie-a_2016-2017",
+        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
+    },
+    {
+        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/1_25_15.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Domenico Celi blows his whistle after Dries Mertens (Napoli) kicks an opponent's legs instead of the ball.",
+        "comments_text_anonymized": "[REFEREE] blows his whistle after [PLAYER] ([TEAM]) kicks an opponent's legs instead of the ball.",
+        "league": "italy_serie-a_2016-2017",
+        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
+    },
+    {
+        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/1_25_15.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Leonardo Spinazzola (Atalanta) fouls an opponent during an attacking move.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) fouls an opponent during an attacking move.",
+        "league": "italy_serie-a_2016-2017",
+        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_42_21.mp4",
+        "caption": "corner",
+        "comments_text": "Lionel Messi (Barcelona) rolls the ball short to a teammate from the corner instead of sending a cross into the box.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) rolls the ball short to a teammate from the corner instead of sending a cross into the box.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_32_39.mp4",
+        "caption": "corner",
+        "comments_text": "Neymar (Barcelona) decides to take a short corner instead of crossing into the box.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) decides to take a short corner instead of crossing into the box.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_47_42.mp4",
+        "caption": "penalty",
+        "comments_text": "Pablo Zabaleta (Manchester City) brings his opponent down. Felix Brych has a clear sight of it and blows his whistle for a foul. PENALTY to Barcelona! Great chance to score.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. PENALTY to [TEAM]! Great chance to score.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_44_18.mp4",
+        "caption": "yellow card",
+        "comments_text": "Fernando (Manchester City) picks up a yellow card for a foul.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) picks up a yellow card for a foul.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_42_49.mp4",
+        "caption": "yellow card",
+        "comments_text": "Adriano (Barcelona) can't expect anything else than a yellow card for his hard tackle. And a yellow it is. Felix Brych didn't think twice about pulling it out of his pocket.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) can't expect anything else than a yellow card for his hard tackle. And a yellow it is. [REFEREE] didn't think twice about pulling it out of his pocket.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_23_23.mp4",
+        "caption": "goal",
+        "comments_text": "Goal! David Silva puts the ball on a plate for Sergio Aguero (Manchester City), who scores with a simple close-range finish. It's 1:2.",
+        "comments_text_anonymized": "Goal! [PLAYER] puts the ball on a plate for [PLAYER] ([TEAM]), who scores with a simple close-range finish. It's 1:2.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/1_29_48.mp4",
+        "caption": "goal",
+        "comments_text": "GOAL! Luis Suarez (Barcelona) got to the ball in front of the goal and he couldn't miss from there. His low drive went in off the right-hand post. The score is 0:1.",
+        "comments_text_anonymized": "GOAL! [PLAYER] ([TEAM]) got to the ball in front of the goal and he couldn't miss from there. His low drive went in off the right-hand post. The score is 0:1.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_37_50.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Luis Suarez (Barcelona) feels very aggrieved after the referee stops play for a foul that he commits while in possession of the ball.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) feels very aggrieved after the referee stops play for a foul that he commits while in possession of the ball.",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_33_03.mp4",
+        "caption": "corner",
+        "comments_text": "Salva Sevilla (Espanyol) decides to take a short corner instead of crossing into the box.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) decides to take a short corner instead of crossing into the box.",
+        "league": "spain_laliga_2014-2015",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_20_15.mp4",
+        "caption": "corner",
+        "comments_text": "The corner from Salva Sevilla (Espanyol) is cleared away by the defence.",
+        "comments_text_anonymized": "The corner from [PLAYER] ([TEAM]) is cleared away by the defence.",
+        "league": "spain_laliga_2014-2015",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_45_50.mp4",
+        "caption": "yellow card",
+        "comments_text": "Hector Moreno (Espanyol) was probably a bit loose with his words to Antonio Mateu Lahoz, who decides to show him a yellow.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) was probably a bit loose with his words to [REFEREE], who decides to show him a yellow.",
+        "league": "spain_laliga_2014-2015",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/1_24_35.mp4",
+        "caption": "goal",
+        "comments_text": "Luis Suarez plays a neat ball into the path of Lionel Messi (Barcelona), who makes room for a shot and sends in a low drive which bounces in off the right post! 0:2.",
+        "comments_text_anonymized": "[PLAYER] plays a neat ball into the path of [PLAYER] ([TEAM]), who makes room for a shot and sends in a low drive which bounces in off the right post! 0:2.",
+        "league": "spain_laliga_2014-2015",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/1_16_28.mp4",
+        "caption": "goal",
+        "comments_text": "Goal! Jordi Alba displays great vision and sends a pass to Neymar (Barcelona), who shows brilliant composure inside the box to bury the ball from close range in the back of the net. The score is 0:1.",
+        "comments_text_anonymized": "Goal! [PLAYER] displays great vision and sends a pass to [PLAYER] ([TEAM]), who shows brilliant composure inside the box to bury the ball from close range in the back of the net. The score is 0:1.",
+        "league": "spain_laliga_2014-2015",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_43_07.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Antonio Mateu Lahoz blows his whistle for a foul after Gerard Pique (Barcelona) hacks down one of his opponents.",
+        "comments_text_anonymized": "[REFEREE] blows his whistle for a foul after [PLAYER] ([TEAM]) hacks down one of his opponents.",
+        "league": "spain_laliga_2014-2015",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_35_11.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Antonio Mateu Lahoz blows for a foul after Javier Mascherano (Barcelona) was too aggressive in the battle for the ball.",
+        "comments_text_anonymized": "[REFEREE] blows for a foul after [PLAYER] ([TEAM]) was too aggressive in the battle for the ball.",
+        "league": "spain_laliga_2014-2015",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/2_25_01.mp4",
+        "caption": "corner",
+        "comments_text": "Michael Krohn-Dehli (Sevilla) swings in the corner, but it's comfortably cleared away.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) swings in the corner, but it's comfortably cleared away.",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/2_15_52.mp4",
+        "caption": "corner",
+        "comments_text": "Ever Banega (Sevilla) puts a cross into the box from the corner but there is no panic from the opposition and they easily clear.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) puts a cross into the box from the corner but there is no panic from the opposition and they easily clear.",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/1_42_39.mp4",
+        "caption": "yellow card",
+        "comments_text": "A yellow card for a tackle by Grzegorz Krychowiak (Sevilla). Svein Moen doesn't hesitate at all to make this decision.",
+        "comments_text_anonymized": "A yellow card for a tackle by [PLAYER] ([TEAM]). [REFEREE] doesn't hesitate at all to make this decision.",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/1_35_06.mp4",
+        "caption": "goal",
+        "comments_text": "Goal Wilfried Bony (Manchester City)! Wilfried Bony (Manchester City) was put through by Jesus Navas and he showed brilliant composure inside the box to fire into the bottom right corner. 1:3.",
+        "comments_text_anonymized": "Goal [PLAYER] ([TEAM])! [PLAYER] ([TEAM]) was put through by [PLAYER] and he showed brilliant composure inside the box to fire into the bottom right corner. 1:3.",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/1_24_09.mp4",
+        "caption": "goal",
+        "comments_text": "Goal! A great cross from Coke finds Benoit Tremoulinas (Sevilla), who scores with a simple header into an empty net. 1:2.",
+        "comments_text_anonymized": "Goal! A great cross from [PLAYER] finds [PLAYER] ([TEAM]), who scores with a simple header into an empty net. 1:2.",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/2_38_38.mp4",
+        "caption": "throw in",
+        "comments_text": "Ciro Immobile (Sevilla) produces a lovely chip pass into the box, but one of the opposition players cuts it out. It's a throw-in for Sevilla.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) produces a lovely chip pass into the box, but one of the opposition players cuts it out. It's a throw-in for [TEAM].",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/1_36_40.mp4",
+        "caption": "throw in",
+        "comments_text": "Decent spell from Sevilla here and they keep the pressure on until one of the defending players steps in. The referee and the linesman both signal a throw-in for Sevilla.",
+        "comments_text_anonymized": "Decent spell from [TEAM] here and they keep the pressure on until one of the defending players steps in. The referee and the linesman both signal a throw-in for [TEAM].",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/2_41_00.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Grzegorz Krychowiak (Sevilla) trips an opposition player and Svein Moen signals a foul. Manchester City earn a free kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) trips an opposition player and [REFEREE] signals a foul. [TEAM] earn a free kick.",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/2_33_38.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Grzegorz Krychowiak (Sevilla) brings an opponent down and Svein Moen interrupts the game.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) brings an opponent down and [REFEREE] interrupts the game.",
+        "league": "europe_uefa-champions-league_2015-2016",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_28_27.mp4",
+        "caption": "corner",
+        "comments_text": "Fran Rico (Granada CF) goes over to take the corner kick and it looks like he will send the ball into the penalty box.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) goes over to take the corner kick and it looks like he will send the ball into the penalty box.",
+        "league": "spain_laliga_2015-2016",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_23_58.mp4",
+        "caption": "corner",
+        "comments_text": "Luka Modric (Real Madrid) steps up to take the corner, but the ball just sails in among the defenders.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) steps up to take the corner, but the ball just sails in among the defenders.",
+        "league": "spain_laliga_2015-2016",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_34_17.mp4",
+        "caption": "yellow card",
+        "comments_text": "A yellow card for a tackle by Rene Krhin (Granada CF). Juan Martinez Munuera doesn't hesitate at all to make this decision.",
+        "comments_text_anonymized": "A yellow card for a tackle by [PLAYER] ([TEAM]). [REFEREE] doesn't hesitate at all to make this decision.",
+        "league": "spain_laliga_2015-2016",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_24_39.mp4",
+        "caption": "yellow card",
+        "comments_text": "Javier Marquez (Granada CF) takes out his opponent with a horrific tackle and is relieved when the referee only shows him a yellow card.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) takes out his opponent with a horrific tackle and is relieved when the referee only shows him a yellow card.",
+        "league": "spain_laliga_2015-2016",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_09_15.mp4",
+        "caption": "goal",
+        "comments_text": "A perfect lofted pass from Isco finds Karim Benzema (Real Madrid), who jumps highest and steers a close-range header in the countermovement of the goalkeeper. His effort was both strong and precise, and Andres Fernandez had no chance of stopping that. 0:0.",
+        "comments_text_anonymized": "A perfect lofted pass from [PLAYER] finds [PLAYER] ([TEAM]), who jumps highest and steers a close-range header in the countermovement of the goalkeeper. His effort was both strong and precise, and [PLAYER] had no chance of stopping that. 0:0.",
+        "league": "spain_laliga_2015-2016",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_42_53.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Poor challenge! Pepe (Real Madrid) is penalised for tripping and Juan Martinez Munuera blows his whistle. Granada CF win a free kick. It's a promising situation for a direct shot.",
+        "comments_text_anonymized": "Poor challenge! [PLAYER] ([TEAM]) is penalised for tripping and [REFEREE] blows his whistle. [TEAM] win a free kick. It's a promising situation for a direct shot.",
+        "league": "spain_laliga_2015-2016",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_37_17.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Javier Marquez (Granada CF) brings an opponent down and Juan Martinez Munuera interrupts the game. Real Madrid are awarded a free kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) brings an opponent down and [REFEREE] interrupts the game. [TEAM] are awarded a free kick.",
+        "league": "spain_laliga_2015-2016",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_40_55.mp4",
+        "caption": "corner",
+        "comments_text": "The resulting corner from Neymar (Barcelona) only finds one of the defenders, who heads it out of danger.",
+        "comments_text_anonymized": "The resulting corner from [PLAYER] ([TEAM]) only finds one of the defenders, who heads it out of danger.",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_44_00.mp4",
+        "caption": "penalty",
+        "comments_text": "The referee blows his whistle as Marquinhos (Paris SG) was too aggressive in his challenge. The referee points to the penalty spot. Barcelona are awarded a penalty kick!",
+        "comments_text_anonymized": "The referee blows his whistle as [PLAYER] ([TEAM]) was too aggressive in his challenge. The referee points to the penalty spot. [TEAM] are awarded a penalty kick!",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_02_35.mp4",
+        "caption": "penalty",
+        "comments_text": "Thomas Meunier (Paris SG) is penalised after knocking an opponent down. Barcelona are given a penalty!",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is penalised after knocking an opponent down. [TEAM] are given a penalty!",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_48_21.mp4",
+        "caption": "yellow card",
+        "comments_text": "Marco Verratti (Paris SG) is awarded a yellow card for his tackle. He doesn't seem to agree with the decision, but Deniz Aytekin ignores the protests.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is awarded a yellow card for his tackle. He doesn't seem to agree with the decision, but [REFEREE] ignores the protests.",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_44_17.mp4",
+        "caption": "yellow card",
+        "comments_text": "Marquinhos (Paris SG) is the one who receives a yellow card.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is the one who receives a yellow card.",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_49_37.mp4",
+        "caption": "goal",
+        "comments_text": "Neymar plays a terrific cross over to Sergi Roberto (Barcelona), who finds some space inside the box and puts the ball into the back of the net.",
+        "comments_text_anonymized": "[PLAYER] plays a terrific cross over to [PLAYER] ([TEAM]), who finds some space inside the box and puts the ball into the back of the net.",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_45_08.mp4",
+        "caption": "goal",
+        "comments_text": "Goal! Neymar (Barcelona) slams home the penalty with a precise shot which goes inside the right post.",
+        "comments_text_anonymized": "Goal! [PLAYER] ([TEAM]) slams home the penalty with a precise shot which goes inside the right post.",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_41_44.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Deniz Aytekin blows the whistle, Angel Di Maria (Paris SG) is penalised for a foul. A free kick has been awarded to Barcelona.",
+        "comments_text_anonymized": "[REFEREE] blows the whistle, [PLAYER] ([TEAM]) is penalised for a foul. A free kick has been awarded to [TEAM].",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_26_10.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Luis Suarez (Barcelona) commits a foul and Deniz Aytekin immediately signals a free kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) commits a foul and [REFEREE] immediately signals a free kick.",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_40_30.mp4",
+        "caption": "corner",
+        "comments_text": "Daniel Carvajal (Real Madrid) works the corner short.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) works the corner short.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_33_50.mp4",
+        "caption": "corner",
+        "comments_text": "The resulting corner from Manuel Trigueros (Villarreal) is cleared by the opposition's defence.",
+        "comments_text_anonymized": "The resulting corner from [PLAYER] ([TEAM]) is cleared by the opposition's defence.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_44_24.mp4",
+        "caption": "penalty",
+        "comments_text": "Sergio Ramos (Real Madrid) changes the direction of the ball using his hand, but he is angry when the referee gives a foul against him. Penalty awarded! Villarreal will take a penalty kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) changes the direction of the ball using his hand, but he is angry when the referee gives a foul against him. Penalty awarded! [TEAM] will take a penalty kick.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_29_34.mp4",
+        "caption": "yellow card",
+        "comments_text": "Toni Kroos (Real Madrid) has tested the patience of referee Gonzalez Gonzalez and goes into the book for a previous late challenge. Toni Kroos (Real Madrid) trips an opponent with a slide tackle. Gonzalez Gonzalez stops the game and he could give him a card, but eventually decides on just a warning.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) has tested the patience of referee [REFEREE] and goes into the book for a previous late challenge. [PLAYER] ([TEAM]) trips an opponent with a slide tackle. [REFEREE] stops the game and he could give him a card, but eventually decides on just a warning.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_23_48.mp4",
+        "caption": "yellow card",
+        "comments_text": "Cristiano Ronaldo (Real Madrid) is shown a yellow card after a horrible tackle. Cristiano Ronaldo (Real Madrid) robs an opponent of the ball and explodes in anger when Gonzalez Gonzalez blows for a foul.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is shown a yellow card after a horrible tackle. [PLAYER] ([TEAM]) robs an opponent of the ball and explodes in anger when [REFEREE] blows for a foul.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_02_39.mp4",
+        "caption": "goal",
+        "comments_text": "James Rodriguez takes over corner duties and expertly finds Sergio Ramos (Real Madrid), who scores with a header that bounces up off the ground and goes into the bottom left corner. The score is now 1:1.",
+        "comments_text_anonymized": "[PLAYER] takes over corner duties and expertly finds [PLAYER] ([TEAM]), who scores with a header that bounces up off the ground and goes into the bottom left corner. The score is now 1:1.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_45_17.mp4",
+        "caption": "goal",
+        "comments_text": "Bruno (Villarreal) steps up to take the penalty and converts it with a shot into the middle of the goal.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) steps up to take the penalty and converts it with a shot into the middle of the goal.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_46_53.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Mario Gaspar (Villarreal) makes a rough challenge and Gonzalez Gonzalez blows his whistle for a foul. Another situation results in a direct free kick for Real Madrid.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) makes a rough challenge and [REFEREE] blows his whistle for a foul. Another situation results in a direct free kick for [TEAM].",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_45_05.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Dangerous play by Raphael Varane (Real Madrid). Gonzalez Gonzalez blows his whistle for a foul.",
+        "comments_text_anonymized": "Dangerous play by [PLAYER] ([TEAM]). [REFEREE] blows his whistle for a foul.",
+        "league": "spain_laliga_2016-2017",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_44_51.mp4",
+        "caption": "corner",
+        "comments_text": "Douglas Costa (Bayern Munich) takes the corner with a short pass.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) takes the corner with a short pass.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_41_39.mp4",
+        "caption": "corner",
+        "comments_text": "Karim Bellarabi (Bayer Leverkusen) goes over to take the corner kick and it looks like he will swing the ball into the penalty box.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) goes over to take the corner kick and it looks like he will swing the ball into the penalty box.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_24_48.mp4",
+        "caption": "penalty",
+        "comments_text": "Arjen Robben (Bayern Munich) is going to take the penalty!",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is going to take the penalty!",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_24_06.mp4",
+        "caption": "penalty",
+        "comments_text": "Handball by Roberto Hilbert (Bayer Leverkusen). PENALTY to Bayern Munich! Almost the entire opposition team is gathered around the referee and complaining. However, the decision has been made and it's final.",
+        "comments_text_anonymized": "Handball by [PLAYER] ([TEAM]). PENALTY to [TEAM]! Almost the entire opposition team is gathered around the referee and complaining. However, the decision has been made and it's final.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_26_13.mp4",
+        "caption": "yellow card",
+        "comments_text": "Robbie Kruse (Bayer Leverkusen) is cautioned by the referee.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is cautioned by the referee.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/1_18_47.mp4",
+        "caption": "yellow card",
+        "comments_text": "Thiago Alcantara (Bayern Munich) has received a yellow card for his foul.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) has received a yellow card for his foul.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_25_07.mp4",
+        "caption": "goal",
+        "comments_text": "Arjen Robben (Bayern Munich) confidently powers his spot-kick into the left side of the goal.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) confidently powers his spot-kick into the left side of the goal.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_14_30.mp4",
+        "caption": "goal",
+        "comments_text": "Thomas Muller (Bayern Munich) makes no mistake from the penalty spot after waiting for Bernd Leno to move before slotting the ball low into the middle of the goal!",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) makes no mistake from the penalty spot after waiting for [PLAYER] to move before slotting the ball low into the middle of the goal!",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_38_44.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Mario Gotze (Bayern Munich) launches into a thunderous tackle on his opponent and the referee blows his whistle for a foul.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) launches into a thunderous tackle on his opponent and the referee blows his whistle for a foul.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_26_04.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Goal, no wait. Florian Meyer blows his whistle for handball and Robbie Kruse (Bayer Leverkusen) can't celebrate. Disallowed goal.",
+        "comments_text_anonymized": "Goal, no wait. [REFEREE] blows his whistle for handball and [PLAYER] ([TEAM]) can't celebrate. Disallowed goal.",
+        "league": "germany_bundesliga_2015-2016",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen"
+    }
+]
