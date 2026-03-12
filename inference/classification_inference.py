@@ -1,5 +1,5 @@
 import sys, os
-sys.path.append('/content/UniSoccer')
+sys.path.append('/content/SoccerExplainability')
 from dataset.video_dataset import VideoCaptionDataset, VideoCaptionDataset_Balanced
 from model.MatchVision_classifier import MatchVision_Classifier
 from PIL import Image
@@ -805,7 +805,7 @@ def main():
     parser = argparse.ArgumentParser(description="Load a Python config file.")
     parser.add_argument('--config_path', type=str, default="config/pretrain_classification.py", help='The path to the Python config file')
     parser.add_argument('--checkpoint_path', type=str, default="/content/pretrained_classification.pth", help='The path to the checkpoint file')
-    parser.add_argument('--coco_json', type=str, default="/content/UniSoccer/annotations-coco.json",
+    parser.add_argument('--coco_json', type=str, default="/content/SoccerExplainability/annotations-coco.json",
                         help='Path to annotations-coco.json for GradCAM evaluation against GT bboxes')
     parser.add_argument('--cam_threshold', type=float, default=0.5,
                         help='Fraction of max to binarise heatmap for IoU (default: 0.5)')
