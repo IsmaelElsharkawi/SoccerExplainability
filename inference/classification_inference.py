@@ -12,6 +12,8 @@ sys.path.append('/content/SoccerExplainability')
 
 from dataset.video_dataset import VideoCaptionDataset, VideoCaptionDataset_Balanced
 from model.MatchVision_classifier import MatchVision_Classifier
+from model.SigLIP_classifier import SigLIP_Classifier
+from config.model_type import MODEL_TYPE
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
@@ -76,12 +78,22 @@ def main():
         persistent_workers=True,
     )
 
-    classifier = MatchVision_Classifier(
-        keywords=config_test_dataset['keywords'],
-        classifier_transformer_type=classifier_transformer_type,
-        vision_encoder_type=encoder_type,
-        use_transformer=use_transformer,
-    ).eval()
+
+    if MODEL_TYPE.lower() == "siglip":
+        classifier = SigLIP_Classifier(
+            keywords=config_test_dataset['keywords'],
+            feature_dim=768,
+            model_name="google/siglip-base-patch16-224"
+        ).eval()
+        gradcam_target_layer = classifier.siglip_model.post_layernorm
+    else:
+        classifier = MatchVision_Classifier(
+            keywords=config_test_dataset['keywords'],
+            classifier_transformer_type=classifier_transformer_type,
+            vision_encoder_type=encoder_type,
+            use_transformer=use_transformer,
+        ).eval()
+        gradcam_target_layer = classifier.siglip_model.post_layernorm
 
     checkpoint = torch.load(checkpoint_path, map_location='cpu')
     new_state_dict = {key.replace('module.', ''): value for key, value in checkpoint['state_dict'].items()}
@@ -128,7 +140,7 @@ def main():
 
         grad_cam = GradCAM(
             model=classifier.module,
-            target_layers=[classifier.module.siglip_model.post_layernorm],
+            target_layers=[gradcam_target_layer],
             reshape_transform=reshape_transform,
         )
         grad_cam_results = grad_cam(input_tensor=frames, targets=[ClassifierOutputTarget(caption[0])])
