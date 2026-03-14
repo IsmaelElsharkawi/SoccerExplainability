@@ -245,6 +245,8 @@ def main():
                 group_video_means[group_name]['frames'] += int(gs.get('annotated_frames', 0))
             if has_group_data:
                 videos_with_any_group += 1
+            else:
+                print(f'  Note: Video has no annotated frames in any group: {res["video_id"]}')
 
         print(f'  Videos evaluated: {videos_with_any_group}')
         global_group_summary = {}
