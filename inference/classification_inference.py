@@ -45,6 +45,21 @@ def get_gradcam_target_layer(model):
     )
 
 
+def detect_model_type_from_state_dict(state_dict):
+    """Infer checkpoint architecture from parameter names."""
+    keys = state_dict.keys()
+
+    # MatchVision checkpoints include temporal/transformer classifier weights.
+    if any(k.startswith('transformer_encoder.') or k.startswith('siglip_model.timesformer.') for k in keys):
+        return 'matchvision'
+
+    # SigLIP classifier checkpoints include a text branch and raw vision_model keys.
+    if any(k.startswith('text_model.') or k.startswith('siglip_model.vision_model.') for k in keys):
+        return 'siglip'
+
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description='Load a Python config file.')
     parser.add_argument('--config_path', type=str, default='config/pretrain_classification.py', help='The path to the Python config file')
@@ -96,29 +111,44 @@ def main():
         persistent_workers=True,
     )
 
-
-    if MODEL_TYPE.lower() == "siglip":
+    configured_model_type = MODEL_TYPE.lower()
+    if configured_model_type == "siglip":
         classifier = SigLIP_Classifier(
             keywords=config_test_dataset['keywords'],
             feature_dim=768,
             model_name="google/siglip-base-patch16-224"
         ).eval()
+        print('Using Hugging Face pretrained SigLIP weights; skipping --checkpoint_path loading.')
     else:
+        checkpoint = torch.load(checkpoint_path, map_location='cpu')
+        new_state_dict = {key.replace('module.', ''): value for key, value in checkpoint['state_dict'].items()}
+
+        detected_model_type = detect_model_type_from_state_dict(new_state_dict)
+        if detected_model_type is not None and detected_model_type != configured_model_type:
+            print(
+                f'Warning: MODEL_TYPE={configured_model_type} does not match checkpoint architecture '
+                f'({detected_model_type}). Using {detected_model_type}.'
+            )
+        model_type = detected_model_type or configured_model_type
+        if model_type == 'siglip':
+            raise ValueError(
+                'Checkpoint appears to be a SigLIP checkpoint, but siglip mode skips local checkpoint loading. '
+                'Set MODEL_TYPE="siglip" to use Hugging Face pretrained SigLIP weights.'
+            )
+
         classifier = MatchVision_Classifier(
             keywords=config_test_dataset['keywords'],
             classifier_transformer_type=classifier_transformer_type,
             vision_encoder_type=encoder_type,
             use_transformer=use_transformer,
         ).eval()
-
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
-    new_state_dict = {key.replace('module.', ''): value for key, value in checkpoint['state_dict'].items()}
-    classifier.load_state_dict(new_state_dict)
+        classifier.load_state_dict(new_state_dict)
 
     classifier = classifier.to(devices[0])
     classifier = torch.nn.DataParallel(classifier, device_ids=device_ids)
 
-    print(classifier.module.transformer_encoder.layers[-1])
+    if hasattr(classifier.module, 'transformer_encoder'):
+        print(classifier.module.transformer_encoder.layers[-1])
 
     attribution_evaluator = None
     all_eval_results = {}
