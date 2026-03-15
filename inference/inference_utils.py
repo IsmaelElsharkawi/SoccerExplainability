@@ -9,13 +9,22 @@ def load_config(path):
 
 
 def reshape_transform(result, height=14, width=14, timesteps=30):
-    # Result shape: [batch* time, 196, embedding_dim]
+    # Result shape is typically [batch*time, 196, embedding_dim] for video
+    # and [batch, 196, embedding_dim] for image-only SigLIP.
     BT, N, C = result.shape
     print("Tensor Shape:", result.shape)
-    result = result.unsqueeze(0)
-    result = result.reshape(BT // timesteps, timesteps, height, width, C)
 
-    # Transpose dimensions to get [batch, embedding_dim, time, height, width].
+    if N != height * width:
+        raise ValueError(
+            f"Unexpected token count {N}; expected {height * width} for {height}x{width} patches."
+        )
+
+    effective_timesteps = timesteps if BT >= timesteps and BT % timesteps == 0 else 1
+    batch_size = BT // effective_timesteps
+
+    result = result.reshape(batch_size, effective_timesteps, height, width, C)
+
+    # Transpose dimensions to [batch, embedding_dim, time, height, width].
     result = result.permute(0, 4, 1, 2, 3)
     print("Reshaped Tensor Shape:", result.shape)
     return result

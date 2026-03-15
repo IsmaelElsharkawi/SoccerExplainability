@@ -72,6 +72,8 @@ def main():
                         help='Optional path to save per-video attribution evaluation results as JSON')
     parser.add_argument('--output_dir', type=str, default='/content/drive/MyDrive/gradcam-visualizations/',
                         help='Directory to save attribution visualization outputs')
+    parser.add_argument('--siglip_temporal_aggregation', type=str, default='mean', choices=['mean', 'max'],
+                        help='Temporal aggregation for SigLIP frame embeddings (default: mean)')
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -116,9 +118,13 @@ def main():
         classifier = SigLIP_Classifier(
             keywords=config_test_dataset['keywords'],
             feature_dim=768,
-            model_name="google/siglip-base-patch16-224"
+            model_name="google/siglip-base-patch16-224",
+            temporal_aggregation=args.siglip_temporal_aggregation,
         ).eval()
-        print('Using Hugging Face pretrained SigLIP weights; skipping --checkpoint_path loading.')
+        print(
+            'Using Hugging Face pretrained SigLIP weights; skipping --checkpoint_path loading. '
+            f'Temporal aggregation: {args.siglip_temporal_aggregation}'
+        )
     else:
         checkpoint = torch.load(checkpoint_path, map_location='cpu')
         new_state_dict = {key.replace('module.', ''): value for key, value in checkpoint['state_dict'].items()}
@@ -198,6 +204,19 @@ def main():
         for grad_cam_result in grad_cam_results:
             new_frames = dummy_frames[i]
             new_frames = new_frames.permute(0, 2, 3, 1)
+            grad_cam_result = np.asarray(grad_cam_result)
+
+            if grad_cam_result.ndim == 2:
+                grad_cam_result = np.repeat(grad_cam_result[None, ...], new_frames.shape[0], axis=0)
+            elif grad_cam_result.ndim == 3 and grad_cam_result.shape[0] == 1 and new_frames.shape[0] > 1:
+                grad_cam_result = np.repeat(grad_cam_result, new_frames.shape[0], axis=0)
+
+            if grad_cam_result.shape[0] != new_frames.shape[0]:
+                raise ValueError(
+                    f'Attribution map frame count ({grad_cam_result.shape[0]}) does not match '
+                    f'video frame count ({new_frames.shape[0]}).'
+                )
+
             print('attribution map shape: ', grad_cam_result.shape)
             grad_cam_mean = torch.mean(torch.tensor(grad_cam_result, device='cpu'), dim=(1, 2)).cpu().numpy()
             print('attribution score shape: ', grad_cam_mean.shape)
