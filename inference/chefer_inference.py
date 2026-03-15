@@ -102,10 +102,6 @@ LABEL_NAMES = [
 
 LABEL_TO_IDX = {name: idx for idx, name in enumerate(LABEL_NAMES)}
 
-# Toggle verbose debug prints for shape/value verification at every critical step
-DEBUG = False
-
-
 # ============================================================================
 # Chefer LRP Rules (from Transformer-MM-Explainability paper)
 # ============================================================================
@@ -170,18 +166,11 @@ def wrap_siglip_attention_module(attn_module):
         
         # Store attention weights (detached copy for storage)
         attn_storage['attn'] = attn.detach()
-        if DEBUG:
-            print(f"  [DEBUG wrap_siglip_spatial] Stored attn: shape={list(attn.shape)}, "
-                  f"requires_grad={attn.requires_grad}, "
-                  f"row_sum[0,0,0]={attn[0,0,0].sum().item():.4f} (expect ~1.0)")
         
         # Register gradient hook to capture gradients during backward pass
         if attn.requires_grad:
             def grad_hook(grad):
                 grad_storage['grad'] = grad.detach()
-                if DEBUG:
-                    print(f"  [DEBUG wrap_siglip_spatial] Grad hook fired: shape={list(grad.shape)}, "
-                          f"norm={grad.norm().item():.6e}")
             attn.register_hook(grad_hook)
         
         # Apply dropout if module has it
@@ -274,16 +263,9 @@ def wrap_pooling_head_attention(mha_module):
         
         # Store attention weights and register gradient hook
         attn_storage['attn'] = attn.detach()
-        if DEBUG:
-            print(f"  [DEBUG wrap_pooling_head] Stored attn: shape={list(attn.shape)}, "
-                  f"requires_grad={attn.requires_grad}, "
-                  f"row_sum[0,0,0]={attn[0,0,0].sum().item():.4f} (expect ~1.0)")
         if attn.requires_grad:
             def grad_hook(grad):
                 grad_storage['grad'] = grad.detach()
-                if DEBUG:
-                    print(f"  [DEBUG wrap_pooling_head] Grad hook fired: shape={list(grad.shape)}, "
-                          f"norm={grad.norm().item():.6e}")
             attn.register_hook(grad_hook)
         
         out = (attn @ V).transpose(1, 2).reshape(B, Nq, C)  # [B, 1, 768]
@@ -425,18 +407,10 @@ def generate_per_frame_heatmaps(
     T = num_frames
     num_patches = patch_size * patch_size  # 196
     
-    if DEBUG:
-        print(f"[DEBUG] video_frames: {list(video_frames.shape)} (expect [B, C, T, H, W])")
-        print(f"[DEBUG] B={B}, T={T}, num_patches={num_patches}")
-        print(f"[DEBUG] Wrapped layers: spatial={len(wrapped['spatial_attn'])}, "
-              f"pooling={'yes' if wrapped['pooling_head_attn'] else 'no'}")
-    
     # Initialize per-frame relevance matrices (analog of R = eye(num_tokens) in example.py)
     # SigLIP has no CLS token, so R is [196, 196] per frame (patches only).
     # The probe (CLS equivalent) is handled at extraction via the pooling head.
     R_pp_per_frame = [torch.eye(num_patches, device=device) for _ in range(T)]
-    if DEBUG:
-        print(f"[DEBUG] R_pp_per_frame: {T} matrices of shape [{num_patches}, {num_patches}]")
     
     # Forward pass WITH gradients enabled (critical for Chefer!)
     model.zero_grad()
@@ -459,29 +433,17 @@ def generate_per_frame_heatmaps(
     
     # Get patch embeddings
     x = visual_encoder.vision_model_embedding(x)  # [B*T, 196, 768]
-    if DEBUG:
-        print(f"[DEBUG] After vision_model_embedding: {list(x.shape)} (expect [B*T, 196, 768])")
     x = rearrange(x, "(b t) n m -> b n t m", b=B_actual, t=T_actual)
     x = x + visual_encoder.temporal_positional_embedding
-    if DEBUG:
-        tpe = visual_encoder.temporal_positional_embedding
-        print(f"[DEBUG] After temporal_pos_embed addition: x={list(x.shape)}, "
-              f"tpe_norm={tpe.norm().item():.4f}, tpe_max_abs={tpe.abs().max().item():.6f}")
     x = rearrange(x, "b n t m -> (b t) n m")
     
     # Forward through Timesformer
     x = visual_encoder.timesformer(x, B_actual, T_actual)
-    if DEBUG:
-        print(f"[DEBUG] After timesformer: {list(x.shape)} (expect [B*T, 196, 768])")
     
     # Continue forward through pooling to get final features
     x = visual_encoder.post_layernorm(x)
     x = visual_encoder.head(x)  # [B*T, 768] - spatial pooled
-    if DEBUG:
-        print(f"[DEBUG] After pooling head: {list(x.shape)} (expect [B*T, 768])")
     video_features = rearrange(x, "(b t) m -> b t m", b=B_actual, t=T_actual)
-    if DEBUG:
-        print(f"[DEBUG] video_features: {list(video_features.shape)} (expect [B, T, 768])")
     
     # Convert label name to index if provided
     if target_label_name is not None:
@@ -516,12 +478,6 @@ def generate_per_frame_heatmaps(
     else:
         raise RuntimeError("Model does not have a classification head (model.classifier).")
     
-    if DEBUG:
-        print(f"[DEBUG] cls_logits: shape={list(cls_logits.shape)}, "
-              f"min={cls_logits.min().item():.4f}, max={cls_logits.max().item():.4f}, "
-              f"predicted_class={cls_logits.argmax(dim=-1).item()} "
-              f"({LABEL_NAMES[cls_logits.argmax(dim=-1).item()]})")
-    
     # Backprop from the target class logit (one-hot selection)
     target = cls_logits[0, target_label]
     print(f"Chefer class-logit backprop: class_idx={target_label}, logit={target.item():.4f}")
@@ -530,12 +486,6 @@ def generate_per_frame_heatmaps(
     target.backward(retain_graph=True)
     
     print(f"Computed backward pass. Target value: {target.item():.4f}")
-    
-    if DEBUG:
-        # Verify gradients exist on video_frames (confirms backprop reached input)
-        print(f"[DEBUG] video_frames.grad is None: {video_frames.grad is None}")
-        if video_frames.grad is not None:
-            print(f"[DEBUG] video_frames.grad norm: {video_frames.grad.norm().item():.6e}")
     
     # =========================================================================
     # Relevance propagation — mirrors example.py lines 23-30 exactly.
@@ -555,12 +505,6 @@ def generate_per_frame_heatmaps(
         attn_probs = attn_module.get_attn()       # [B*T, num_heads, N, N]
         attn_grad = attn_module.get_attn_gradients()  # [B*T, num_heads, N, N]
         
-        if DEBUG:
-            print(f"[DEBUG] Layer {layer_idx} SPATIAL: "
-                  f"attn={'None' if attn_probs is None else list(attn_probs.shape)} "
-                  f"(expect [B*T={T}, heads, N={num_patches}, N={num_patches}]), "
-                  f"grad={'None' if attn_grad is None else list(attn_grad.shape)}")
-        
         if attn_probs is not None:
             for t in range(T):
                 # --- identical to example.py lines 24-30, applied per frame ---
@@ -571,17 +515,6 @@ def generate_per_frame_heatmaps(
                 cam = grad * cam
                 cam = cam.clamp(min=0).mean(dim=0)
                 R_pp_per_frame[t] += torch.matmul(cam, R_pp_per_frame[t])
-                
-                if DEBUG and t == 0 and layer_idx == 0:
-                    print(f"[DEBUG]   cam (frame 0, layer 0): shape={list(cam.shape)} "
-                          f"(expect [{num_patches},{num_patches}]), "
-                          f"norm={cam.norm().item():.6e}, "
-                          f"max={cam.max().item():.6e}")
-    
-    if DEBUG:
-        for t in range(min(3, T)):
-            print(f"[DEBUG] R_pp_per_frame[{t}]: norm={R_pp_per_frame[t].norm().item():.4f}, "
-                  f"diag_mean={R_pp_per_frame[t].diag().mean().item():.4f}")
     
     # =========================================================================
     # Extract heatmaps via pooling head cross-attention (CLS-token analog).
@@ -614,20 +547,10 @@ def generate_per_frame_heatmaps(
         # Since SigLIP has no CLS token, cam_cross @ R is the equivalent of R[cls, 1:] in original Chefer
         image_relevance = torch.matmul(cam, R_pp_per_frame[t]).squeeze(0)  # [N]
         
-        if DEBUG and t == 0:
-            print(f"[DEBUG] image_relevance (frame 0): shape={list(image_relevance.shape)} "
-                  f"(expect [{num_patches}]), "
-                  f"min={image_relevance.min().item():.6f}, "
-                  f"max={image_relevance.max().item():.6f}, "
-                  f"mean={image_relevance.mean().item():.6f}")
-        
         heatmap = image_relevance.detach().cpu().numpy().reshape(patch_size, patch_size)
         heatmaps.append(heatmap)
     
     heatmaps = np.stack(heatmaps, axis=0)  # [T, patch_size, patch_size]
-    if DEBUG:
-        print(f"[DEBUG] Raw heatmaps: shape={list(heatmaps.shape)} (expect [{T}, {patch_size}, {patch_size}]), "
-              f"global_min={heatmaps.min():.6f}, global_max={heatmaps.max():.6f}")
     
     # Min-max normalization per frame
     for t in range(T):
@@ -636,15 +559,6 @@ def generate_per_frame_heatmaps(
             heatmaps[t] = (h - h.min()) / (h.max() - h.min())
         else:
             heatmaps[t] = np.zeros_like(h)
-    
-    if DEBUG:
-        print(f"[DEBUG] Normalized heatmaps: shape={list(heatmaps.shape)}, "
-              f"all in [0,1]: min={heatmaps.min():.4f}, max={heatmaps.max():.4f}")
-        # Per-frame stats for first 3 frames
-        for t in range(min(3, T)):
-            h = heatmaps[t]
-            print(f"[DEBUG]   frame {t}: mean={h.mean():.4f}, std={h.std():.4f}, "
-                  f"max_pos=({np.unravel_index(h.argmax(), h.shape)})")
     
     return heatmaps
 
