@@ -27,6 +27,24 @@ base_path = '/content/drive/MyDrive/arsenal-paris-gradcam/'
 high_res_video_path = '/content/drive/MyDrive/arsenal-paris-high-res/2016-11-23 - 22-45 Arsenal 2 - 2 Paris SG/'
 
 
+def get_gradcam_target_layer(model):
+    """Resolve a SigLIP-compatible target layer for Grad-CAM.
+
+    Supports both custom wrappers and raw Hugging Face SigLIP layouts.
+    """
+    siglip_model = model.siglip_model
+
+    if hasattr(siglip_model, 'post_layernorm'):
+        return siglip_model.post_layernorm
+
+    if hasattr(siglip_model, 'vision_model') and hasattr(siglip_model.vision_model, 'post_layernorm'):
+        return siglip_model.vision_model.post_layernorm
+
+    raise AttributeError(
+        f'Could not resolve Grad-CAM target layer from model type: {type(siglip_model).__name__}'
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description='Load a Python config file.')
     parser.add_argument('--config_path', type=str, default='config/pretrain_classification.py', help='The path to the Python config file')
@@ -85,7 +103,6 @@ def main():
             feature_dim=768,
             model_name="google/siglip-base-patch16-224"
         ).eval()
-        gradcam_target_layer = classifier.siglip_model.post_layernorm
     else:
         classifier = MatchVision_Classifier(
             keywords=config_test_dataset['keywords'],
@@ -93,7 +110,6 @@ def main():
             vision_encoder_type=encoder_type,
             use_transformer=use_transformer,
         ).eval()
-        gradcam_target_layer = classifier.siglip_model.post_layernorm
 
     checkpoint = torch.load(checkpoint_path, map_location='cpu')
     new_state_dict = {key.replace('module.', ''): value for key, value in checkpoint['state_dict'].items()}
@@ -138,8 +154,10 @@ def main():
 
         logits = classifier.module.forward(frames)
 
+        gradcam_model = classifier.module if hasattr(classifier, 'module') else classifier
+        gradcam_target_layer = get_gradcam_target_layer(gradcam_model)
         grad_cam = GradCAM(
-            model=classifier.module,
+            model=gradcam_model,
             target_layers=[gradcam_target_layer],
             reshape_transform=reshape_transform,
         )
