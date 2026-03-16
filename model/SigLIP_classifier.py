@@ -75,5 +75,6 @@ class SigLIP_Classifier(nn.Module):
         return logits
 
     def get_types(self, logits):
-        # Return predicted class indices
-        return torch.argmax(logits, dim=-1, keepdim=True)
+        # Return top-5 predicted class indices.
+        _, top_indices = torch.topk(logits, k=5, dim=1, largest=True, sorted=True)
+        return top_indices
