@@ -1,0 +1,3 @@
+# Model checkpoints (keep directory, ignore contents)
+model/SoccerMaster/pretrained_models/*
+!model/SoccerMaster/pretrained_models/.gitkeep

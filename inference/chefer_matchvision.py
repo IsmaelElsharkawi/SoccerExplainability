@@ -1,13 +1,7 @@
 """
-Chefer explainability inference for MatchVision classification (per-frame spatial-only).
+Chefer explainability inference for MatchVision classification
 
-This is the ORIGINAL Chefer method applied to VisionTimesformer without the
-temporal fix. Each frame has an independent R_pp [N, N] relevance matrix
-that only accumulates spatial attention. Temporal attention is NOT included
-in the relevance propagation.
-
-For the temporal-fix version that builds a joint R [T*N, T*N] matrix
-including both spatial and temporal attention, see chefer_inference.py.
+Each frame has an independent R_pp [N, N] relevance matrix that only accumulates spatial attention.
 
 ================================================================================
 CHEFER METHOD (per-frame spatial-only)
@@ -54,23 +48,19 @@ Use target_label / target_label_name to specify class:
     7:  show added time     15:  off side
 
 Usage:
-    python chefer_inference.py \\
+    python chefer_matchvision.py \\
         --config_path ../config/pretrain_classification_ibex.py \\
         --checkpoint_path /path/to/pretrained_classification.pth \\
         --output_dir /path/to/output
 """
 
 import argparse
-import math
 import os
 import sys
 from typing import Optional
 
-import cv2
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from einops import rearrange
 from tqdm import tqdm
 
@@ -80,274 +70,42 @@ from inference_utils import (
     load_config, create_test_dataloader, load_classifier,
     setup_attribution_evaluator, match_video_id,
     evaluate_and_print_video, print_and_save_eval_summary,
+    LABEL_NAMES, LABEL_TO_IDX,
+    wrap_siglip_attention_module, wrap_pooling_head_attention,
+    chefer_attribution_renderer,
 )
 from visualization_video import save_lowres_visualization_video
 
-# ============================================================================
-# Chefer Method Constants
-# ============================================================================
-
-# Label mapping for MatchVision_Classifier — must match the keyword order
-# used during training (config/pretrain_classification.py) so that indices
-# align with the pretrained_classification.pth weight rows.
-LABEL_NAMES = [
-    'var', 'end of half game', 'clearance', 'second yellow card',
-    'injury', 'ball possession', 'throw in', 'show added time',
-    'shot off target', 'start of half game', 'substitution',
-    'saved by goal-keeper', 'red card', 'lead to corner',
-    'ball out of play', 'off side', 'goal', 'penalty',
-    'yellow card', 'foul lead to penalty', 'corner', 'free kick',
-    'foul with no card'
-]
-
-LABEL_TO_IDX = {name: idx for idx, name in enumerate(LABEL_NAMES)}
 
 # ============================================================================
-# Chefer LRP Rules (from Transformer-MM-Explainability paper)
-# ============================================================================
-
-def avg_heads(cam, grad):
-    """Rule 5 from paper: Average attention heads weighted by gradients."""
-    cam = cam.reshape(-1, cam.shape[-2], cam.shape[-1])
-    grad = grad.reshape(-1, grad.shape[-2], grad.shape[-1])
-    cam = grad * cam
-    cam = cam.clamp(min=0).mean(dim=0)
-    return cam
-
-
-# ============================================================================
-# Attention Weight Extraction Wrappers
-# ============================================================================
-
-def wrap_siglip_attention_module(attn_module):
-    """
-    Wrap a SigLIP Attention module to capture attention weights AND gradients.
-    
-    This replaces the forward method to properly capture attention for Chefer.
-    Gradients are captured via hooks on the attention tensor.
-    
-    Args:
-        attn_module: SiglipAttention module
-        
-    Returns:
-        The same module, now with get_attn() and get_attn_gradients() methods
-    """
-    # Idempotency guard: skip if already wrapped
-    if hasattr(attn_module, '_chefer_wrapped'):
-        return attn_module
-
-    # Get dimensions from projection layers
-    embed_dim = attn_module.q_proj.out_features  # 768
-    num_heads = attn_module.num_heads if hasattr(attn_module, 'num_heads') else 12
-    head_dim = embed_dim // num_heads
-    scale = 1.0 / math.sqrt(head_dim)
-    
-    # Storage for attention weights and gradients
-    attn_storage = {}
-    grad_storage = {}
-    
-    def wrapped_forward(hidden_states, attention_mask=None, output_attentions=False):
-        """Wrapped forward that captures attention weights AND gradients."""
-        B, N, C = hidden_states.shape
-        
-        # Compute Q, K, V separately
-        query = attn_module.q_proj(hidden_states)
-        key = attn_module.k_proj(hidden_states)
-        value = attn_module.v_proj(hidden_states)
-        
-        # Reshape for multi-head attention
-        query = query.view(B, N, num_heads, head_dim).transpose(1, 2)
-        key = key.view(B, N, num_heads, head_dim).transpose(1, 2)
-        value = value.view(B, N, num_heads, head_dim).transpose(1, 2)
-        
-        # Compute attention scores
-        attn = (query @ key.transpose(-2, -1)) * scale
-        attn = attn.softmax(dim=-1)
-        
-        # Store attention weights (detached copy for storage)
-        attn_storage['attn'] = attn.detach()
-        
-        # Register gradient hook to capture gradients during backward pass
-        if attn.requires_grad:
-            def grad_hook(grad):
-                grad_storage['grad'] = grad.detach()
-            attn.register_hook(grad_hook)
-        
-        # Apply dropout if module has it
-        if hasattr(attn_module, 'dropout'):
-            dropout_val = attn_module.dropout
-            if callable(dropout_val):
-                attn_dropped = dropout_val(attn)
-            elif isinstance(dropout_val, (float, int)) and dropout_val > 0:
-                attn_dropped = F.dropout(attn, p=dropout_val, training=attn_module.training)
-            else:
-                attn_dropped = attn
-        else:
-            attn_dropped = attn
-        
-        # Compute output
-        out = (attn_dropped @ value).transpose(1, 2).reshape(B, N, C)
-        out = attn_module.out_proj(out)
-        
-        # Return 2 values for SiglipEncoderLayer compatibility
-        if output_attentions:
-            return out, attn
-        return out, None
-    
-    # Replace forward method
-    attn_module.forward = wrapped_forward
-    
-    # Add methods to retrieve attention weights and gradients
-    def get_attn():
-        return attn_storage.get('attn')
-    
-    def get_attn_gradients():
-        return grad_storage.get('grad')
-    
-    attn_module.get_attn = get_attn
-    attn_module.get_attn_gradients = get_attn_gradients
-    attn_module._chefer_num_heads = num_heads
-    attn_module._chefer_head_dim = head_dim
-    attn_module._chefer_wrapped = True
-    
-    return attn_module
-
-
-def wrap_pooling_head_attention(mha_module):
-    """
-    Wrap SigLIP's pooling head nn.MultiheadAttention for cross-attention capture.
-    
-    The pooling head does: output = attention(probe, patches, patches)
-    where probe [B, 1, 768] is a learnable CLS-like token and patches [B, 196, 768]
-    are the spatial features.  This wrapper manually computes the attention so we
-    can register gradient hooks — needed for proper Chefer R[probe, patches] extraction.
-    
-    Args:
-        mha_module: nn.MultiheadAttention (batch_first=True) from SiglipMultiheadAttentionPoolingHead
-        
-    Returns:
-        The same module, now with get_attn() and get_attn_gradients() methods
-    """
-    # Idempotency guard: skip if already wrapped
-    if hasattr(mha_module, '_chefer_wrapped'):
-        return mha_module
-
-    embed_dim = mha_module.embed_dim   # 768
-    num_heads = mha_module.num_heads   # 12
-    head_dim = embed_dim // num_heads  # 64
-    scale = 1.0 / math.sqrt(head_dim)
-    
-    attn_storage = {}
-    grad_storage = {}
-    
-    def wrapped_forward(query, key, value, **kwargs):
-        """Manual cross-attention with gradient hooks on attention weights."""
-        B, Nq, C = query.shape   # [B*T, 1, 768]  (probe)
-        _, Nk, _ = key.shape     # [B*T, 196, 768] (patches)
-        
-        # Split in_proj_weight/bias into Q, K, V projections
-        w = mha_module.in_proj_weight  # [3*768, 768]
-        b = mha_module.in_proj_bias    # [3*768]
-        
-        Q = F.linear(query, w[:embed_dim], b[:embed_dim])
-        K = F.linear(key, w[embed_dim:2*embed_dim], b[embed_dim:2*embed_dim])
-        V = F.linear(value, w[2*embed_dim:], b[2*embed_dim:])
-        
-        # Reshape for multi-head: [B, N, H, D] -> [B, H, N, D]
-        Q = Q.view(B, Nq, num_heads, head_dim).transpose(1, 2)  # [B, H, 1, 64]
-        K = K.view(B, Nk, num_heads, head_dim).transpose(1, 2)  # [B, H, 196, 64]
-        V = V.view(B, Nk, num_heads, head_dim).transpose(1, 2)  # [B, H, 196, 64]
-        
-        attn = (Q @ K.transpose(-2, -1)) * scale  # [B, H, 1, 196]
-        attn = attn.softmax(dim=-1)
-        
-        # Store attention weights and register gradient hook
-        attn_storage['attn'] = attn.detach()
-        if attn.requires_grad:
-            def grad_hook(grad):
-                grad_storage['grad'] = grad.detach()
-            attn.register_hook(grad_hook)
-        
-        out = (attn @ V).transpose(1, 2).reshape(B, Nq, C)  # [B, 1, 768]
-        out = mha_module.out_proj(out)
-        
-        return out, attn
-    
-    mha_module.forward = wrapped_forward
-    
-    mha_module.get_attn = lambda: attn_storage.get('attn')
-    mha_module.get_attn_gradients = lambda: grad_storage.get('grad')
-    mha_module._chefer_num_heads = num_heads
-    mha_module._chefer_head_dim = head_dim
-    mha_module._chefer_wrapped = True
-    
-    return mha_module
-
-
-# ============================================================================
-# Model Wrapping Functions
+# Model Wrapping
 # ============================================================================
 
 def wrap_matchvision_model(model):
     """
-    Wrap a MatchVision model's attention modules for Chefer explainability.
-    
-    Per-frame spatial-only version: wraps only spatial attention and pooling head.
-    Temporal attention (Timesformer) is NOT wrapped — it participates in the
-    forward pass but is excluded from the relevance propagation.
-    
-    This wraps:
-    1. SigLIP spatial attention in VisionTimesformer encoder blocks
-    2. SigLIP pooling head cross-attention (probe -> patches, the CLS equivalent)
-    
-    Args:
-        model: MatchVision model (MatchVision_Classifier or VisionTimesformer)
-        
-    Returns:
-        Dictionary with wrapped attention modules organized by type
+    Wrap MatchVision_Classifier's attention modules for Chefer explainability.
+
+    Wraps all 12 spatial self_attn layers in VisionTimesformer and the
+    pooling head cross-attention. Temporal attention is NOT wrapped.
     """
     wrapped = {
-        'spatial_attn': [],      # SigLIP spatial attention (per frame)
-        'pooling_head_attn': None, # SigLIP pooling head cross-attention (probe -> patches)
+        'spatial_attn': [],
+        'pooling_head_attn': None,
     }
-    
-    # Get visual encoder - handle MatchVision_Classifier, full model, or standalone VisionTimesformer
-    if hasattr(model, 'siglip_model'):
-        visual_encoder = model.siglip_model
-    elif hasattr(model, 'visual_encoder'):
-        visual_encoder = model.visual_encoder
-    elif hasattr(model, 'timesformer'):
-        # Model IS the visual encoder (VisionTimesformer)
-        visual_encoder = model
-    else:
-        raise ValueError("Model does not have 'siglip_model', 'visual_encoder' or 'timesformer' attribute")
-    
-    # Wrap Timesformer spatial attention only (NO temporal wrapping)
-    if hasattr(visual_encoder, 'timesformer'):
-        timesformer = visual_encoder.timesformer
-        for i, block in enumerate(timesformer.resblocks):
-            # Wrap spatial attention (SigLIP encoder layer)
-            if hasattr(block, 'encoder'):
-                encoder_layer = block.encoder
-                if hasattr(encoder_layer, 'self_attn'):
-                    try:
-                        wrapped_spatial = wrap_siglip_attention_module(encoder_layer.self_attn)
-                        wrapped['spatial_attn'].append((i, wrapped_spatial))
-                    except Exception as e:
-                        print(f"Warning: Could not wrap spatial attention in block {i}: {e}")
-    
-    # Wrap SigLIP pooling head attention (probe -> patches cross-attention)
-    if hasattr(visual_encoder, 'head') and hasattr(visual_encoder.head, 'attention'):
-        try:
-            wrapped_head = wrap_pooling_head_attention(visual_encoder.head.attention)
-            wrapped['pooling_head_attn'] = wrapped_head
-        except Exception as e:
-            print(f"Warning: Could not wrap pooling head attention: {e}")
-    
+
+    visual_encoder = model.siglip_model
+    timesformer = visual_encoder.timesformer
+
+    for i, block in enumerate(timesformer.resblocks):
+        wrapped_spatial = wrap_siglip_attention_module(block.encoder.self_attn)
+        wrapped['spatial_attn'].append((i, wrapped_spatial))
+
+    wrapped['pooling_head_attn'] = wrap_pooling_head_attention(visual_encoder.head.attention)
+
     print(f"Wrapped attention modules (per-frame spatial-only):")
     print(f"  - Spatial (SigLIP): {len(wrapped['spatial_attn'])} layers")
-    print(f"  - Pooling head (probe->patches): {'yes' if wrapped['pooling_head_attn'] is not None else 'no'}")
-    
+    print(f"  - Pooling head (probe->patches): yes")
+
     return wrapped
 
 
@@ -393,90 +151,56 @@ def generate_per_frame_heatmaps(
     Returns:
         Heatmaps array [T, patch_size, patch_size] with values in [0, 1]
     """
-    # Set model to eval mode but enable gradients for Chefer
     model.eval()
-    
-    # Wrap the model to capture attention weights AND gradients
     wrapped = wrap_matchvision_model(model)
-    
-    # Move inputs to device and enable gradients
+
     video_frames = video_frames.to(device)
     video_frames.requires_grad_(True)
-    
+
     B = video_frames.shape[0]
     T = num_frames
     num_patches = patch_size * patch_size  # 196
-    
-    # Initialize per-frame relevance matrices (analog of R = eye(num_tokens) in example.py)
-    # SigLIP has no CLS token, so R is [196, 196] per frame (patches only).
-    # The probe (CLS equivalent) is handled at extraction via the pooling head.
+
     R_pp_per_frame = [torch.eye(num_patches, device=device) for _ in range(T)]
-    
-    # Forward pass WITH gradients enabled (critical for Chefer!)
+
     model.zero_grad()
-    
-    # Get visual features
-    if hasattr(model, 'siglip_model'):
-        visual_encoder = model.siglip_model
-    elif hasattr(model, 'visual_encoder'):
-        visual_encoder = model.visual_encoder
-    elif hasattr(model, 'timesformer'):
-        visual_encoder = model
-    else:
-        raise ValueError("Model does not have 'siglip_model', 'visual_encoder' or 'timesformer' attribute")
-    
-    # Process video frames
+
+    # =========================================================================
+    # Forward pass through VisionTimesformer
+    # =========================================================================
+    visual_encoder = model.siglip_model
+
     x = video_frames
     B_actual, _, T_actual, _, _ = x.shape
-    
     x = rearrange(x, "b c t h w -> (b t) c h w")
-    
-    # Get patch embeddings
+
     x = visual_encoder.vision_model_embedding(x)  # [B*T, 196, 768]
     x = rearrange(x, "(b t) n m -> b n t m", b=B_actual, t=T_actual)
     x = x + visual_encoder.temporal_positional_embedding
     x = rearrange(x, "b n t m -> (b t) n m")
-    
-    # Forward through Timesformer
+
     x = visual_encoder.timesformer(x, B_actual, T_actual)
-    
-    # Continue forward through pooling to get final features
+
     x = visual_encoder.post_layernorm(x)
-    x = visual_encoder.head(x)  # [B*T, 768] - spatial pooled
+    x = visual_encoder.head(x)  # [B*T, 768]
     video_features = rearrange(x, "(b t) m -> b t m", b=B_actual, t=T_actual)
-    
+
     # Convert label name to index if provided
     if target_label_name is not None:
         if target_label_name.lower() not in LABEL_TO_IDX:
             raise ValueError(f"Unknown label '{target_label_name}'. Available: {LABEL_NAMES}")
         target_label = LABEL_TO_IDX[target_label_name.lower()]
         print(f"Resolved label name '{target_label_name}' to index {target_label}")
-    
-    # Backprop from classification logit
-    # video_features is [B, T, 768] from visual encoder
-    
-    # Route through the full MatchVision_Classifier pipeline:
-    #   classifier_ln1 -> transformer_encoder -> classifier_ln2 -> classifier
-    # This matches MatchVision_Classifier.get_logits() exactly.
-    if hasattr(model, 'classifier') and hasattr(model, 'classifier_ln1'):
-        x_cls = model.classifier_ln1(video_features)  # [B, T, 768]
-        if hasattr(model, 'use_transformer') and model.use_transformer and hasattr(model, 'transformer_encoder'):
-            x_cls = x_cls.permute(1, 0, 2)  # [T, B, 768]
-            x_cls = model.transformer_encoder(x_cls)
-            if hasattr(model, 'classifier_transformer_type') and model.classifier_transformer_type == 'cls_token':
-                x_cls = x_cls[0, :, :]  # [B, 768]
-            else:
-                x_cls = x_cls.mean(dim=0)  # [B, 768] — avg_pool (default)
-        else:
-            x_cls = x_cls.mean(dim=1)  # [B, 768]
-        x_cls = model.classifier_ln2(x_cls)
-        cls_logits = model.classifier(x_cls)  # [B, num_classes]
-    elif hasattr(model, 'classifier'):
-        # Simpler model with just a classifier head
-        cls_features = video_features.mean(dim=1)
-        cls_logits = model.classifier(cls_features)
-    else:
-        raise RuntimeError("Model does not have a classification head (model.classifier).")
+
+    # =========================================================================
+    # Classification head: LN -> TransformerEncoder(avg_pool) -> LN -> Linear
+    # =========================================================================
+    x_cls = model.classifier_ln1(video_features)  # [B, T, 768]
+    x_cls = x_cls.permute(1, 0, 2)                # [T, B, 768]
+    x_cls = model.transformer_encoder(x_cls)
+    x_cls = x_cls.mean(dim=0)                      # [B, 768]
+    x_cls = model.classifier_ln2(x_cls)
+    cls_logits = model.classifier(x_cls)            # [B, num_classes]
     
     # Backprop from the target class logit (one-hot selection)
     target = cls_logits[0, target_label]
@@ -561,38 +285,6 @@ def generate_per_frame_heatmaps(
             heatmaps[t] = np.zeros_like(h)
     
     return heatmaps
-
-
-# ============================================================================
-# Attribution Renderer
-# ============================================================================
-
-def chefer_attribution_renderer(frame_float, attribution_map):
-    """
-    Render a Chefer heatmap overlay on a frame.
-
-    Replaces pytorch_grad_cam's show_cam_on_image so we have no dependency
-    on that library.
-
-    Args:
-        frame_float: [H, W, 3] float32 image in [0, 1]
-        attribution_map: [h, w] float32 heatmap in [0, 1] (may differ in size)
-
-    Returns:
-        [H, W, 3] uint8 RGB overlay image
-    """
-    H, W = frame_float.shape[:2]
-    heatmap = cv2.resize(attribution_map, (W, H), interpolation=cv2.INTER_LINEAR)
-
-    heatmap = np.clip(heatmap, 0, 1)
-    heatmap_uint8 = (heatmap * 255).astype(np.uint8)
-    heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
-    heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-
-    alpha = 0.5
-    overlay = alpha * heatmap_colored + (1 - alpha) * frame_float
-    overlay = np.clip(overlay * 255, 0, 255).astype(np.uint8)
-    return overlay
 
 
 # ============================================================================

@@ -1,0 +1,8 @@
+# This directory should contain SoccerMaster checkpoints:
+# - backbone.pt (from huggingface.co/xleprime/SoccerMaster)
+# - CaptionClassification.pt
+#
+# Download commands (from SoccerMaster README):
+# cd /SoccerExplainability/model/SoccerMaster/pretrained_models
+# git lfs install
+# git clone https://huggingface.co/xleprime/SoccerMaster

@@ -3,7 +3,7 @@ sys.path.append('PATH_TO_FOLDER_OF_THIS_PROJECT')
 import torch
 import torch.nn as nn
 # from model.MatchVision_from_siglip import VisionTimesformer
-from model.MatchVision import VisionTimesformer
+from model.MatchVision.MatchVision import VisionTimesformer
 import torch.nn.functional as F
 from einops import rearrange
 

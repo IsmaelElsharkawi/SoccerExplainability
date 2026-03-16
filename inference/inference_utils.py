@@ -1,18 +1,200 @@
 import importlib.util
 import json
+import math
 import os
 import sys
 
+import cv2
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from dataset.video_dataset import VideoCaptionDataset, VideoCaptionDataset_Balanced
-from model.MatchVision_classifier import MatchVision_Classifier
+from model.MatchVision.MatchVision_classifier import MatchVision_Classifier
 
 from coco_attribution_eval import CocoAttributionEvaluator
+
+
+# ============================================================================
+# Chefer Method Constants
+# ============================================================================
+
+LABEL_NAMES = [
+    'var', 'end of half game', 'clearance', 'second yellow card',
+    'injury', 'ball possession', 'throw in', 'show added time',
+    'shot off target', 'start of half game', 'substitution',
+    'saved by goal-keeper', 'red card', 'lead to corner',
+    'ball out of play', 'off side', 'goal', 'penalty',
+    'yellow card', 'foul lead to penalty', 'corner', 'free kick',
+    'foul with no card'
+]
+
+LABEL_TO_IDX = {name: idx for idx, name in enumerate(LABEL_NAMES)}
+
+
+# ============================================================================
+# Chefer Attention Wrapping
+# ============================================================================
+
+def wrap_siglip_attention_module(attn_module):
+    """
+    Wrap a SigLIP Attention module to capture attention weights AND gradients.
+
+    Replaces the forward method to manually compute multi-head attention so we
+    can store the attention matrix and register a gradient hook on it.
+
+    Works for both SigLIP-base (MatchVision) and SigLIP2-large (SoccerMaster)
+    since both use the same SiglipAttention interface (q_proj, k_proj, v_proj, out_proj).
+
+    Args:
+        attn_module: SiglipAttention module
+
+    Returns:
+        The same module, now with get_attn() and get_attn_gradients() methods
+    """
+    if hasattr(attn_module, '_chefer_wrapped'):
+        return attn_module
+
+    embed_dim = attn_module.q_proj.out_features
+    num_heads = attn_module.num_heads
+    head_dim = embed_dim // num_heads
+    scale = 1.0 / math.sqrt(head_dim)
+
+    attn_storage = {}
+    grad_storage = {}
+
+    def wrapped_forward(hidden_states, attention_mask=None, output_attentions=False):
+        B, N, C = hidden_states.shape
+
+        query = attn_module.q_proj(hidden_states)
+        key = attn_module.k_proj(hidden_states)
+        value = attn_module.v_proj(hidden_states)
+
+        query = query.view(B, N, num_heads, head_dim).transpose(1, 2)
+        key = key.view(B, N, num_heads, head_dim).transpose(1, 2)
+        value = value.view(B, N, num_heads, head_dim).transpose(1, 2)
+
+        attn = (query @ key.transpose(-2, -1)) * scale
+        attn = attn.softmax(dim=-1)
+
+        attn_storage['attn'] = attn.detach()
+
+        if attn.requires_grad:
+            def grad_hook(grad):
+                grad_storage['grad'] = grad.detach()
+            attn.register_hook(grad_hook)
+
+        out = (attn @ value).transpose(1, 2).reshape(B, N, C)
+        out = attn_module.out_proj(out)
+
+        if output_attentions:
+            return out, attn
+        return out, None
+
+    attn_module.forward = wrapped_forward
+
+    attn_module.get_attn = lambda: attn_storage.get('attn')
+    attn_module.get_attn_gradients = lambda: grad_storage.get('grad')
+    attn_module._chefer_wrapped = True
+
+    return attn_module
+
+
+def wrap_pooling_head_attention(mha_module):
+    """
+    Wrap SigLIP's pooling head nn.MultiheadAttention for cross-attention capture.
+
+    The pooling head does: output = attention(probe, patches, patches)
+    where probe is a learnable CLS-like token and patches are the spatial features.
+
+    Works for both SigLIP-base (MatchVision) and SigLIP2-large (SoccerMaster).
+
+    Args:
+        mha_module: nn.MultiheadAttention (batch_first=True)
+
+    Returns:
+        The same module, now with get_attn() and get_attn_gradients() methods
+    """
+    if hasattr(mha_module, '_chefer_wrapped'):
+        return mha_module
+
+    embed_dim = mha_module.embed_dim
+    num_heads = mha_module.num_heads
+    head_dim = embed_dim // num_heads
+    scale = 1.0 / math.sqrt(head_dim)
+
+    attn_storage = {}
+    grad_storage = {}
+
+    def wrapped_forward(query, key, value, **kwargs):
+        B, Nq, C = query.shape
+        _, Nk, _ = key.shape
+
+        w = mha_module.in_proj_weight
+        b = mha_module.in_proj_bias
+
+        Q = F.linear(query, w[:embed_dim], b[:embed_dim])
+        K = F.linear(key, w[embed_dim:2*embed_dim], b[embed_dim:2*embed_dim])
+        V = F.linear(value, w[2*embed_dim:], b[2*embed_dim:])
+
+        Q = Q.view(B, Nq, num_heads, head_dim).transpose(1, 2)
+        K = K.view(B, Nk, num_heads, head_dim).transpose(1, 2)
+        V = V.view(B, Nk, num_heads, head_dim).transpose(1, 2)
+
+        attn = (Q @ K.transpose(-2, -1)) * scale
+        attn = attn.softmax(dim=-1)
+
+        attn_storage['attn'] = attn.detach()
+        if attn.requires_grad:
+            def grad_hook(grad):
+                grad_storage['grad'] = grad.detach()
+            attn.register_hook(grad_hook)
+
+        out = (attn @ V).transpose(1, 2).reshape(B, Nq, C)
+        out = mha_module.out_proj(out)
+
+        return out, attn
+
+    mha_module.forward = wrapped_forward
+
+    mha_module.get_attn = lambda: attn_storage.get('attn')
+    mha_module.get_attn_gradients = lambda: grad_storage.get('grad')
+    mha_module._chefer_wrapped = True
+
+    return mha_module
+
+
+# ============================================================================
+# Chefer Attribution Renderer
+# ============================================================================
+
+def chefer_attribution_renderer(frame_float, attribution_map):
+    """
+    Render a Chefer heatmap overlay on a frame.
+
+    Args:
+        frame_float: [H, W, 3] float32 image in [0, 1]
+        attribution_map: [h, w] float32 heatmap in [0, 1] (may differ in size)
+
+    Returns:
+        [H, W, 3] uint8 RGB overlay image
+    """
+    H, W = frame_float.shape[:2]
+    heatmap = cv2.resize(attribution_map, (W, H), interpolation=cv2.INTER_LINEAR)
+
+    heatmap = np.clip(heatmap, 0, 1)
+    heatmap_uint8 = (heatmap * 255).astype(np.uint8)
+    heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
+    heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+
+    alpha = 0.5
+    overlay = alpha * heatmap_colored + (1 - alpha) * frame_float
+    overlay = np.clip(overlay * 255, 0, 255).astype(np.uint8)
+    return overlay
 
 
 # ============================================================================
