@@ -224,14 +224,6 @@
         "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
     },
     {
-        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_39_03.mp4",
-        "caption": "corner",
-        "comments_text": "Christian Eriksen (Tottenham) is about to take a corner kick.",
-        "comments_text_anonymized": "[PLAYER] ([TEAM]) is about to take a corner kick.",
-        "league": "england_epl_2016-2017",
-        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool"
-    },
-    {
         "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_42_45.mp4",
         "caption": "penalty",
         "comments_text": "James Milner (Liverpool) is heading towards the penalty spot to take it.",
@@ -356,14 +348,6 @@
         "caption": "foul with no card",
         "comments_text": "Domenico Celi blows his whistle after Dries Mertens (Napoli) kicks an opponent's legs instead of the ball.",
         "comments_text_anonymized": "[REFEREE] blows his whistle after [PLAYER] ([TEAM]) kicks an opponent's legs instead of the ball.",
-        "league": "italy_serie-a_2016-2017",
-        "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
-    },
-    {
-        "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/1_25_15.mp4",
-        "caption": "foul with no card",
-        "comments_text": "Leonardo Spinazzola (Atalanta) fouls an opponent during an attacking move.",
-        "comments_text_anonymized": "[PLAYER] ([TEAM]) fouls an opponent during an attacking move.",
         "league": "italy_serie-a_2016-2017",
         "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta"
     },
