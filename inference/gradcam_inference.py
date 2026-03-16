@@ -12,6 +12,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from config.model_type import MODEL_TYPE
+from model.SigLIP_classifier import SigLIP_Classifier
 
 from inference_utils import (
     load_config, reshape_transform, create_test_dataloader,
@@ -23,6 +25,21 @@ from visualization_video import save_lowres_visualization_video
 
 base_path = '/content/drive/MyDrive/arsenal-paris-gradcam/'
 high_res_video_path = '/content/drive/MyDrive/arsenal-paris-high-res/2016-11-23 - 22-45 Arsenal 2 - 2 Paris SG/'
+
+
+def get_gradcam_target_layer(model):
+    """Resolve a SigLIP-compatible target layer for Grad-CAM."""
+    siglip_model = model.siglip_model
+
+    if hasattr(siglip_model, 'post_layernorm'):
+        return siglip_model.post_layernorm
+
+    if hasattr(siglip_model, 'vision_model') and hasattr(siglip_model.vision_model, 'post_layernorm'):
+        return siglip_model.vision_model.post_layernorm
+
+    raise AttributeError(
+        f'Could not resolve Grad-CAM target layer from model type: {type(siglip_model).__name__}'
+    )
 
 
 def main():
@@ -37,6 +54,8 @@ def main():
                         help='Optional path to save per-video attribution evaluation results as JSON')
     parser.add_argument('--output_dir', type=str, default='/content/drive/MyDrive/gradcam-visualizations/',
                         help='Directory to save attribution visualization outputs')
+    parser.add_argument('--siglip_temporal_aggregation', type=str, default='mean', choices=['mean', 'max'],
+                        help='Temporal aggregation for SigLIP frame embeddings (default: mean)')
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -66,12 +85,28 @@ def main():
     # ----------------------------------------------------------------
     # Model
     # ----------------------------------------------------------------
-    classifier = load_classifier(
-        config_test_dataset, classifier_transformer_type, encoder_type,
-        use_transformer, checkpoint_path, devices, device_ids,
-    )
+    configured_model_type = MODEL_TYPE.lower()
+    if configured_model_type == 'siglip':
+        classifier = SigLIP_Classifier(
+            keywords=config_test_dataset['keywords'],
+            feature_dim=768,
+            model_name='google/siglip-base-patch16-224',
+            temporal_aggregation=args.siglip_temporal_aggregation,
+        ).eval()
+        classifier = classifier.to(devices[0])
+        classifier = torch.nn.DataParallel(classifier, device_ids=device_ids)
+        print(
+            'Using Hugging Face pretrained SigLIP weights; skipping --checkpoint_path loading. '
+            f'Temporal aggregation: {args.siglip_temporal_aggregation}'
+        )
+    else:
+        classifier = load_classifier(
+            config_test_dataset, classifier_transformer_type, encoder_type,
+            use_transformer, checkpoint_path, devices, device_ids,
+        )
 
-    print(classifier.module.transformer_encoder.layers[-1])
+    if hasattr(classifier.module, 'transformer_encoder'):
+        print(classifier.module.transformer_encoder.layers[-1])
 
     # ----------------------------------------------------------------
     # COCO evaluator (optional)
@@ -99,9 +134,11 @@ def main():
 
         logits = classifier.module.forward(frames)
 
+        gradcam_model = classifier.module if hasattr(classifier, 'module') else classifier
+        gradcam_target_layer = get_gradcam_target_layer(gradcam_model)
         grad_cam = GradCAM(
-            model=classifier.module,
-            target_layers=[classifier.module.siglip_model.post_layernorm],
+            model=gradcam_model,
+            target_layers=[gradcam_target_layer],
             reshape_transform=reshape_transform,
         )
         grad_cam_results = grad_cam(input_tensor=frames, targets=[ClassifierOutputTarget(caption[0])])
@@ -111,12 +148,25 @@ def main():
         for grad_cam_result in grad_cam_results:
             new_frames = dummy_frames[i]
             new_frames = new_frames.permute(0, 2, 3, 1)
+            grad_cam_result = np.asarray(grad_cam_result)
+
+            if grad_cam_result.ndim == 2:
+                grad_cam_result = np.repeat(grad_cam_result[None, ...], new_frames.shape[0], axis=0)
+            elif grad_cam_result.ndim == 3 and grad_cam_result.shape[0] == 1 and new_frames.shape[0] > 1:
+                grad_cam_result = np.repeat(grad_cam_result, new_frames.shape[0], axis=0)
+
+            if grad_cam_result.shape[0] != new_frames.shape[0]:
+                raise ValueError(
+                    f'Attribution map frame count ({grad_cam_result.shape[0]}) does not match '
+                    f'video frame count ({new_frames.shape[0]}).'
+                )
+
             print('attribution map shape: ', grad_cam_result.shape)
             grad_cam_mean = torch.mean(torch.tensor(grad_cam_result, device='cpu'), dim=(1, 2)).cpu().numpy()
             print('attribution score shape: ', grad_cam_mean.shape)
 
             visualizations = []
-            for j in range(30):
+            for j in range(new_frames.shape[0]):
                 visualization = show_cam_on_image(
                     cv2.resize(np.float32(new_frames[j].cpu()) / 255.0, (224, 224)),
                     grad_cam_result[j],
