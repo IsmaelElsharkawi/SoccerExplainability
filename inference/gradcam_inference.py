@@ -5,6 +5,8 @@ import sys
 import cv2
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from tqdm import tqdm
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -14,6 +16,7 @@ from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from config.model_type import MODEL_TYPE
 from model.SigLIP_classifier import SigLIP_Classifier
+from model.SoccerMaster.SoccerMaster_multi_task import MultiTaskingModel
 
 from inference_utils import (
     load_config, reshape_transform, create_test_dataloader,
@@ -27,9 +30,76 @@ base_path = '/content/drive/MyDrive/arsenal-paris-gradcam/'
 high_res_video_path = '/content/drive/MyDrive/arsenal-paris-high-res/2016-11-23 - 22-45 Arsenal 2 - 2 Paris SG/'
 
 
+SOCCERMASTER_DEFAULT_CONFIG = {
+    'SIGLIP_BACKBONE_TYPE': 'soccer_master',
+    'NUM_FRAMES': 30,
+    'CKPT_PATH': 'google/siglip2-large-patch16-512',
+    'TEXT_ENCODER_CKPT_PATH': 'google/siglip2-large-patch16-512',
+    'BACKBONE_USE_TEMPORAL_GATE': True,
+    'FREEZE_VISION_ENCODER': False,
+    'FREEZE_TEXT_ENCODER': True,
+    'TEMPORAL_START_LAYER': 16,
+    'DATASETS_TO_HEADS': {'VideoCaption': ['CaptionClassification']},
+    'BACKBONE_HIDDEN_DIM': 1024,
+    'BACKBONE_TYPE': 'video',
+    'CAPTION_CLASSIFICATION_DROPOUT_RATE': 0.0,
+    'CAPTION_CLASSIFICATION_USE_ATTN_POOL': False,
+    'CAPTION_CLASSIFICATION_USE_TRANSFORMERS': True,
+    'CAPTION_CLASSIFICATION_NUM_TRANSFORMER_ENCODER': 2,
+    'CAPTION_CLASSIFICATION_USE_MLP': False,
+    'CAPTION_CLASSIFICATION_USE_LAYER_NORM': True,
+    'CAPTION_CLASSIFICATION_LOSS_WEIGHT': 1.0,
+    'CAPTION_CLASSIFICATION_LABEL_SMOOTHING': 0.0,
+}
+
+
+class SoccerMasterClassifierAdapter(nn.Module):
+    """Adapter exposing SoccerMaster as a classifier for Grad-CAM."""
+
+    def __init__(self, multitask_model, input_size=512, dataset_name='VideoCaption'):
+        super().__init__()
+        self.multitask_model = multitask_model
+        self.input_size = input_size
+        self.dataset_name = dataset_name
+        # For Grad-CAM target-layer resolution.
+        self.siglip_model = multitask_model.backbone.vision_model
+
+    def forward(self, x):
+        # Accept (B, C, T, H, W) and convert to SoccerMaster format (B, T, C, H, W).
+        if x.dim() == 5 and x.shape[1] == 3:
+            x = x.permute(0, 2, 1, 3, 4)
+
+        if x.dim() != 5:
+            raise ValueError(f'Unexpected input rank {x.dim()} for SoccerMasterClassifierAdapter')
+
+        bsz, timesteps, channels, height, width = x.shape
+        if height != self.input_size or width != self.input_size:
+            x = x.reshape(bsz * timesteps, channels, height, width)
+            x = F.interpolate(x, size=(self.input_size, self.input_size), mode='bilinear', align_corners=False)
+            x = x.reshape(bsz, timesteps, channels, self.input_size, self.input_size)
+
+        outputs = self.multitask_model(x, dataset_name=self.dataset_name, metas=None, text=None)
+        return outputs['CaptionClassification']['logits']
+
+    def get_types(self, logits):
+        _, top_indices = torch.topk(logits, k=5, dim=1, largest=True, sorted=True)
+        return top_indices
+
+
+def load_soccermaster_classifier(checkpoint_dir, device):
+    config = SOCCERMASTER_DEFAULT_CONFIG.copy()
+    model = MultiTaskingModel(config)
+    model.load_checkpoint(checkpoint_dir)
+    model = model.to(device).eval()
+    return SoccerMasterClassifierAdapter(model).eval()
+
+
 def get_gradcam_target_layer(model):
     """Resolve a SigLIP-compatible target layer for Grad-CAM."""
     siglip_model = model.siglip_model
+
+    if hasattr(siglip_model, 'post_norm'):
+        return siglip_model.post_norm
 
     if hasattr(siglip_model, 'post_layernorm'):
         return siglip_model.post_layernorm
@@ -56,6 +126,8 @@ def main():
                         help='Directory to save attribution visualization outputs')
     parser.add_argument('--siglip_temporal_aggregation', type=str, default='mean', choices=['mean', 'max'],
                         help='Temporal aggregation for SigLIP frame embeddings (default: mean)')
+    parser.add_argument('--soccermaster_checkpoint_dir', type=str, default=None,
+                        help='Path to SoccerMaster checkpoint directory (backbone.pt + CaptionClassification.pt)')
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -99,6 +171,13 @@ def main():
             'Using Hugging Face pretrained SigLIP weights; skipping --checkpoint_path loading. '
             f'Temporal aggregation: {args.siglip_temporal_aggregation}'
         )
+    elif configured_model_type == 'soccermaster':
+        if not args.soccermaster_checkpoint_dir:
+            raise ValueError('MODEL_TYPE is soccermaster but --soccermaster_checkpoint_dir was not provided.')
+
+        classifier = load_soccermaster_classifier(args.soccermaster_checkpoint_dir, devices[0])
+        classifier = torch.nn.DataParallel(classifier, device_ids=device_ids)
+        print(f'Loaded SoccerMaster checkpoint from: {args.soccermaster_checkpoint_dir}')
     else:
         classifier = load_classifier(
             config_test_dataset, classifier_transformer_type, encoder_type,
@@ -136,10 +215,17 @@ def main():
 
         gradcam_model = classifier.module if hasattr(classifier, 'module') else classifier
         gradcam_target_layer = get_gradcam_target_layer(gradcam_model)
+        if configured_model_type == 'soccermaster':
+            gradcam_reshape_transform = lambda result: reshape_transform(
+                result, height=32, width=32, timesteps=frames.shape[2]
+            )
+        else:
+            gradcam_reshape_transform = lambda result: reshape_transform(result, timesteps=frames.shape[2])
+
         grad_cam = GradCAM(
             model=gradcam_model,
             target_layers=[gradcam_target_layer],
-            reshape_transform=reshape_transform,
+            reshape_transform=gradcam_reshape_transform,
         )
         grad_cam_results = grad_cam(input_tensor=frames, targets=[ClassifierOutputTarget(caption[0])])
         print('attribution map batch shape: ', grad_cam_results.shape)

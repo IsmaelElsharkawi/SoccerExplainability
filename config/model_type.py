@@ -1,2 +1,2 @@
 # Add this to config to select model type
-MODEL_TYPE = "matchvision"  # or "siglip"
+MODEL_TYPE = "soccermaster"  # "matchvision" | "siglip" | "soccermaster"
