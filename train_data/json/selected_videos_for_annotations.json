@@ -233,7 +233,7 @@
     },
     {
         "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_41_54.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Erik Lamela (Tottenham) brings his opponent down. Robert Madley has a clear sight of it and blows his whistle for a foul. Liverpool are awarded a penalty kick!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. [TEAM] are awarded a penalty kick!",
         "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
@@ -276,14 +276,6 @@
         "caption": "throw in",
         "comments_text": "The referee and the linesman both signal a throw-in for Liverpool.",
         "comments_text_anonymized": "The referee and the linesman both signal a throw-in for [TEAM].",
-        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
-        "league": "england_epl_2016-2017"
-    },
-    {
-        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_22_04.mp4",
-        "caption": "throw in",
-        "comments_text": "The ball is behind the sideline. James Milner (Liverpool) takes a throw-in.",
-        "comments_text_anonymized": "The ball is behind the sideline. [PLAYER] ([TEAM]) takes a throw-in.",
         "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
         "league": "england_epl_2016-2017"
     },
@@ -369,7 +361,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_47_42.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Pablo Zabaleta (Manchester City) brings his opponent down. Felix Brych has a clear sight of it and blows his whistle for a foul. PENALTY to Barcelona! Great chance to score.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. PENALTY to [TEAM]! Great chance to score.",
         "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona",
@@ -609,7 +601,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_44_00.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "The referee blows his whistle as Marquinhos (Paris SG) was too aggressive in his challenge. The referee points to the penalty spot. Barcelona are awarded a penalty kick!",
         "comments_text_anonymized": "The referee blows his whistle as [PLAYER] ([TEAM]) was too aggressive in his challenge. The referee points to the penalty spot. [TEAM] are awarded a penalty kick!",
         "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
@@ -617,7 +609,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_02_35.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Thomas Meunier (Paris SG) is penalised after knocking an opponent down. Barcelona are given a penalty!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is penalised after knocking an opponent down. [TEAM] are given a penalty!",
         "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
@@ -689,7 +681,7 @@
     },
     {
         "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_44_24.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Sergio Ramos (Real Madrid) changes the direction of the ball using his hand, but he is angry when the referee gives a foul against him. Penalty awarded! Villarreal will take a penalty kick.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) changes the direction of the ball using his hand, but he is angry when the referee gives a foul against him. Penalty awarded! [TEAM] will take a penalty kick.",
         "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
@@ -761,7 +753,7 @@
     },
     {
         "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_24_48.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Arjen Robben (Bayern Munich) is going to take the penalty!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is going to take the penalty!",
         "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
@@ -769,7 +761,7 @@
     },
     {
         "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_24_06.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Handball by Roberto Hilbert (Bayer Leverkusen). PENALTY to Bayern Munich! Almost the entire opposition team is gathered around the referee and complaining. However, the decision has been made and it's final.",
         "comments_text_anonymized": "Handball by [PLAYER] ([TEAM]). PENALTY to [TEAM]! Almost the entire opposition team is gathered around the referee and complaining. However, the decision has been made and it's final.",
         "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
@@ -816,42 +808,18 @@
         "league": "germany_bundesliga_2015-2016"
     },
     {
-        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_26_04.mp4",
-        "caption": "foul with no card",
-        "comments_text": "Goal, no wait. Florian Meyer blows his whistle for handball and Robbie Kruse (Bayer Leverkusen) can't celebrate. Disallowed goal.",
-        "comments_text_anonymized": "Goal, no wait. [REFEREE] blows his whistle for handball and [PLAYER] ([TEAM]) can't celebrate. Disallowed goal.",
-        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
-        "league": "germany_bundesliga_2015-2016"
-    },
-    {
         "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_12_27.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Nemanja Matic (Chelsea) brings his opponent down. Mark Clattenburg has a clear sight of it and blows his whistle for a foul. That's a penalty to West Brom! They have a good chance to score now.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. That's a penalty to [TEAM]! They have a good chance to score now.",
         "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea",
         "league": "england_epl_2015-2016"
     },
     {
-        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_13_38.mp4",
-        "caption": "penalty",
-        "comments_text": "A player from Bayer Leverkusen pulled an opponent down, forcing the referee to blow his whistle. The referee blows his whistle and awards Bayern Munich a penalty after chaos inside the box.",
-        "comments_text_anonymized": "A player from [TEAM] pulled an opponent down, forcing the referee to blow his whistle. The referee blows his whistle and awards [TEAM] a penalty after chaos inside the box.",
-        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
-        "league": "germany_bundesliga_2015-2016"
-    },
-    {
         "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_02_08.mp4",
         "caption": "injury",
         "comments_text": "Danny Rose (Tottenham) is clearly asking for some medical attention with his painful gestures. The extent of his injury is yet to be discovered.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is clearly asking for some medical attention with his painful gestures. The extent of his injury is yet to be discovered.",
-        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
-        "league": "england_epl_2016-2017"
-    },
-    {
-        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_03_22.mp4",
-        "caption": "injury",
-        "comments_text": "Danny Rose (Tottenham) seems to be alright and is okay to carry on.",
-        "comments_text_anonymized": "[PLAYER] ([TEAM]) seems to be alright and is okay to carry on.",
         "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
         "league": "england_epl_2016-2017"
     },
@@ -880,14 +848,6 @@
         "league": "italy_serie-a_2015-2016"
     },
     {
-        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_42_07.mp4",
-        "caption": "injury",
-        "comments_text": "Marcelo (Real Madrid) is having a really tough time right now. We are about to find out how serious his injury is.",
-        "comments_text_anonymized": "[PLAYER] ([TEAM]) is having a really tough time right now. We are about to find out how serious his injury is.",
-        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
-        "league": "spain_laliga_2016-2017"
-    },
-    {
         "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_22_27.mp4",
         "caption": "injury",
         "comments_text": "Branislav Ivanovic (Chelsea) is clearly asking for some medical attention with his painful gestures. The extent of his injury is yet to be discovered.",
@@ -910,14 +870,6 @@
         "comments_text_anonymized": "[PLAYER] ([TEAM]) has picked up a minor injury, but it looks like he will be able to continue.",
         "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
         "league": "germany_bundesliga_2016-2017"
-    },
-    {
-        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_23_46.mp4",
-        "caption": "injury",
-        "comments_text": "Branislav Ivanovic (Chelsea) is able to continue to play.",
-        "comments_text_anonymized": "[PLAYER] ([TEAM]) is able to continue to play.",
-        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea",
-        "league": "england_epl_2015-2016"
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/1_37_12.mp4",
@@ -966,14 +918,6 @@
         "comments_text_anonymized": "[PLAYER] ([TEAM]) seems to be alright and is okay to carry on.",
         "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
         "league": "germany_bundesliga_2016-2017"
-    },
-    {
-        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/1_38_31.mp4",
-        "caption": "injury",
-        "comments_text": "Lucas (Paris SG) seems to be alright and is okay to carry on.",
-        "comments_text_anonymized": "[PLAYER] ([TEAM]) seems to be alright and is okay to carry on.",
-        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
-        "league": "europe_uefa-champions-league_2016-2017"
     },
     {
         "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_24_32.mp4",
@@ -1105,7 +1049,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_45_00.mp4",
-        "caption": "free kick",
+        "caption": "penalty",
         "comments_text": "Neymar (Barcelona) will take the responsibility and he is already preparing the ball.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) will take the responsibility and he is already preparing the ball.",
         "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
@@ -1129,7 +1073,7 @@
     },
     {
         "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_45_09.mp4",
-        "caption": "free kick",
+        "caption": "penalty",
         "comments_text": "Bruno (Villarreal) will take the responsibility and he is already preparing the ball.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) will take the responsibility and he is already preparing the ball.",
         "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
@@ -1248,14 +1192,6 @@
         "league": "germany_bundesliga_2015-2016"
     },
     {
-        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_09_40.mp4",
-        "caption": "lead to corner",
-        "comments_text": "This shall not pass! Ivan Rakitic (Barcelona) lines up a shot from the edge of the box and goes for goal, but the effort is well blocked by a defender. Barcelona force a corner. Their opponents will face another attacking threat.",
-        "comments_text_anonymized": "This shall not pass! [PLAYER] ([TEAM]) lines up a shot from the edge of the box and goes for goal, but the effort is well blocked by a defender. [TEAM] force a corner. Their opponents will face another attacking threat.",
-        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona",
-        "league": "europe_uefa-champions-league_2014-2015"
-    },
-    {
         "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/1_38_18.mp4",
         "caption": "lead to corner",
         "comments_text": "Douglas Costa (Bayern Munich) tries to send a low pass into the box, but it's blocked and cleared. The ball is out of play and Bayern Munich manage to earn a corner.",
@@ -1360,14 +1296,6 @@
         "league": "spain_laliga_2014-2015"
     },
     {
-        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_30_51.mp4",
-        "caption": "substitution",
-        "comments_text": "Luis Enrique has decided to make a change. Sergi Roberto (Barcelona) replaces Rafinha.",
-        "comments_text_anonymized": "[COACH] has decided to make a change. [PLAYER] ([TEAM]) replaces [PLAYER].",
-        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
-        "league": "europe_uefa-champions-league_2016-2017"
-    },
-    {
         "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_32_16.mp4",
         "caption": "substitution",
         "comments_text": "We are about to witness a substitution. Bacary Sagna (Manchester City) is replacing David Silva.",
@@ -1392,28 +1320,12 @@
         "league": "italy_serie-a_2016-2017"
     },
     {
-        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_41_57.mp4",
-        "caption": "substitution",
-        "comments_text": "The referee stops play so that a substitution can be made and Jonathan dos Santos leaves the pitch and Alfred John Momar N'Diaye (Villarreal) comes on.",
-        "comments_text_anonymized": "The referee stops play so that a substitution can be made and [PLAYER] leaves the pitch and [PLAYER] ([TEAM]) comes on.",
-        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
-        "league": "spain_laliga_2016-2017"
-    },
-    {
         "video": "italy_serie-a_2016-2017/2017-02-25 - 20-00 Napoli 0 - 2 Atalanta/2_36_45.mp4",
         "caption": "substitution",
         "comments_text": "Substitution. Alberto Grassi (Atalanta) on for Alejandro Gomez.",
         "comments_text_anonymized": "Substitution. [PLAYER] ([TEAM]) on for [PLAYER].",
         "match": "2017-02-25 - 20-00 Napoli 0 - 2 Atalanta",
         "league": "italy_serie-a_2016-2017"
-    },
-    {
-        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_41_40.mp4",
-        "caption": "substitution",
-        "comments_text": "The referee signals that it is time for a substitution and Xavi (Barcelona) comes onto the pitch so that Andres Iniesta can be given a rest.",
-        "comments_text_anonymized": "The referee signals that it is time for a substitution and [PLAYER] ([TEAM]) comes onto the pitch so that [PLAYER] can be given a rest.",
-        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona",
-        "league": "spain_laliga_2014-2015"
     },
     {
         "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_10_07.mp4",
@@ -1513,7 +1425,7 @@
     },
     {
         "video": "spain_laliga_2016-2017/2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon/2_31_57.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Duje Cop (Gijon) is going to take the penalty!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is going to take the penalty!",
         "match": "2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon",
@@ -1521,7 +1433,7 @@
     },
     {
         "video": "spain_laliga_2014-2015/2015-04-18 - 21-00 Real Madrid 3 - 1 Malaga/2_20_23.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Inaki Vicandi Garrido blows his whistle for a foul after Samu Castillejo (Malaga) hacks down one of his opponents. The referee gives a penalty kick to Real Madrid!!",
         "comments_text_anonymized": "[REFEREE] blows his whistle for a foul after [PLAYER] ([TEAM]) hacks down one of his opponents. The referee gives a penalty kick to [TEAM]!!",
         "match": "2015-04-18 - 21-00 Real Madrid 3 - 1 Malaga",
@@ -1537,7 +1449,7 @@
     },
     {
         "video": "spain_laliga_2016-2017/2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon/2_31_27.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Nacho (Real Madrid) brings his opponent down with a tackle and Alejandro Hernandez blows his whistle for a foul. PENALTY to Gijon! Great chance to score.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down with a tackle and [REFEREE] blows his whistle for a foul. PENALTY to [TEAM]! Great chance to score.",
         "match": "2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon",
@@ -1545,7 +1457,7 @@
     },
     {
         "video": "italy_serie-a_2016-2017/2017-02-26 - 22-45 Inter 1 - 3 AS Roma/2_38_45.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Poor challenge! Gary Medel (Inter) is penalised for tripping and Paolo Tagliavento blows his whistle. PENALTY AWARDED to AS Roma!",
         "comments_text_anonymized": "Poor challenge! [PLAYER] ([TEAM]) is penalised for tripping and [REFEREE] blows his whistle. PENALTY AWARDED to [TEAM]!",
         "match": "2017-02-26 - 22-45 Inter 1 - 3 AS Roma",
@@ -1561,7 +1473,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2016-11-01 - 20-45 Besiktas 1 - 1 Napoli/2_31_54.mp4",
-        "caption": "penalty",
+        "caption": "lead to penalty",
         "comments_text": "Nikola Maksimovic (Napoli) clearly handles the ball, but he is surprised when the referee blows his whistle. The referee makes a call and blows his whistle for an infringement. Besiktas are awarded a penalty.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) clearly handles the ball, but he is surprised when the referee blows his whistle. The referee makes a call and blows his whistle for an infringement. [TEAM] are awarded a penalty.",
         "match": "2016-11-01 - 20-45 Besiktas 1 - 1 Napoli",
@@ -1600,27 +1512,11 @@
         "league": "england_epl_2015-2016"
     },
     {
-        "video": "england_epl_2016-2017/2017-01-21 - 15-30 Liverpool 2 - 3 Swansea/2_27_03.mp4",
-        "caption": "red card",
-        "comments_text": "It looks like Wayne Routledge (Swansea) saw red with that tackle. Kevin Friend won't tolerate such behaviour on the pitch and blows for a foul.",
-        "comments_text_anonymized": "It looks like [PLAYER] ([TEAM]) saw red with that tackle. [REFEREE] won't tolerate such behaviour on the pitch and blows for a foul.",
-        "match": "2017-01-21 - 15-30 Liverpool 2 - 3 Swansea",
-        "league": "england_epl_2016-2017"
-    },
-    {
         "video": "italy_serie-a_2016-2017/2016-12-04 - 17-00 Lazio 0 - 2 AS Roma/2_20_48.mp4",
         "caption": "red card",
         "comments_text": "Danilo Cataldi (Lazio) is given a red card for some unsportsmanlike conduct off the pitch.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is given a red card for some unsportsmanlike conduct off the pitch.",
         "match": "2016-12-04 - 17-00 Lazio 0 - 2 AS Roma",
-        "league": "italy_serie-a_2016-2017"
-    },
-    {
-        "video": "italy_serie-a_2016-2017/2017-01-29 - 17-00 Sampdoria 3 - 2 AS Roma/1_34_08.mp4",
-        "caption": "red card",
-        "comments_text": "It looks like Daniele De Rossi (AS Roma) saw red with that tackle. Paolo Mazzoleni won't tolerate such behaviour on the pitch and blows for a foul.",
-        "comments_text_anonymized": "It looks like [PLAYER] ([TEAM]) saw red with that tackle. [REFEREE] won't tolerate such behaviour on the pitch and blows for a foul.",
-        "match": "2017-01-29 - 17-00 Sampdoria 3 - 2 AS Roma",
         "league": "italy_serie-a_2016-2017"
     },
     {
