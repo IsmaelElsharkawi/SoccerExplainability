@@ -90,7 +90,8 @@ def load_soccermaster_classifier(checkpoint_dir, device):
     config = SOCCERMASTER_DEFAULT_CONFIG.copy()
     model = MultiTaskingModel(config)
     model.load_checkpoint(checkpoint_dir)
-    model = model.to(device).eval()
+    model = model.half().to(device).eval()
+    print(f'SoccerMaster model loaded on {device} (float16)')
     return SoccerMasterClassifierAdapter(model).eval()
 
 
@@ -205,6 +206,8 @@ def main():
         matched_video_id = match_video_id(attribution_evaluator, video_path[0])
 
         frames = frames.to(devices[0])
+        if configured_model_type == 'soccermaster':
+            frames = frames.half()
         vp_parts = video_path[0].replace('\\', '/').split('/')
         match_name = vp_parts[-2] if len(vp_parts) >= 2 else 'unknown_match'
         video_timestamp = video_name.replace('.mp4', '')
