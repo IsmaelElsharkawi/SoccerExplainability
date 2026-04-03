@@ -233,7 +233,7 @@
     },
     {
         "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_41_54.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Erik Lamela (Tottenham) brings his opponent down. Robert Madley has a clear sight of it and blows his whistle for a foul. Liverpool are awarded a penalty kick!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. [TEAM] are awarded a penalty kick!",
         "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
@@ -361,7 +361,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_47_42.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Pablo Zabaleta (Manchester City) brings his opponent down. Felix Brych has a clear sight of it and blows his whistle for a foul. PENALTY to Barcelona! Great chance to score.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. PENALTY to [TEAM]! Great chance to score.",
         "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona",
@@ -601,7 +601,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_44_00.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "The referee blows his whistle as Marquinhos (Paris SG) was too aggressive in his challenge. The referee points to the penalty spot. Barcelona are awarded a penalty kick!",
         "comments_text_anonymized": "The referee blows his whistle as [PLAYER] ([TEAM]) was too aggressive in his challenge. The referee points to the penalty spot. [TEAM] are awarded a penalty kick!",
         "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
@@ -609,7 +609,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_02_35.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Thomas Meunier (Paris SG) is penalised after knocking an opponent down. Barcelona are given a penalty!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is penalised after knocking an opponent down. [TEAM] are given a penalty!",
         "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
@@ -681,7 +681,7 @@
     },
     {
         "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_44_24.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Sergio Ramos (Real Madrid) changes the direction of the ball using his hand, but he is angry when the referee gives a foul against him. Penalty awarded! Villarreal will take a penalty kick.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) changes the direction of the ball using his hand, but he is angry when the referee gives a foul against him. Penalty awarded! [TEAM] will take a penalty kick.",
         "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
@@ -753,7 +753,7 @@
     },
     {
         "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_24_48.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Arjen Robben (Bayern Munich) is going to take the penalty!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is going to take the penalty!",
         "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
@@ -761,7 +761,7 @@
     },
     {
         "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_24_06.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Handball by Roberto Hilbert (Bayer Leverkusen). PENALTY to Bayern Munich! Almost the entire opposition team is gathered around the referee and complaining. However, the decision has been made and it's final.",
         "comments_text_anonymized": "Handball by [PLAYER] ([TEAM]). PENALTY to [TEAM]! Almost the entire opposition team is gathered around the referee and complaining. However, the decision has been made and it's final.",
         "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
@@ -809,7 +809,7 @@
     },
     {
         "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_12_27.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Nemanja Matic (Chelsea) brings his opponent down. Mark Clattenburg has a clear sight of it and blows his whistle for a foul. That's a penalty to West Brom! They have a good chance to score now.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. That's a penalty to [TEAM]! They have a good chance to score now.",
         "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea",
@@ -1425,7 +1425,7 @@
     },
     {
         "video": "spain_laliga_2016-2017/2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon/2_31_57.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Duje Cop (Gijon) is going to take the penalty!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is going to take the penalty!",
         "match": "2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon",
@@ -1433,7 +1433,7 @@
     },
     {
         "video": "spain_laliga_2014-2015/2015-04-18 - 21-00 Real Madrid 3 - 1 Malaga/2_20_23.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Inaki Vicandi Garrido blows his whistle for a foul after Samu Castillejo (Malaga) hacks down one of his opponents. The referee gives a penalty kick to Real Madrid!!",
         "comments_text_anonymized": "[REFEREE] blows his whistle for a foul after [PLAYER] ([TEAM]) hacks down one of his opponents. The referee gives a penalty kick to [TEAM]!!",
         "match": "2015-04-18 - 21-00 Real Madrid 3 - 1 Malaga",
@@ -1449,7 +1449,7 @@
     },
     {
         "video": "spain_laliga_2016-2017/2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon/2_31_27.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Nacho (Real Madrid) brings his opponent down with a tackle and Alejandro Hernandez blows his whistle for a foul. PENALTY to Gijon! Great chance to score.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down with a tackle and [REFEREE] blows his whistle for a foul. PENALTY to [TEAM]! Great chance to score.",
         "match": "2016-11-26 - 18-15 Real Madrid 2 - 1 Gijon",
@@ -1457,7 +1457,7 @@
     },
     {
         "video": "italy_serie-a_2016-2017/2017-02-26 - 22-45 Inter 1 - 3 AS Roma/2_38_45.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Poor challenge! Gary Medel (Inter) is penalised for tripping and Paolo Tagliavento blows his whistle. PENALTY AWARDED to AS Roma!",
         "comments_text_anonymized": "Poor challenge! [PLAYER] ([TEAM]) is penalised for tripping and [REFEREE] blows his whistle. PENALTY AWARDED to [TEAM]!",
         "match": "2017-02-26 - 22-45 Inter 1 - 3 AS Roma",
@@ -1473,7 +1473,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2016-11-01 - 20-45 Besiktas 1 - 1 Napoli/2_31_54.mp4",
-        "caption": "lead to penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Nikola Maksimovic (Napoli) clearly handles the ball, but he is surprised when the referee blows his whistle. The referee makes a call and blows his whistle for an infringement. Besiktas are awarded a penalty.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) clearly handles the ball, but he is surprised when the referee blows his whistle. The referee makes a call and blows his whistle for an infringement. [TEAM] are awarded a penalty.",
         "match": "2016-11-01 - 20-45 Besiktas 1 - 1 Napoli",
