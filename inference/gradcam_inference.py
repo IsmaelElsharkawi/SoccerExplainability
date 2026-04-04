@@ -301,7 +301,13 @@ def main():
             i += 1
 
         all_predictions.append(predictions.cpu())
+        del logits
+        del predictions
+        del grad_cam_results
+        del grad_cam
         del frames
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     all_predictions = torch.cat(all_predictions, dim=0)
     print(all_predictions)
