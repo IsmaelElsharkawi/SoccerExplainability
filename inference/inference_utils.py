@@ -342,6 +342,24 @@ def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_id,
             f"({gs['annotated_frames']} frames)"
         )
 
+    temporal_scores = es.get('temporal_localization', {})
+    tier_scores = temporal_scores.get('tiers', {})
+    if temporal_scores:
+        print(
+            f"    - temporal mean: "
+            f"mean_tIoU={temporal_scores.get('mean_tIoU', float('nan')):.3f}  "
+            f"(thr_ratio={temporal_scores.get('score_threshold_ratio', float('nan')):.2f})"
+        )
+        for tier_name in ['small_only', 'small_large', 'small_large_visual_cues']:
+            ts = tier_scores.get(tier_name)
+            if not ts:
+                continue
+            print(
+                f"      * {tier_name}: "
+                f"tIoU={ts['tIoU']:.3f}  "
+                f"(gt={ts['gt_frames']}, pred={ts['pred_frames']})"
+            )
+
 
 def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                                 summary_title='Attribution Label-Group Evaluation Summary'):
@@ -354,6 +372,11 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
         'small_only': {'energy': [], 'pointing': [], 'iou': [], 'frames': 0},
         'small_large': {'energy': [], 'pointing': [], 'iou': [], 'frames': 0},
         'small_large_visual_cues': {'energy': [], 'pointing': [], 'iou': [], 'frames': 0},
+    }
+    temporal_video_means = {
+        'small_only': {'tiou': [], 'gt_frames': 0},
+        'small_large': {'tiou': [], 'gt_frames': 0},
+        'small_large_visual_cues': {'tiou': [], 'gt_frames': 0},
     }
     videos_with_any_group = 0
     for _, res in all_eval_results.items():
@@ -374,6 +397,16 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
             group_video_means[group_name]['frames'] += int(gs.get('annotated_frames', 0))
         if has_group_data:
             videos_with_any_group += 1
+
+        temporal_scores = s.get('temporal_localization', {})
+        temporal_tiers = temporal_scores.get('tiers', {})
+        for tier_name in temporal_video_means:
+            ts = temporal_tiers.get(tier_name)
+            if not ts:
+                continue
+            if not np.isnan(ts.get('tIoU', np.nan)):
+                temporal_video_means[tier_name]['tiou'].append(float(ts['tIoU']))
+            temporal_video_means[tier_name]['gt_frames'] += int(ts.get('gt_frames', 0))
 
     print(f'  Videos evaluated: {videos_with_any_group}')
     global_group_summary = {}
@@ -401,6 +434,38 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
             }
             print(f'  {group_name}: no matching annotated frames')
 
+    global_temporal_summary = {}
+    print('  Temporal localization (tiers):')
+    for tier_name, vals in temporal_video_means.items():
+        if vals['tiou']:
+            global_temporal_summary[tier_name] = {
+                'mean_tIoU': float(np.mean(vals['tiou'])),
+                'gt_frames': int(vals['gt_frames']),
+            }
+            print(
+                f"    {tier_name}: "
+                f"mean_tIoU={global_temporal_summary[tier_name]['mean_tIoU']:.4f}  "
+                f"(gt_frames={global_temporal_summary[tier_name]['gt_frames']})"
+            )
+        else:
+            global_temporal_summary[tier_name] = {
+                'mean_tIoU': float('nan'),
+                'gt_frames': 0,
+            }
+            print(f'    {tier_name}: no temporal GT-positive frames')
+
+    valid_global_tious = [
+        vals['mean_tIoU'] for vals in global_temporal_summary.values()
+        if not np.isnan(vals['mean_tIoU'])
+    ]
+    global_temporal_means = {
+        'mean_tIoU_across_tiers': float(np.mean(valid_global_tious)) if valid_global_tious else float('nan'),
+    }
+    print(
+        f"  Temporal means across tiers: "
+        f"mean_tIoU={global_temporal_means['mean_tIoU_across_tiers']:.4f}"
+    )
+
     if eval_output_path:
         def _conv(obj):
             if isinstance(obj, (np.floating, np.float32, np.float64)):
@@ -416,6 +481,10 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 {
                     'per_video': {k: v for k, v in all_eval_results.items()},
                     'global_label_group_summary': global_group_summary,
+                    'global_temporal_localization_summary': {
+                        'tiers': global_temporal_summary,
+                        'means': global_temporal_means,
+                    },
                 },
                 _f,
                 indent=2,

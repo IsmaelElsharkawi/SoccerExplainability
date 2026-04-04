@@ -49,6 +49,16 @@ def _compute_attribution_metrics_for_bboxes(attribution_map, bboxes, cam_thresho
     }
 
 
+def _frame_set_iou(gt_frames, pred_frames):
+    """Compute IoU between two frame-index sets."""
+    if not gt_frames and not pred_frames:
+        return 1.0
+    union = gt_frames | pred_frames
+    if not union:
+        return 0.0
+    return float(len(gt_frames & pred_frames) / len(union))
+
+
 def _annotation_display_name(annotation, categories):
     return annotation.get("label") or categories.get(annotation.get("category_id"), "unknown")
 
@@ -325,6 +335,62 @@ class CocoAttributionEvaluator:
                     "mean_iou": float("nan"),
                     "annotated_frames": 0,
                 }
+
+        # Temporal localization from frame-level attribution intensity.
+        # Uses cumulative label groups as temporal tiers.
+        flat_maps = attribution_maps.reshape(num_frames, -1)
+        frame_scores = np.mean(flat_maps, axis=1)
+        max_score = float(np.max(frame_scores)) if len(frame_scores) else 0.0
+        score_threshold = cam_threshold * max_score
+        if max_score > 0:
+            pred_idx_set = set(np.where(frame_scores >= score_threshold)[0].tolist())
+        else:
+            pred_idx_set = set()
+
+        gt_idx_by_tier = {
+            "small_only": set(),
+            "small_large": set(),
+            "small_large_visual_cues": set(),
+        }
+
+        for idx, frame_item in enumerate(per_frame):
+            frame_metrics = frame_item["metrics"]
+            if frame_metrics is None:
+                continue
+            for tier_name in gt_idx_by_tier:
+                tier_metrics = frame_metrics.get("label_group_scores", {}).get(tier_name, {})
+                if int(tier_metrics.get("frames_with_group", 0)) > 0:
+                    gt_idx_by_tier[tier_name].add(idx)
+
+        temporal_tier_scores = {}
+        valid_tious = []
+
+        for tier_name in ["small_only", "small_large", "small_large_visual_cues"]:
+            gt_idx_set = gt_idx_by_tier[tier_name]
+
+            if len(gt_idx_set) == 0:
+                temporal_tier_scores[tier_name] = {
+                    "tIoU": float("nan"),
+                    "gt_frames": 0,
+                    "pred_frames": int(len(pred_idx_set)),
+                }
+                continue
+
+            tier_tiou = _frame_set_iou(gt_idx_set, pred_idx_set)
+
+            temporal_tier_scores[tier_name] = {
+                "tIoU": float(tier_tiou),
+                "gt_frames": int(len(gt_idx_set)),
+                "pred_frames": int(len(pred_idx_set)),
+            }
+            valid_tious.append(float(tier_tiou))
+
+        summary["temporal_localization"] = {
+            "score_threshold_ratio": float(cam_threshold),
+            "score_threshold": float(score_threshold),
+            "tiers": temporal_tier_scores,
+            "mean_tIoU": float(np.mean(valid_tious)) if valid_tious else float("nan"),
+        }
 
         return {"per_frame": per_frame, "summary": summary}
 
