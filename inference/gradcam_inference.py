@@ -97,6 +97,17 @@ def load_soccermaster_classifier(checkpoint_dir, device):
 
 def get_gradcam_target_layer(model):
     """Resolve a SigLIP-compatible target layer for Grad-CAM."""
+    # Prefer the SoccerMaster encoder layer if available (explicit path requested).
+    # `model` here is the `SoccerMasterClassifierAdapter` or its `.module` when wrapped.
+    if hasattr(model, 'multitask_model'):
+        try:
+            layer = model.multitask_model.backbone.vision_model.encoder_blocks[-1].layer_norm1
+            print(f'Using explicit Grad-CAM target layer: {type(layer).__name__}')
+            return layer
+        except Exception:
+            # Fall through to legacy resolution if the explicit path is not present.
+            pass
+
     siglip_model = model.siglip_model
 
     if hasattr(siglip_model, 'post_norm'):
@@ -219,6 +230,7 @@ def main():
         gradcam_model = classifier.module if hasattr(classifier, 'module') else classifier
         gradcam_target_layer = get_gradcam_target_layer(gradcam_model)
         if configured_model_type == 'soccermaster':
+            gradcam_target_layer = classifier.multitask_model.backbone.vision_model.encoder_blocks[-1].encoder.layer_norm2
             gradcam_reshape_transform = lambda result: reshape_transform(
                 result, height=32, width=32, timesteps=frames.shape[2]
             )

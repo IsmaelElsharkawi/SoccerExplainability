@@ -81,13 +81,10 @@ def _color_for_type(type_key):
     return palette[sum(ord(char) for char in str(type_key)) % len(palette)]
 
 
-def draw_gt_bboxes_on_frame(frame, annotations, categories, thickness=2):
-    """Draw normalized bounding boxes and labels on an image (copy returned)."""
+def draw_gt_bboxes_on_frame(frame, annotations, categories, thickness=4):
+    """Draw normalized bounding boxes on an image (copy returned)."""
     height, width = frame.shape[:2]
     out = frame.copy()
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.5
-    text_thickness = 1
 
     for annotation in annotations:
         x, y, w, h = annotation["bbox"]
@@ -96,34 +93,6 @@ def draw_gt_bboxes_on_frame(frame, annotations, categories, thickness=2):
         color = _color_for_type(_annotation_type_key(annotation, categories))
         cv2.rectangle(out, (x1, y1), (x2, y2), color, thickness)
 
-        label_text = _annotation_display_name(annotation, categories)
-        (text_w, text_h), baseline = cv2.getTextSize(label_text, font, font_scale, text_thickness)
-        text_x = max(0, min(x1, width - text_w - 6))
-
-        if y1 - text_h - baseline - 8 >= 0:
-            text_y = y1 - 6
-            box_top = text_y - text_h - baseline - 2
-            box_bottom = text_y + 2
-        else:
-            text_y = min(height - baseline - 2, y1 + text_h + baseline + 6)
-            box_top = text_y - text_h - baseline - 2
-            box_bottom = text_y + 2
-
-        box_top = max(0, box_top)
-        box_bottom = min(height - 1, box_bottom)
-        box_right = min(width - 1, text_x + text_w + 6)
-
-        cv2.rectangle(out, (text_x, box_top), (box_right, box_bottom), color, -1)
-        cv2.putText(
-            out,
-            label_text,
-            (text_x + 3, text_y),
-            font,
-            font_scale,
-            (0, 0, 0),
-            text_thickness,
-            cv2.LINE_AA,
-        )
     return out
 
 

@@ -207,6 +207,28 @@ def load_config(path):
     spec.loader.exec_module(config)
     return config.config
 
+# For SoccerMaster
+# def reshape_transform(result, height=14, width=14, timesteps=30):
+#     # Result shape is typically [batch*time, 196, embedding_dim] for video
+#     # and [batch, 196, embedding_dim] for image-only SigLIP.
+#     BT, C, N = result.shape
+#     print("Tensor Shape:", result.shape)
+
+#     if N != height * width:
+#         raise ValueError(
+#             f"Unexpected token count {N}; expected {height * width} for {height}x{width} patches."
+#         )
+
+#     effective_timesteps = timesteps if BT >= timesteps and BT % timesteps == 0 else 1
+#     batch_size = BT // effective_timesteps
+#     result = result.reshape(BT, C, height, width).unsqueeze(0)
+#     print(result.shape)
+#     #result = result.reshape(batch_size, C, effective_timesteps, height, width, C)
+
+#     # Transpose dimensions to [batch, embedding_dim, time, height, width].
+#     result = result.permute(0, 2, 1, 3, 4)
+#     print("Reshaped Tensor Shape:", result.shape)
+#     return result
 
 def reshape_transform(result, height=14, width=14, timesteps=30):
     # Result shape is typically [batch*time, 196, embedding_dim] for video
