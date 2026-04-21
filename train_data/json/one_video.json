@@ -21,7 +21,8 @@
         "comments_text": "The resulting corner from Raphael Guerreiro (Dortmund) only finds one of the defenders, who heads it out of danger.",
         "comments_text_anonymized": "The resulting corner from [PLAYER] ([TEAM]) only finds one of the defenders, who heads it out of danger.",
         "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
-        "league": "germany_bundesliga_2016-2017"
+        "league": "germany_bundesliga_2016-2017",
+        "label": 10
     },
     {
         "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_13_13.mp4",
@@ -78,5 +79,29 @@
         "comments_text_anonymized": "[PLAYER] ([TEAM]) will take the free kick.",
         "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
         "league": "england_epl_2016-2017"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_33_10.mp4",
+        "caption": "goal",
+        "comments_text": "It's a goal! Hakan Calhanoglu plays a lovely pass into the box and finds Chicharito (Bayer Leverkusen). He tries his luck from close range and coolly strikes the ball into the back of the net. 2:0.",
+        "comments_text_anonymized": "It's a goal! [PLAYER] plays a lovely pass into the box and finds [PLAYER] ([TEAM]). He tries his luck from close range and coolly strikes the ball into the back of the net. 2:0.",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
+        "league": "germany_bundesliga_2016-2017"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_41_54.mp4",
+        "caption": "foul lead to penalty",
+        "comments_text": "Erik Lamela (Tottenham) brings his opponent down. Robert Madley has a clear sight of it and blows his whistle for a foul. Liverpool are awarded a penalty kick!",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. [TEAM] are awarded a penalty kick!",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
+        "league": "england_epl_2016-2017"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_45_50.mp4",
+        "caption": "second yellow card",
+        "comments_text": "Hector Moreno (Espanyol) was probably a bit loose with his words to Antonio Mateu Lahoz, who decides to show him a yellow.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) was probably a bit loose with his words to [REFEREE], who decides to show him a yellow.",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona",
+        "league": "spain_laliga_2014-2015"
     }
 ]
