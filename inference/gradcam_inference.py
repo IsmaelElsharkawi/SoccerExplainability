@@ -235,7 +235,7 @@ def main():
         # For SoccerMaster, use post_norm after encoder blocks (consistent with other SigLIP models)
         if configured_model_type == 'soccermaster':
             # Use the post_norm layer from the vision backbone which normalizes token outputs
-            gradcam_target_layer = gradcam_model.multitask_model.backbone.vision_model.post_norm
+            gradcam_target_layer = classifier.module.multitask_model.backbone.vision_model.encoder_blocks[-1].encoder.layer_norm2
             # SoccerMaster uses siglip2-large-patch16-512: input_size=512, patch_size=16 => 32x32=1024 tokens
             gradcam_reshape_transform = lambda result: reshape_transform(
                 result, height=32, width=32, timesteps=frames.shape[2]
