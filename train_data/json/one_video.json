@@ -1,10 +1,107 @@
 [
     {
-        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_29_27.mp4",
+        "video": "italy_serie-a_2016-2017/2016-12-04 - 17-00 Lazio 0 - 2 AS Roma/2_20_48.mp4",
+        "caption": "red card",
+        "comments_text": "Danilo Cataldi (Lazio) is given a red card for some unsportsmanlike conduct off the pitch.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) is given a red card for some unsportsmanlike conduct off the pitch.",
+        "match": "2016-12-04 - 17-00 Lazio 0 - 2 AS Roma",
+        "league": "italy_serie-a_2016-2017"
+    },
+    {
+        "video": "spain_laliga_2015-2016/2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF/2_24_39.mp4",
+        "caption": "yellow card",
+        "comments_text": "Javier Marquez (Granada CF) takes out his opponent with a horrific tackle and is relieved when the referee only shows him a yellow card.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) takes out his opponent with a horrific tackle and is relieved when the referee only shows him a yellow card.",
+        "match": "2015-09-19 - 17-00 Real Madrid 1 - 0 Granada CF",
+        "league": "spain_laliga_2015-2016"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_37_49.mp4",
+        "caption": "corner",
+        "comments_text": "The resulting corner from Raphael Guerreiro (Dortmund) only finds one of the defenders, who heads it out of danger.",
+        "comments_text_anonymized": "The resulting corner from [PLAYER] ([TEAM]) only finds one of the defenders, who heads it out of danger.",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
+        "league": "germany_bundesliga_2016-2017",
+        "label": 10
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/1_13_13.mp4",
+        "caption": "penalty",
+        "comments_text": "James Morrison (West Brom) fails to beat the goalkeeper from the penalty spot with a shot low into the middle of the goal. Thibaut Courtois anticipates his intention perfectly, though, and doesn't have to move to stop the effort. West Brom have been awarded a corner kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) fails to beat the goalkeeper from the penalty spot with a shot low into the middle of the goal. [PLAYER] anticipates his intention perfectly, though, and doesn't have to move to stop the effort. [TEAM] have been awarded a corner kick.",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea",
+        "league": "england_epl_2015-2016"
+    },
+    {
+        "video": "england_epl_2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea/2_44_07.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Serge Gnabry (West Brom) commits a rough challenge and Mark Clattenburg blows his whistle for a foul. Chelsea are awarded a free kick. Let's see what they create from this.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) commits a rough challenge and [REFEREE] blows his whistle for a foul. [TEAM] are awarded a free kick. Let's see what they create from this.",
+        "match": "2015-08-23 - 15-30 West Brom 2 - 3 Chelsea",
+        "league": "england_epl_2015-2016"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/1_30_30.mp4",
+        "caption": "injury",
+        "comments_text": "Matthias Ginter (Dortmund) has picked up a minor injury, but it looks like he will be able to continue.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) has picked up a minor injury, but it looks like he will be able to continue.",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
+        "league": "germany_bundesliga_2016-2017"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_27_40.mp4",
+        "caption": "lead to corner",
+        "comments_text": "The ball is cleared after Thomas Muller (Bayern Munich) attempted to dribble past an opposing player. Bayern Munich win a corner.",
+        "comments_text_anonymized": "The ball is cleared after [PLAYER] ([TEAM]) attempted to dribble past an opposing player. [TEAM] win a corner.",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
+        "league": "germany_bundesliga_2015-2016"
+    },
+    {
+        "video": "europe_uefa-champions-league_2015-2016/2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City/1_36_40.mp4",
+        "caption": "throw in",
+        "comments_text": "Decent spell from Sevilla here and they keep the pressure on until one of the defending players steps in. The referee and the linesman both signal a throw-in for Sevilla.",
+        "comments_text_anonymized": "Decent spell from [TEAM] here and they keep the pressure on until one of the defending players steps in. The referee and the linesman both signal a throw-in for [TEAM].",
+        "match": "2015-11-03 - 22-45 Sevilla 1 - 3 Manchester City",
+        "league": "europe_uefa-champions-league_2015-2016"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_21_33.mp4",
         "caption": "substitution",
-        "comments_text": "Substitution. Julian Draxler makes way for Serge Aurier (Paris SG).",
-        "comments_text_anonymized": "Substitution. [PLAYER] makes way for [PLAYER] ([TEAM]).",
-        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
-        "league": "europe_uefa-champions-league_2016-2017"
+        "comments_text": "Substitution. Julian Brandt leaves the pitch and is replaced by Kevin Volland (Bayer Leverkusen).",
+        "comments_text_anonymized": "Substitution. [PLAYER] leaves the pitch and is replaced by [PLAYER] ([TEAM]).",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
+        "league": "germany_bundesliga_2016-2017"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/2_32_02.mp4",
+        "caption": "free kick",
+        "comments_text": "Joel Matip (Liverpool) will take the free kick.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) will take the free kick.",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
+        "league": "england_epl_2016-2017"
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_33_10.mp4",
+        "caption": "goal",
+        "comments_text": "It's a goal! Hakan Calhanoglu plays a lovely pass into the box and finds Chicharito (Bayer Leverkusen). He tries his luck from close range and coolly strikes the ball into the back of the net. 2:0.",
+        "comments_text_anonymized": "It's a goal! [PLAYER] plays a lovely pass into the box and finds [PLAYER] ([TEAM]). He tries his luck from close range and coolly strikes the ball into the back of the net. 2:0.",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
+        "league": "germany_bundesliga_2016-2017"
+    },
+    {
+        "video": "england_epl_2016-2017/2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool/1_41_54.mp4",
+        "caption": "foul lead to penalty",
+        "comments_text": "Erik Lamela (Tottenham) brings his opponent down. Robert Madley has a clear sight of it and blows his whistle for a foul. Liverpool are awarded a penalty kick!",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) brings his opponent down. [REFEREE] has a clear sight of it and blows his whistle for a foul. [TEAM] are awarded a penalty kick!",
+        "match": "2016-08-27 - 14-30 Tottenham 1 - 1 Liverpool",
+        "league": "england_epl_2016-2017"
+    },
+    {
+        "video": "spain_laliga_2014-2015/2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona/2_45_50.mp4",
+        "caption": "second yellow card",
+        "comments_text": "Hector Moreno (Espanyol) was probably a bit loose with his words to Antonio Mateu Lahoz, who decides to show him a yellow.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) was probably a bit loose with his words to [REFEREE], who decides to show him a yellow.",
+        "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona",
+        "league": "spain_laliga_2014-2015"
     }
 ]
