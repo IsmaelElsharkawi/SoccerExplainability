@@ -6,6 +6,13 @@ import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 
+def _normalize_frame_float(frame_raw):
+    frame_float = frame_raw.astype(np.float32)
+    if frame_float.max() > 1.0:
+        frame_float /= 255.0
+    return np.clip(frame_float, 0.0, 1.0)
+
+
 def create_combined_visualization(high_res_frame, attribution_overlay, attribution_graph,
                                    prediction_text, ground_truth_text, frame_number):
     """Create a combined visualization with high-res video, attribution overlay, graph, and labels."""
@@ -175,6 +182,17 @@ def save_lowres_visualization_video(video_directory, video_name, lowres_frames,
         from pytorch_grad_cam.utils.image import show_cam_on_image
 
         def _default_renderer(frame_float, attribution_map):
+            frame_h, frame_w = frame_float.shape[:2]
+            attribution_map = np.asarray(attribution_map, dtype=np.float32)
+            if attribution_map.ndim == 3 and attribution_map.shape[-1] == 1:
+                attribution_map = attribution_map[..., 0]
+            if attribution_map.shape[:2] != (frame_h, frame_w):
+                attribution_map = cv2.resize(
+                    attribution_map,
+                    (frame_w, frame_h),
+                    interpolation=cv2.INTER_LINEAR,
+                )
+            attribution_map = np.clip(attribution_map, 0.0, 1.0)
             return show_cam_on_image(frame_float, attribution_map, use_rgb=True)
 
         attribution_renderer = _default_renderer
@@ -192,7 +210,7 @@ def save_lowres_visualization_video(video_directory, video_name, lowres_frames,
             frame_raw = frame_raw.cpu().numpy()
         frame_raw = frame_raw.astype(np.uint8)
 
-        frame_float = np.float32(cv2.resize(frame_raw, (224, 224))) / 255.0
+        frame_float = _normalize_frame_float(frame_raw)
         attribution_vis = attribution_renderer(frame_float, attribution_maps[idx])
         attribution_vis_resized = cv2.resize(attribution_vis, (target_size, target_size))
 
