@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 
-import cv2
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,7 +11,6 @@ from tqdm import tqdm
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from pytorch_grad_cam import GradCAM
-from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from config.model_type import MODEL_TYPE
 from model.SigLIP_classifier import SigLIP_Classifier
@@ -273,15 +271,6 @@ def main():
             print('attribution map shape: ', grad_cam_result.shape)
             grad_cam_mean = torch.mean(torch.tensor(grad_cam_result, device='cpu'), dim=(1, 2)).cpu().numpy()
             print('attribution score shape: ', grad_cam_mean.shape)
-
-            visualizations = []
-            for j in range(new_frames.shape[0]):
-                visualization = show_cam_on_image(
-                    cv2.resize(np.float32(new_frames[j].cpu()) / 255.0, (224, 224)),
-                    grad_cam_result[j],
-                    use_rgb=True,
-                )
-                visualizations.append(visualization)
 
             # ----------------------------------------------------------
             # COCO evaluation
