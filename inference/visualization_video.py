@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-from coco_attribution_eval import draw_gt_bboxes_on_frame
-
 
 def create_combined_visualization(high_res_frame, attribution_overlay, attribution_graph,
                                    prediction_text, ground_truth_text, frame_number):
@@ -35,6 +33,35 @@ def create_combined_visualization(high_res_frame, attribution_overlay, attributi
 
     combined_main = np.hstack([high_res_frame, right_column])
     return combined_main
+
+
+def _render_text_free_graph(attribution_scores, current_idx, panel_width, panel_height=180):
+    fig, ax = plt.subplots(figsize=(panel_width / 100, panel_height / 100), dpi=100)
+    frame_numbers = np.arange(len(attribution_scores))
+    ax.plot(frame_numbers, attribution_scores, linewidth=2, color="blue")
+    ax.scatter([current_idx], [attribution_scores[current_idx]], s=60, color="red", zorder=5)
+    ax.set_xlim(0, max(len(attribution_scores) - 1, 1))
+
+    score_min = float(np.min(attribution_scores))
+    score_max = float(np.max(attribution_scores))
+    if score_max > score_min:
+        pad = (score_max - score_min) * 0.1
+        ax.set_ylim(score_min - pad, score_max + pad)
+
+    ax.grid(True, alpha=0.3)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    fig.tight_layout(pad=0.2)
+
+    canvas = FigureCanvasAgg(fig)
+    canvas.draw()
+    graph_img = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8)
+    graph_img = graph_img.reshape(canvas.get_width_height()[::-1] + (4,))
+    graph_img = cv2.cvtColor(graph_img, cv2.COLOR_RGBA2RGB)
+    plt.close(fig)
+    return graph_img
 
 
 def save_combined_video(video_directory, video_name, high_res_video_file,
@@ -129,7 +156,10 @@ def save_lowres_visualization_video(video_directory, video_name, lowres_frames,
                                     prediction_text='', ground_truth_text='',
                                     attribution_evaluator=None, matched_video_id=None,
                                     cam_threshold=0.5, attribution_method_name='Attribution',
-                                    attribution_renderer=None, **legacy_kwargs):
+                                    attribution_renderer=None,
+                                    draw_overlay_bboxes=False,
+                                    render_text=False,
+                                    **legacy_kwargs):
     """Create and save a visualization video using low-quality dataset frames."""
     if attribution_maps is None and "gradcam_heatmaps" in legacy_kwargs:
         attribution_maps = legacy_kwargs["gradcam_heatmaps"]
@@ -171,36 +201,41 @@ def save_lowres_visualization_video(video_directory, video_name, lowres_frames,
             if annots:
                 roi_annots = [a for a in annots if not a.get("no_roi", False)]
                 if roi_annots:
-                    attribution_vis_resized = draw_gt_bboxes_on_frame(
-                        attribution_vis_resized,
-                        roi_annots,
-                        attribution_evaluator.categories,
-                        thickness=4,
-                    )
-
                     frame_metrics = attribution_evaluator.evaluate_frame(
                         attribution_maps[idx], matched_video_id, idx,
                         cam_threshold=cam_threshold,
                     )
+                    if draw_overlay_bboxes:
+                        from coco_attribution_eval import draw_gt_bboxes_on_frame
+
+                        attribution_vis_resized = draw_gt_bboxes_on_frame(
+                            attribution_vis_resized,
+                            roi_annots,
+                            attribution_evaluator.categories,
+                            thickness=4,
+                        )
 
         panel_width = target_size
 
-        fig, ax = plt.subplots(figsize=(panel_width / 100, 2.0))
-        ax.plot(np.arange(num_frames), attribution_scores,
-                marker="o", linewidth=2, markersize=4, color="blue")
-        ax.plot(idx, attribution_scores[idx],
-                marker="o", markersize=10, color="red", zorder=5)
-        ax.set_xlabel("Frame")
-        ax.set_ylabel(attribution_method_name)
-        ax.set_title(f"{attribution_method_name} Scores - {ground_truth_text}")
-        ax.grid(True, alpha=0.3)
-        fig.tight_layout()
-        canvas = FigureCanvasAgg(fig)
-        canvas.draw()
-        graph_img = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8)
-        graph_img = graph_img.reshape(canvas.get_width_height()[::-1] + (4,))
-        graph_img = cv2.cvtColor(graph_img, cv2.COLOR_RGBA2RGB)
-        plt.close(fig)
+        if render_text:
+            fig, ax = plt.subplots(figsize=(panel_width / 100, 2.0))
+            ax.plot(np.arange(num_frames), attribution_scores,
+                    marker="o", linewidth=2, markersize=4, color="blue")
+            ax.plot(idx, attribution_scores[idx],
+                    marker="o", markersize=10, color="red", zorder=5)
+            ax.set_xlabel("Frame")
+            ax.set_ylabel(attribution_method_name)
+            ax.set_title(f"{attribution_method_name} Scores - {ground_truth_text}")
+            ax.grid(True, alpha=0.3)
+            fig.tight_layout()
+            canvas = FigureCanvasAgg(fig)
+            canvas.draw()
+            graph_img = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8)
+            graph_img = graph_img.reshape(canvas.get_width_height()[::-1] + (4,))
+            graph_img = cv2.cvtColor(graph_img, cv2.COLOR_RGBA2RGB)
+            plt.close(fig)
+        else:
+            graph_img = _render_text_free_graph(attribution_scores, idx, panel_width)
         graph_img = cv2.resize(graph_img, (panel_width, graph_img.shape[0]))
 
         combined = np.vstack([attribution_vis_resized, graph_img])
