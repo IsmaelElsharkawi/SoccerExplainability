@@ -241,10 +241,17 @@ def reshape_transform(result, height=14, width=14, timesteps=30):
             f"Unexpected token count {N}; expected {height * width} for {height}x{width} patches."
         )
 
-    effective_timesteps = timesteps if BT >= timesteps and BT % timesteps == 0 else 1
-    batch_size = BT // effective_timesteps
+    if timesteps <= 0:
+        raise ValueError(f"timesteps must be positive, got {timesteps}.")
 
-    result = result.reshape(batch_size, effective_timesteps, height, width, C)
+    if BT % timesteps != 0:
+        raise ValueError(
+            f"Cannot reshape activations with leading dimension {BT} into batches of {timesteps} timesteps."
+        )
+
+    batch_size = BT // timesteps
+
+    result = result.reshape(batch_size, timesteps, height, width, C)
 
     # Transpose dimensions to [batch, embedding_dim, time, height, width].
     result = result.permute(0, 4, 1, 2, 3)
@@ -268,6 +275,7 @@ def create_test_dataloader(config_test_dataset):
         video_base_dir=config_test_dataset['video_base'],
         sample=config_test_dataset['sample'],
         keywords=config_test_dataset['keywords'],
+        processor_model_name=config_test_dataset.get('processor_model_name', 'google/siglip-base-patch16-224'),
     )
 
     test_data_loader = DataLoader(

@@ -161,6 +161,10 @@ def main():
 
     devices = [torch.device(f'cuda:{i}') for i in device_ids]
 
+    if MODEL_TYPE.lower() == 'soccermaster':
+        config_test_dataset = config_test_dataset.copy()
+        config_test_dataset['processor_model_name'] = SOCCERMASTER_DEFAULT_CONFIG['CKPT_PATH']
+
     # ----------------------------------------------------------------
     # Dataset
     # ----------------------------------------------------------------
@@ -229,8 +233,12 @@ def main():
 
         gradcam_model = classifier.module if hasattr(classifier, 'module') else classifier
         gradcam_target_layer = get_gradcam_target_layer(gradcam_model)
+        
+        # For SoccerMaster, use post_norm after encoder blocks (consistent with other SigLIP models)
         if configured_model_type == 'soccermaster':
-            gradcam_target_layer = classifier.multitask_model.backbone.vision_model.encoder_blocks[-1].encoder.layer_norm2
+            # Use the post_norm layer from the vision backbone which normalizes token outputs
+            gradcam_target_layer = gradcam_model.multitask_model.backbone.vision_model.post_norm
+            # SoccerMaster uses siglip2-large-patch16-512: input_size=512, patch_size=16 => 32x32=1024 tokens
             gradcam_reshape_transform = lambda result: reshape_transform(
                 result, height=32, width=32, timesteps=frames.shape[2]
             )

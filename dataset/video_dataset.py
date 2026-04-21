@@ -17,6 +17,7 @@ class VideoCaptionDataset(Dataset):
                 sample_num = None,
                 require_text = False,
                 text_key = "comments_text_anonymized",
+                processor_model_name = "google/siglip-base-patch16-224",
                 ):
         self.video_base_dir = video_base_dir
         self.num_frames = num_frames
@@ -25,7 +26,7 @@ class VideoCaptionDataset(Dataset):
         self.max_num_frames = max_num_frames
         self.trimmed30 = trimmed30
         self.keywords = keywords
-        self.transform = set_transform()
+        self.transform = set_transform(model_name=processor_model_name)
         self.require_text = require_text
         self.text_key = text_key
 
@@ -92,7 +93,8 @@ class VideoCaptionDataset_Balanced(Dataset):
                  keywords=['Penalty', 'Kick-off', 'Shots off target', 'Shots on target', 'Throw-in', 'Ball out of play', 'Foul', 'Direct free-kick', 'Yellow card', 'Goal', 'Clearance', 'Indirect free-kick', 'Offside', 'Corner', 'Yellow->red card', 'Red card', 'Substitution'],
                  sample_num=[500, 2000, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 250, 250, 2500],
                  require_text = False,
-                 text_key = "comments_text"
+                 text_key = "comments_text",
+                 processor_model_name = "google/siglip-base-patch16-224"
                  ):
         self.video_base_dir = video_base_dir
         self.num_frames = num_frames
@@ -102,7 +104,7 @@ class VideoCaptionDataset_Balanced(Dataset):
         self.trimmed30 = trimmed30
         self.keywords = keywords
         self.sample_num = sample_num
-        self.transform = set_transform()
+        self.transform = set_transform(model_name=processor_model_name)
         self.require_text = require_text
         self.text_key = text_key
         
