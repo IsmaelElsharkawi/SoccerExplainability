@@ -360,8 +360,7 @@ def main():
     config = load_config(args.config_path)
 
     config_dataset = config['dataset']
-    config_test_dataset = config_dataset['test'].copy()
-    config_test_dataset['processor_model_name'] = args.siglip2_path
+    config_test_dataset = config_dataset['test']
 
     config_training_settings = config['training_settings']
     device_ids = config_training_settings['device_ids']

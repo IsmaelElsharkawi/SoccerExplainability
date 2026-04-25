@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 
+import cv2
 import numpy as np
 import torch
 import torch.nn as nn
@@ -11,6 +12,7 @@ from tqdm import tqdm
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from config.model_type import MODEL_TYPE
 from model.SigLIP_classifier import SigLIP_Classifier
@@ -95,17 +97,6 @@ def load_soccermaster_classifier(checkpoint_dir, device):
 
 def get_gradcam_target_layer(model):
     """Resolve a SigLIP-compatible target layer for Grad-CAM."""
-    # Prefer the SoccerMaster encoder layer if available (explicit path requested).
-    # `model` here is the `SoccerMasterClassifierAdapter` or its `.module` when wrapped.
-    if hasattr(model, 'multitask_model'):
-        try:
-            layer = model.multitask_model.backbone.vision_model.encoder_blocks[-1].layer_norm1
-            print(f'Using explicit Grad-CAM target layer: {type(layer).__name__}')
-            return layer
-        except Exception:
-            # Fall through to legacy resolution if the explicit path is not present.
-            pass
-
     siglip_model = model.siglip_model
 
     if hasattr(siglip_model, 'post_norm'):
@@ -158,10 +149,6 @@ def main():
     use_transformer = config_training_settings['use_transformer']
 
     devices = [torch.device(f'cuda:{i}') for i in device_ids]
-
-    if MODEL_TYPE.lower() == 'soccermaster':
-        config_test_dataset = config_test_dataset.copy()
-        config_test_dataset['processor_model_name'] = SOCCERMASTER_DEFAULT_CONFIG['CKPT_PATH']
 
     # ----------------------------------------------------------------
     # Dataset
@@ -230,13 +217,11 @@ def main():
         logits = classifier.module.forward(frames)
 
         gradcam_model = classifier.module if hasattr(classifier, 'module') else classifier
-        gradcam_target_layer = get_gradcam_target_layer(gradcam_model)
-        
-        # For SoccerMaster, use post_norm after encoder blocks (consistent with other SigLIP models)
         if configured_model_type == 'soccermaster':
-            # Use the post_norm layer from the vision backbone which normalizes token outputs
-            gradcam_target_layer = gradcam_model.multitask_model.backbone.vision_model.post_norm
-            # SoccerMaster uses siglip2-large-patch16-512: input_size=512, patch_size=16 => 32x32=1024 tokens
+            gradcam_target_layer = gradcam_model.multitask_model.backbone.vision_model.encoder_blocks[-1].encoder.layer_norm2
+        else:
+            gradcam_target_layer = get_gradcam_target_layer(gradcam_model)
+        if configured_model_type == 'soccermaster':
             gradcam_reshape_transform = lambda result: reshape_transform(
                 result, height=32, width=32, timesteps=frames.shape[2]
             )
@@ -271,6 +256,15 @@ def main():
             print('attribution map shape: ', grad_cam_result.shape)
             grad_cam_mean = torch.mean(torch.tensor(grad_cam_result, device='cpu'), dim=(1, 2)).cpu().numpy()
             print('attribution score shape: ', grad_cam_mean.shape)
+
+            visualizations = []
+            for j in range(new_frames.shape[0]):
+                visualization = show_cam_on_image(
+                    cv2.resize(np.float32(new_frames[j].cpu()) / 255.0, (224, 224)),
+                    grad_cam_result[j],
+                    use_rgb=True,
+                )
+                visualizations.append(visualization)
 
             # ----------------------------------------------------------
             # COCO evaluation

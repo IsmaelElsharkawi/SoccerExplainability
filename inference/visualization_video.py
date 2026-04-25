@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-from coco_attribution_eval import draw_gt_bboxes_on_frame
+from coco_attribution_eval import draw_gt_bboxes_on_frame, overlay_metrics_text
 
 
 def create_combined_visualization(high_res_frame, attribution_overlay, attribution_graph,
@@ -33,8 +33,27 @@ def create_combined_visualization(high_res_frame, attribution_overlay, attributi
     elif right_h > hr_h:
         right_column = right_column[:hr_h, :, :]
 
+    text_height = 80
+    text_area = np.ones((text_height, hr_w + right_column.shape[1], 3), dtype=np.uint8) * 255
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.7
+    thickness = 2
+
+    cv2.putText(text_area, f"Frame: {frame_number}/30", (10, 25),
+                font, font_scale, (0, 0, 0), thickness)
+
+    gt_color = (0, 150, 0) if prediction_text == ground_truth_text else (0, 0, 200)
+    cv2.putText(text_area, f"Ground Truth: {ground_truth_text}", (10, 50),
+                font, font_scale, gt_color, thickness)
+
+    pred_color = (0, 150, 0) if prediction_text == ground_truth_text else (0, 0, 200)
+    cv2.putText(text_area, f"Prediction: {prediction_text}", (10, 75),
+                font, font_scale, pred_color, thickness)
+
     combined_main = np.hstack([high_res_frame, right_column])
-    return combined_main
+    final_frame = np.vstack([text_area, combined_main])
+    return final_frame
 
 
 def save_combined_video(video_directory, video_name, high_res_video_file,
@@ -104,8 +123,26 @@ def save_combined_video(video_directory, video_name, high_res_video_file,
         elif right_h > hr_h:
             right_column = right_column[:hr_h, :, :]
 
+        text_height = 80
+        text_area = np.ones((text_height, hr_w + right_column.shape[1], 3), dtype=np.uint8) * 255
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.7
+        thickness = 2
+
+        cv2.putText(text_area, f"Frame: {current_attribution_idx + 1}/30", (10, 25),
+                    font, font_scale, (0, 0, 0), thickness)
+
+        gt_color = (0, 150, 0) if prediction_text == ground_truth_text else (0, 0, 200)
+        cv2.putText(text_area, f"Ground Truth: {ground_truth_text}", (10, 50),
+                    font, font_scale, gt_color, thickness)
+
+        pred_color = (0, 150, 0) if prediction_text == ground_truth_text else (0, 0, 200)
+        cv2.putText(text_area, f"Prediction: {prediction_text}", (10, 75),
+                    font, font_scale, pred_color, thickness)
+
         combined_main = np.hstack([high_res_frame, right_column])
-        combined_frame = combined_main
+        combined_frame = np.vstack([text_area, combined_main])
 
         if out is None:
             height, width = combined_frame.shape[:2]
@@ -175,13 +212,16 @@ def save_lowres_visualization_video(video_directory, video_name, lowres_frames,
                         attribution_vis_resized,
                         roi_annots,
                         attribution_evaluator.categories,
-                        thickness=4,
+                        thickness=3,
                     )
 
                     frame_metrics = attribution_evaluator.evaluate_frame(
                         attribution_maps[idx], matched_video_id, idx,
                         cam_threshold=cam_threshold,
                     )
+                    if frame_metrics:
+                        attribution_vis_resized = overlay_metrics_text(
+                            attribution_vis_resized, frame_metrics)
 
         panel_width = target_size
 
@@ -203,7 +243,19 @@ def save_lowres_visualization_video(video_directory, video_name, lowres_frames,
         plt.close(fig)
         graph_img = cv2.resize(graph_img, (panel_width, graph_img.shape[0]))
 
-        combined = np.vstack([attribution_vis_resized, graph_img])
+        text_height = 80
+        text_bar = np.ones((text_height, panel_width, 3), dtype=np.uint8) * 40
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        match = prediction_text == ground_truth_text
+        color = (0, 220, 0) if match else (0, 0, 220)
+        cv2.putText(text_bar, f"Frame {idx + 1}/{num_frames}",
+                    (10, 25), font, 0.55, (255, 255, 255), 1)
+        cv2.putText(text_bar, f"GT: {ground_truth_text}",
+                    (10, 50), font, 0.55, color, 2)
+        cv2.putText(text_bar, f"Pred: {prediction_text}",
+                    (10, 72), font, 0.55, color, 2)
+
+        combined = np.vstack([text_bar, attribution_vis_resized, graph_img])
 
         if out is None:
             h, w = combined.shape[:2]

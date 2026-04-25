@@ -84,17 +84,12 @@ def read_frames_decord(
 
     return frames, frame_indices, duration
 
-from transformers import AutoImageProcessor, AutoProcessor
+from transformers import AutoProcessor
 
 def set_transform(
         model_name = "google/siglip-base-patch16-224"
     ):
-    try:
-        return AutoImageProcessor.from_pretrained(model_name)
-    except Exception:
-        processor = AutoProcessor.from_pretrained(model_name)
-        image_processor = getattr(processor, "image_processor", None)
-        if image_processor is None:
-            raise
-        return image_processor
+    # 创建 SiglipProcessor 实例
+    processor = AutoProcessor.from_pretrained(model_name)
+    return processor
 
