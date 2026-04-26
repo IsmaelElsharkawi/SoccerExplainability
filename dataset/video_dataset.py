@@ -57,9 +57,15 @@ class VideoCaptionDataset(Dataset):
                 dummy_frames = frames.clone()
                 frames = torch.cat([self.transform(images=frame, return_tensors="pt")["pixel_values"] for frame in frames], dim=0)
                 frames = rearrange(frames, 't c h w -> c t h w')
+                # Append #variant to the returned path so downstream code
+                # can match the correct COCO annotation variant.
+                returned_path = video_info['video']
+                variant = video_info.get('variant')
+                if variant:
+                    returned_path = f"{returned_path}#{variant}"
                 if self.require_text:
-                    return frames, caption, video_info['video'], video_info['caption'], video_info[self.text_key]
-                return frames, caption, dummy_frames, video_info['video'], video_info['caption']
+                    return frames, caption, returned_path, video_info['caption'], video_info[self.text_key]
+                return frames, caption, dummy_frames, returned_path, video_info['caption']
             except:
                 old_idx = idx
                 idx = random.randint(0, len(self) - 1)
@@ -159,9 +165,13 @@ class VideoCaptionDataset_Balanced(Dataset):
                 dummy_frames = frames.clone()
                 frames = torch.cat([self.transform(images=frame, return_tensors="pt")["pixel_values"] for frame in frames], dim=0)
                 frames = rearrange(frames, 't c h w -> c t h w')
+                returned_path = video_info['video']
+                variant = video_info.get('variant')
+                if variant:
+                    returned_path = f"{returned_path}#{variant}"
                 if self.require_text:
-                    return frames, caption, video_info['video'], video_info['caption'], video_info[self.text_key]
-                return frames, caption, dummy_frames, video_info['video'], video_info['caption']
+                    return frames, caption, returned_path, video_info['caption'], video_info[self.text_key]
+                return frames, caption, dummy_frames, returned_path, video_info['caption']
             except:
                 idx = random.randint(0, len(self) - 1)
                 continue

@@ -20,7 +20,7 @@ from model.SoccerMaster.SoccerMaster_multi_task import MultiTaskingModel
 
 from inference_utils import (
     load_config, reshape_transform, create_test_dataloader,
-    load_classifier, setup_attribution_evaluator, match_video_id,
+    load_classifier, setup_attribution_evaluator, match_video_ids,
     evaluate_and_print_video, print_and_save_eval_summary,
 )
 from visualization_video import save_lowres_visualization_video
@@ -203,7 +203,7 @@ def main():
         video_name = video_path[0].split('/')[-1]
         print(f'Processing video: {video_name}')
 
-        matched_video_id = match_video_id(attribution_evaluator, video_path[0])
+        matched_video_ids = match_video_ids(attribution_evaluator, video_path[0])
 
         frames = frames.to(devices[0])
         if configured_model_type == 'soccermaster':
@@ -270,7 +270,7 @@ def main():
             # COCO evaluation
             # ----------------------------------------------------------
             evaluate_and_print_video(
-                attribution_evaluator, grad_cam_result, matched_video_id,
+                attribution_evaluator, grad_cam_result, matched_video_ids,
                 video_name, args.cam_threshold, all_eval_results,
             )
 
@@ -296,7 +296,7 @@ def main():
                 prediction_text=prediction_text,
                 ground_truth_text=ground_truth_text,
                 attribution_evaluator=attribution_evaluator,
-                matched_video_id=matched_video_id if attribution_evaluator else None,
+                matched_video_id=matched_video_ids[0] if attribution_evaluator and matched_video_ids else None,
                 cam_threshold=args.cam_threshold,
                 attribution_method_name='GradCAM',
             )

@@ -308,64 +308,115 @@ def setup_attribution_evaluator(coco_json_path):
     return attribution_evaluator, all_eval_results
 
 
-def match_video_id(attribution_evaluator, video_path):
-    """Find the COCO annotation video ID that matches the given video path."""
+def match_video_ids(attribution_evaluator, video_path):
+    """Find all COCO annotation video IDs that match the given video path.
+
+    A single video file may appear as multiple annotation variants (e.g.
+    ``2_45_08.mp4`` and ``2_45_08.mp4#penalty``).  Returns a list of all
+    matching ``video_id`` strings, with the exact (non-fragment) match first.
+
+    If *video_path* contains a ``#fragment`` (e.g. from the dataset's
+    ``variant`` field), only the COCO video ID that ends with that exact
+    fragment is returned.
+    """
     if attribution_evaluator is None:
-        return None
+        return []
+
+    # Split off an optional #variant fragment appended by the dataset.
+    if '#' in video_path:
+        base_path, fragment = video_path.rsplit('#', 1)
+    else:
+        base_path, fragment = video_path, None
+
+    matches = []
     for ann_vid in attribution_evaluator.get_annotated_video_ids():
-        if video_path.endswith(ann_vid) or ann_vid in video_path:
-            return ann_vid
-    return None
+        if base_path.endswith(ann_vid) or ann_vid in base_path:
+            # Base path (without fragment) is a substring match.
+            if fragment is None:
+                # No variant requested — match only the base annotation
+                # (the one whose video_id does NOT contain a '#').
+                if '#' not in ann_vid:
+                    matches.append(ann_vid)
+            else:
+                # Variant requested — match only the annotation whose
+                # video_id ends with the same fragment.
+                if ann_vid.endswith(f'#{fragment}'):
+                    matches.append(ann_vid)
+        elif fragment is not None and (base_path.endswith(ann_vid.split('#')[0]) or ann_vid.split('#')[0] in base_path):
+            # The COCO video_id itself contains a fragment — check if
+            # the base file path matches and the fragment matches.
+            if ann_vid.endswith(f'#{fragment}'):
+                matches.append(ann_vid)
+
+    matches.sort(key=lambda v: ('#' in v, v))
+    return matches
 
 
-def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_id,
+# Keep a thin wrapper so old call-sites that only need a single id still work.
+def match_video_id(attribution_evaluator, video_path):
+    """Return the first matching video ID, or *None*."""
+    ids = match_video_ids(attribution_evaluator, video_path)
+    return ids[0] if ids else None
+
+
+def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
                              video_name, cam_threshold, all_eval_results):
-    """Run per-video COCO attribution evaluation and print results."""
-    if attribution_evaluator is None or matched_video_id is None:
-        return
-    eval_result = attribution_evaluator.evaluate_video(
-        heatmaps,
-        matched_video_id,
-        start_second=0,
-        cam_threshold=cam_threshold,
-    )
-    all_eval_results[matched_video_id] = eval_result
-    es = eval_result['summary']
-    print(f"  [COCO Eval] {video_name}: "
-          f"Energy={es['mean_energy_inside_bbox']:.3f}  "
-          f"Pointing={es['mean_pointing_accuracy']:.3f}  "
-          f"IoU={es['mean_iou']:.3f}  "
-          f"({es['annotated_frames']}/{es['total_frames']} annotated frames)")
-    group_scores = es.get('label_group_scores', {})
-    for group_name in ['small_only', 'small_large', 'small_large_visual_cues']:
-        gs = group_scores.get(group_name)
-        if not gs:
-            continue
-        print(
-            f"    - {group_name}: "
-            f"Energy={gs['mean_energy_inside_bbox']:.3f}  "
-            f"Pointing={gs['mean_pointing_accuracy']:.3f}  "
-            f"IoU={gs['mean_iou']:.3f}  "
-            f"({gs['annotated_frames']} frames)"
-        )
+    """Run per-video COCO attribution evaluation and print results.
 
-    temporal_scores = es.get('temporal_localization', {})
-    tier_scores = temporal_scores.get('tiers', {})
-    if temporal_scores:
-        print(
-            f"    - temporal mean: "
-            f"mean_tIoU={temporal_scores.get('mean_tIoU', float('nan')):.3f}  "
-            f"(thr_ratio={temporal_scores.get('score_threshold_ratio', float('nan')):.2f})"
+    ``matched_video_ids`` may be a single string, a list of strings, or
+    *None*.  Each variant is evaluated independently.
+    """
+    if attribution_evaluator is None or matched_video_ids is None:
+        return
+
+    # Normalise to a list so callers can pass a single id or a list.
+    if isinstance(matched_video_ids, str):
+        matched_video_ids = [matched_video_ids]
+
+    for matched_video_id in matched_video_ids:
+        eval_result = attribution_evaluator.evaluate_video(
+            heatmaps,
+            matched_video_id,
+            start_second=0,
+            cam_threshold=cam_threshold,
         )
-        for tier_name in ['small_only', 'small_large', 'small_large_visual_cues']:
-            ts = tier_scores.get(tier_name)
-            if not ts:
+        all_eval_results[matched_video_id] = eval_result
+        es = eval_result['summary']
+        print(f"  [COCO Eval] {video_name} ({matched_video_id}): "
+              f"Energy={es['mean_energy_inside_bbox']:.3f}  "
+              f"Pointing={es['mean_pointing_accuracy']:.3f}  "
+              f"IoU={es['mean_iou']:.3f}  "
+              f"({es['annotated_frames']}/{es['total_frames']} annotated frames)")
+        group_scores = es.get('label_group_scores', {})
+        for group_name in ['small_only', 'small_large', 'small_large_visual_cues']:
+            gs = group_scores.get(group_name)
+            if not gs:
                 continue
             print(
-                f"      * {tier_name}: "
-                f"tIoU={ts['tIoU']:.3f}  "
-                f"(gt={ts['gt_frames']}, pred={ts['pred_frames']})"
+                f"    - {group_name}: "
+                f"Energy={gs['mean_energy_inside_bbox']:.3f}  "
+                f"Pointing={gs['mean_pointing_accuracy']:.3f}  "
+                f"IoU={gs['mean_iou']:.3f}  "
+                f"({gs['annotated_frames']} frames)"
             )
+
+        temporal_scores = es.get('temporal_localization', {})
+        tier_scores = temporal_scores.get('tiers', {})
+        if temporal_scores:
+            print(
+                f"    - temporal mean: "
+                f"mean_tIoU={temporal_scores.get('mean_tIoU', float('nan')):.3f}  "
+                f"(thr_ratio={temporal_scores.get('score_threshold_ratio', float('nan')):.2f})"
+            )
+            for tier_name in ['small_only', 'small_large', 'small_large_visual_cues']:
+                ts = tier_scores.get(tier_name)
+                if not ts:
+                    continue
+                print(
+                    f"      * {tier_name}: "
+                    f"tIoU={ts['tIoU']:.3f}  "
+                    f"(gt={ts['gt_frames']}, pred={ts['pred_frames']})"
+                )
 
 
 def print_and_save_eval_summary(all_eval_results, eval_output_path=None,

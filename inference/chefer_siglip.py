@@ -29,7 +29,7 @@ from inference_utils import (
     load_config,
     create_test_dataloader,
     setup_attribution_evaluator,
-    match_video_id,
+    match_video_ids,
     evaluate_and_print_video,
     print_and_save_eval_summary,
     LABEL_NAMES,
@@ -250,7 +250,7 @@ def main():
         video_name = video_path[0].split('/')[-1]
         print(f'\nProcessing video: {video_name}')
 
-        matched_video_id = match_video_id(attribution_evaluator, video_path[0])
+        matched_video_ids = match_video_ids(attribution_evaluator, video_path[0])
 
         frames = frames.to(devices[0])
         vp_parts = video_path[0].replace('\\', '/').split('/')
@@ -284,7 +284,7 @@ def main():
             evaluate_and_print_video(
                 attribution_evaluator,
                 chefer_heatmaps,
-                matched_video_id,
+                matched_video_ids,
                 video_name,
                 args.cam_threshold,
                 all_eval_results,
@@ -304,7 +304,7 @@ def main():
                 prediction_text=prediction_text,
                 ground_truth_text=ground_truth_text,
                 attribution_evaluator=attribution_evaluator,
-                matched_video_id=matched_video_id if attribution_evaluator else None,
+                matched_video_id=matched_video_ids[0] if attribution_evaluator and matched_video_ids else None,
                 cam_threshold=args.cam_threshold,
                 attribution_method_name='Chefer-SigLIP',
                 attribution_renderer=chefer_attribution_renderer,

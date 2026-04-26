@@ -753,7 +753,7 @@
     },
     {
         "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_24_48.mp4",
-        "caption": "foul lead to penalty",
+        "caption": "penalty",
         "comments_text": "Arjen Robben (Bayern Munich) is going to take the penalty!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is going to take the penalty!",
         "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
@@ -1441,7 +1441,7 @@
     },
     {
         "video": "europe_uefa-champions-league_2016-2017/2016-11-23 - 22-45 Arsenal 2 - 2 Paris SG/1_44_18.mp4",
-        "caption": "penalty",
+        "caption": "foul lead to penalty",
         "comments_text": "Grzegorz Krychowiak (Paris SG) brings an opponent down and Felix Brych interrupts the game. A penalty is given to Arsenal!",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) brings an opponent down and [REFEREE] interrupts the game. A penalty is given to [TEAM]!",
         "match": "2016-11-23 - 22-45 Arsenal 2 - 2 Paris SG",
@@ -1542,5 +1542,68 @@
         "comments_text_anonymized": "RED CARD! [PLAYER] ([TEAM]) makes a bad challenge and receives a second yellow card from [REFEREE]. He can have an early bath.",
         "match": "2015-04-22 - 21-45 Real Madrid 1 - 0 Atl. Madrid",
         "league": "europe_uefa-champions-league_2014-2015"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_45_08.mp4",
+        "caption": "penalty",
+        "comments_text": "Goal! Neymar (Barcelona) slams home the penalty with a precise shot which goes inside the right post.",
+        "comments_text_anonymized": "Goal! [PLAYER] ([TEAM]) slams home the penalty with a precise shot which goes inside the right post.",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "variant": "penalty"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/2_02_39.mp4",
+        "caption": "corner",
+        "comments_text": "James Rodriguez takes over corner duties and expertly finds Sergio Ramos (Real Madrid), who scores with a header that bounces up off the ground and goes into the bottom left corner. The score is now 1:1.",
+        "comments_text_anonymized": "[PLAYER] takes over corner duties and expertly finds [PLAYER] ([TEAM]), who scores with a header that bounces up off the ground and goes into the bottom left corner. The score is now 1:1.",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
+        "league": "spain_laliga_2016-2017",
+        "variant": "corner"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_45_17.mp4",
+        "caption": "penalty",
+        "comments_text": "Bruno (Villarreal) steps up to take the penalty and converts it with a shot into the middle of the goal.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) steps up to take the penalty and converts it with a shot into the middle of the goal.",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
+        "league": "spain_laliga_2016-2017",
+        "variant": "penalty"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_25_07.mp4",
+        "caption": "penalty",
+        "comments_text": "Arjen Robben (Bayern Munich) confidently powers his spot-kick into the left side of the goal.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) confidently powers his spot-kick into the left side of the goal.",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
+        "league": "germany_bundesliga_2015-2016",
+        "variant": "penalty"
+    },
+    {
+        "video": "germany_bundesliga_2015-2016/2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen/2_14_30.mp4",
+        "caption": "penalty",
+        "comments_text": "Thomas Muller (Bayern Munich) makes no mistake from the penalty spot after waiting for Bernd Leno to move before slotting the ball low into the middle of the goal!",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) makes no mistake from the penalty spot after waiting for [PLAYER] to move before slotting the ball low into the middle of the goal!",
+        "match": "2015-08-29 - 19-30 Bayern Munich 3 - 0 Bayer Leverkusen",
+        "league": "germany_bundesliga_2015-2016",
+        "variant": "penalty"
+    },
+    {
+        "video": "europe_uefa-champions-league_2016-2017/2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG/2_45_00.mp4",
+        "caption": "goal",
+        "comments_text": "Neymar (Barcelona) will take the responsibility and he is already preparing the ball.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) will take the responsibility and he is already preparing the ball.",
+        "match": "2017-03-08 - 22-45 Barcelona 6 - 1 Paris SG",
+        "league": "europe_uefa-champions-league_2016-2017",
+        "variant": "goal"
+    },
+    {
+        "video": "spain_laliga_2016-2017/2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal/1_45_09.mp4",
+        "caption": "goal",
+        "comments_text": "Bruno (Villarreal) will take the responsibility and he is already preparing the ball.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) will take the responsibility and he is already preparing the ball.",
+        "match": "2016-09-21 - 21-00 Real Madrid 1 - 1 Villarreal",
+        "league": "spain_laliga_2016-2017",
+        "variant": "goal"
     }
 ]
