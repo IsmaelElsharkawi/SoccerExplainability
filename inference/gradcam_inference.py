@@ -121,8 +121,8 @@ def main():
                         help='Path to annotations-coco.json for attribution evaluation against GT bboxes')
     parser.add_argument('--cam_threshold', type=float, default=0.5,
                         help='Fraction of max to binarise heatmap for IoU (default: 0.5)')
-    parser.add_argument('--eval_output_json', type=str, default='/content/eval_results.json',
-                        help='Optional path to save per-video attribution evaluation results as JSON')
+    parser.add_argument('--eval_output_json', type=str, default=None,
+                        help='Optional path to save per-video attribution evaluation results as JSON (defaults to <output_dir>/eval_results.json)')
     parser.add_argument('--output_dir', type=str, default='/content/drive/MyDrive/gradcam-visualizations/',
                         help='Directory to save attribution visualization outputs')
     parser.add_argument('--siglip_temporal_aggregation', type=str, default='mean', choices=['mean', 'max'],
@@ -319,9 +319,12 @@ def main():
     # Global evaluation summary
     # ----------------------------------------------------------------
     if attribution_evaluator is not None and all_eval_results:
+        eval_output = args.eval_output_json
+        if eval_output is None:
+            eval_output = os.path.join(args.output_dir, 'eval_results.json')
         print_and_save_eval_summary(
             all_eval_results,
-            eval_output_path=args.eval_output_json,
+            eval_output_path=eval_output,
             summary_title='GradCAM Attribution Label-Group Evaluation Summary',
         )
 
