@@ -104,6 +104,99 @@ def wrap_siglip_attention_module(attn_module):
     return attn_module
 
 
+def wrap_temporal_attention_module(mha_module):
+    """
+    Wrap a backbone temporal nn.MultiheadAttention(batch_first=True) for Chefer.
+
+    The underlying module is structurally identical to the SigLIP pooling head
+    (both are nn.MultiheadAttention), so we delegate to wrap_pooling_head_attention.
+    Renamed for call-site clarity in chefer_matchvision/soccermaster scripts.
+
+    Captures attention of shape [B*N, H, T, T] -- one [T, T] attention per
+    spatial position, since MatchVision's temporal_attn is called on tensors
+    rearranged via 'b t n m -> (b n) t m' (each spatial position attended over
+    time independently).
+    """
+    return wrap_pooling_head_attention(mha_module)
+
+
+def wrap_transformer_encoder_layer(te_layer):
+    """
+    Wrap an nn.TransformerEncoderLayer's self-attention for Chefer relevance.
+
+    The underlying nn.MultiheadAttention is structurally identical to the
+    SigLIP pooling head, so we use the same wrapping pattern. Differences:
+      - Self-attention (q == k == v == sequence), not cross-attention.
+      - Convention can be batch_first=True (SoccerMaster) or False (MatchVision);
+        we read `self_attn.batch_first` and transpose accordingly.
+
+    The wrapped module exposes `get_attn()` / `get_attn_gradients()` returning
+    tensors of shape [B, num_heads, T, T] regardless of batch_first.
+
+    Returns the inner self-attention module (same convention as the other
+    wrappers in this file).
+    """
+    self_attn = te_layer.self_attn
+
+    if hasattr(self_attn, '_chefer_wrapped'):
+        return self_attn
+
+    embed_dim = self_attn.embed_dim
+    num_heads = self_attn.num_heads
+    head_dim = embed_dim // num_heads
+    scale = 1.0 / math.sqrt(head_dim)
+    batch_first = getattr(self_attn, 'batch_first', False)
+
+    attn_storage = {}
+    grad_storage = {}
+
+    def wrapped_forward(query, key, value, **kwargs):
+        if not batch_first:
+            query = query.transpose(0, 1)
+            key = key.transpose(0, 1)
+            value = value.transpose(0, 1)
+
+        B, Nq, C = query.shape
+        _, Nk, _ = key.shape
+
+        w = self_attn.in_proj_weight
+        b = self_attn.in_proj_bias
+
+        Q = F.linear(query, w[:embed_dim], None if b is None else b[:embed_dim])
+        K = F.linear(key, w[embed_dim:2*embed_dim],
+                     None if b is None else b[embed_dim:2*embed_dim])
+        V = F.linear(value, w[2*embed_dim:],
+                     None if b is None else b[2*embed_dim:])
+
+        Q = Q.view(B, Nq, num_heads, head_dim).transpose(1, 2)
+        K = K.view(B, Nk, num_heads, head_dim).transpose(1, 2)
+        V = V.view(B, Nk, num_heads, head_dim).transpose(1, 2)
+
+        attn = (Q @ K.transpose(-2, -1)) * scale
+        attn = attn.softmax(dim=-1)
+
+        attn_storage['attn'] = attn.detach()
+        if attn.requires_grad:
+            def grad_hook(grad):
+                grad_storage['grad'] = grad.detach()
+            attn.register_hook(grad_hook)
+
+        out = (attn @ V).transpose(1, 2).reshape(B, Nq, C)
+        out = self_attn.out_proj(out)
+
+        if not batch_first:
+            out = out.transpose(0, 1)
+
+        return out, attn
+
+    self_attn.forward = wrapped_forward
+    self_attn.get_attn = lambda: attn_storage.get('attn')
+    self_attn.get_attn_gradients = lambda: grad_storage.get('grad')
+    self_attn._chefer_wrapped = True
+
+    return self_attn
+
+
 def wrap_pooling_head_attention(mha_module):
     """
     Wrap SigLIP's pooling head nn.MultiheadAttention for cross-attention capture.
@@ -207,28 +300,6 @@ def load_config(path):
     spec.loader.exec_module(config)
     return config.config
 
-# For SoccerMaster
-# def reshape_transform(result, height=14, width=14, timesteps=30):
-#     # Result shape is typically [batch*time, 196, embedding_dim] for video
-#     # and [batch, 196, embedding_dim] for image-only SigLIP.
-#     BT, C, N = result.shape
-#     print("Tensor Shape:", result.shape)
-
-#     if N != height * width:
-#         raise ValueError(
-#             f"Unexpected token count {N}; expected {height * width} for {height}x{width} patches."
-#         )
-
-#     effective_timesteps = timesteps if BT >= timesteps and BT % timesteps == 0 else 1
-#     batch_size = BT // effective_timesteps
-#     result = result.reshape(BT, C, height, width).unsqueeze(0)
-#     print(result.shape)
-#     #result = result.reshape(batch_size, C, effective_timesteps, height, width, C)
-
-#     # Transpose dimensions to [batch, embedding_dim, time, height, width].
-#     result = result.permute(0, 2, 1, 3, 4)
-#     print("Reshaped Tensor Shape:", result.shape)
-#     return result
 
 def reshape_transform(result, height=14, width=14, timesteps=30):
     # Result shape is typically [batch*time, 196, embedding_dim] for video
@@ -275,7 +346,6 @@ def create_test_dataloader(config_test_dataset):
         video_base_dir=config_test_dataset['video_base'],
         sample=config_test_dataset['sample'],
         keywords=config_test_dataset['keywords'],
-        processor_model_name=config_test_dataset.get('processor_model_name', 'google/siglip-base-patch16-224'),
     )
 
     test_data_loader = DataLoader(
@@ -331,64 +401,115 @@ def setup_attribution_evaluator(coco_json_path):
     return attribution_evaluator, all_eval_results
 
 
-def match_video_id(attribution_evaluator, video_path):
-    """Find the COCO annotation video ID that matches the given video path."""
+def match_video_ids(attribution_evaluator, video_path):
+    """Find all COCO annotation video IDs that match the given video path.
+
+    A single video file may appear as multiple annotation variants (e.g.
+    ``2_45_08.mp4`` and ``2_45_08.mp4#penalty``).  Returns a list of all
+    matching ``video_id`` strings, with the exact (non-fragment) match first.
+
+    If *video_path* contains a ``#fragment`` (e.g. from the dataset's
+    ``variant`` field), only the COCO video ID that ends with that exact
+    fragment is returned.
+    """
     if attribution_evaluator is None:
-        return None
+        return []
+
+    # Split off an optional #variant fragment appended by the dataset.
+    if '#' in video_path:
+        base_path, fragment = video_path.rsplit('#', 1)
+    else:
+        base_path, fragment = video_path, None
+
+    matches = []
     for ann_vid in attribution_evaluator.get_annotated_video_ids():
-        if video_path.endswith(ann_vid) or ann_vid in video_path:
-            return ann_vid
-    return None
+        if base_path.endswith(ann_vid) or ann_vid in base_path:
+            # Base path (without fragment) is a substring match.
+            if fragment is None:
+                # No variant requested — match only the base annotation
+                # (the one whose video_id does NOT contain a '#').
+                if '#' not in ann_vid:
+                    matches.append(ann_vid)
+            else:
+                # Variant requested — match only the annotation whose
+                # video_id ends with the same fragment.
+                if ann_vid.endswith(f'#{fragment}'):
+                    matches.append(ann_vid)
+        elif fragment is not None and (base_path.endswith(ann_vid.split('#')[0]) or ann_vid.split('#')[0] in base_path):
+            # The COCO video_id itself contains a fragment — check if
+            # the base file path matches and the fragment matches.
+            if ann_vid.endswith(f'#{fragment}'):
+                matches.append(ann_vid)
+
+    matches.sort(key=lambda v: ('#' in v, v))
+    return matches
 
 
-def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_id,
+# Keep a thin wrapper so old call-sites that only need a single id still work.
+def match_video_id(attribution_evaluator, video_path):
+    """Return the first matching video ID, or *None*."""
+    ids = match_video_ids(attribution_evaluator, video_path)
+    return ids[0] if ids else None
+
+
+def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
                              video_name, cam_threshold, all_eval_results):
-    """Run per-video COCO attribution evaluation and print results."""
-    if attribution_evaluator is None or matched_video_id is None:
-        return
-    eval_result = attribution_evaluator.evaluate_video(
-        heatmaps,
-        matched_video_id,
-        start_second=0,
-        cam_threshold=cam_threshold,
-    )
-    all_eval_results[matched_video_id] = eval_result
-    es = eval_result['summary']
-    print(f"  [COCO Eval] {video_name}: "
-          f"Energy={es['mean_energy_inside_bbox']:.3f}  "
-          f"Pointing={es['mean_pointing_accuracy']:.3f}  "
-          f"IoU={es['mean_iou']:.3f}  "
-          f"({es['annotated_frames']}/{es['total_frames']} annotated frames)")
-    group_scores = es.get('label_group_scores', {})
-    for group_name in ['small_only', 'small_large', 'small_large_visual_cues']:
-        gs = group_scores.get(group_name)
-        if not gs:
-            continue
-        print(
-            f"    - {group_name}: "
-            f"Energy={gs['mean_energy_inside_bbox']:.3f}  "
-            f"Pointing={gs['mean_pointing_accuracy']:.3f}  "
-            f"IoU={gs['mean_iou']:.3f}  "
-            f"({gs['annotated_frames']} frames)"
-        )
+    """Run per-video COCO attribution evaluation and print results.
 
-    temporal_scores = es.get('temporal_localization', {})
-    tier_scores = temporal_scores.get('tiers', {})
-    if temporal_scores:
-        print(
-            f"    - temporal mean: "
-            f"mean_tIoU={temporal_scores.get('mean_tIoU', float('nan')):.3f}  "
-            f"(thr_ratio={temporal_scores.get('score_threshold_ratio', float('nan')):.2f})"
+    ``matched_video_ids`` may be a single string, a list of strings, or
+    *None*.  Each variant is evaluated independently.
+    """
+    if attribution_evaluator is None or matched_video_ids is None:
+        return
+
+    # Normalise to a list so callers can pass a single id or a list.
+    if isinstance(matched_video_ids, str):
+        matched_video_ids = [matched_video_ids]
+
+    for matched_video_id in matched_video_ids:
+        eval_result = attribution_evaluator.evaluate_video(
+            heatmaps,
+            matched_video_id,
+            start_second=0,
+            cam_threshold=cam_threshold,
         )
-        for tier_name in ['small_only', 'small_large', 'small_large_visual_cues']:
-            ts = tier_scores.get(tier_name)
-            if not ts:
+        all_eval_results[matched_video_id] = eval_result
+        es = eval_result['summary']
+        print(f"  [COCO Eval] {video_name} ({matched_video_id}): "
+              f"Energy={es['mean_energy_inside_bbox']:.3f}  "
+              f"Pointing={es['mean_pointing_accuracy']:.3f}  "
+              f"IoU={es['mean_iou']:.3f}  "
+              f"({es['annotated_frames']}/{es['total_frames']} annotated frames)")
+        group_scores = es.get('label_group_scores', {})
+        for group_name in ['small_only', 'small_large', 'small_large_visual_cues']:
+            gs = group_scores.get(group_name)
+            if not gs:
                 continue
             print(
-                f"      * {tier_name}: "
-                f"tIoU={ts['tIoU']:.3f}  "
-                f"(gt={ts['gt_frames']}, pred={ts['pred_frames']})"
+                f"    - {group_name}: "
+                f"Energy={gs['mean_energy_inside_bbox']:.3f}  "
+                f"Pointing={gs['mean_pointing_accuracy']:.3f}  "
+                f"IoU={gs['mean_iou']:.3f}  "
+                f"({gs['annotated_frames']} frames)"
             )
+
+        temporal_scores = es.get('temporal_localization', {})
+        tier_scores = temporal_scores.get('tiers', {})
+        if temporal_scores:
+            print(
+                f"    - temporal mean: "
+                f"mean_tIoU={temporal_scores.get('mean_tIoU', float('nan')):.3f}  "
+                f"(thr_ratio={temporal_scores.get('score_threshold_ratio', float('nan')):.2f})"
+            )
+            for tier_name in ['small_only', 'small_large', 'small_large_visual_cues']:
+                ts = tier_scores.get(tier_name)
+                if not ts:
+                    continue
+                print(
+                    f"      * {tier_name}: "
+                    f"tIoU={ts['tIoU']:.3f}  "
+                    f"(gt={ts['gt_frames']}, pred={ts['pred_frames']})"
+                )
 
 
 def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
