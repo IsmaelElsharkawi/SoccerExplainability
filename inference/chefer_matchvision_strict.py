@@ -72,7 +72,6 @@ from inference_utils import (
     evaluate_and_print_video, print_and_save_eval_summary,
     LABEL_NAMES, LABEL_TO_IDX,
     wrap_siglip_attention_module, wrap_pooling_head_attention,
-    wrap_transformer_encoder_layer,
     chefer_attribution_renderer,
 )
 from visualization_video import save_lowres_visualization_video
@@ -86,15 +85,15 @@ def wrap_matchvision_model(model):
     """
     Wrap MatchVision_Classifier's attention modules for Chefer explainability.
 
-    Wraps all 12 spatial self_attn layers in VisionTimesformer, the pooling
-    head cross-attention, and the classifier head's TransformerEncoder layers
-    (single-axis temporal self-attention; ICCV 2021 Chefer applies directly).
-    Backbone temporal attention (factored space-time) remains excluded.
+    Strict spatial-only configuration: wraps the 12 spatial self_attn layers
+    in VisionTimesformer and the pooling head cross-attention only. Both the
+    backbone temporal attention (factored space-time) and the classifier
+    head's TransformerEncoder are NOT wrapped -- this is canonical ICCV 2021
+    Chefer applied directly with no extensions.
     """
     wrapped = {
         'spatial_attn': [],
         'pooling_head_attn': None,
-        'head_te_attn': [],
     }
 
     visual_encoder = model.siglip_model
@@ -106,14 +105,9 @@ def wrap_matchvision_model(model):
 
     wrapped['pooling_head_attn'] = wrap_pooling_head_attention(visual_encoder.head.attention)
 
-    if getattr(model, 'use_transformer', False) and hasattr(model, 'transformer_encoder'):
-        for i, te_layer in enumerate(model.transformer_encoder.layers):
-            wrapped['head_te_attn'].append((i, wrap_transformer_encoder_layer(te_layer)))
-
-    print(f"Wrapped attention modules (per-frame spatial + head temporal):")
+    print(f"Wrapped attention modules (strict spatial-only):")
     print(f"  - Spatial (SigLIP): {len(wrapped['spatial_attn'])} layers")
     print(f"  - Pooling head (probe->patches): yes")
-    print(f"  - Classifier head TransformerEncoder: {len(wrapped['head_te_attn'])} layers")
 
     return wrapped
 
@@ -285,44 +279,13 @@ def generate_per_frame_heatmaps(
     
     heatmaps = np.stack(heatmaps, axis=0)  # [T, patch_size, patch_size]
 
-    # =========================================================================
-    # Per-frame temporal weighting via R_tt over the classifier head's
-    # TransformerEncoder. This is single-axis self-attention over the T frame
-    # embeddings, so canonical ICCV 2021 Chefer applies directly:
-    #     R_tt = I_T;   for each layer:  R_tt += (grad*attn).clamp.mean(heads) @ R_tt
-    # The head's mean-pool reduces T tokens uniformly to 1, so each frame's
-    # contribution to the prediction = R_tt.mean(dim=0)[t].
-    # =========================================================================
-    temporal_weights = np.ones(T, dtype=np.float32)
-    if wrapped['head_te_attn']:
-        R_tt = torch.eye(T, device=device, dtype=torch.float32)
-        for _, te_attn in wrapped['head_te_attn']:
-            cam = te_attn.get_attn()
-            grad = te_attn.get_attn_gradients()
-            if cam is None or grad is None:
-                print('  WARNING: head TE attn/grad not captured; skipping R_tt update.')
-                continue
-            cam = cam.reshape(-1, cam.shape[-1], cam.shape[-1]).float()
-            grad = grad.reshape(-1, grad.shape[-1], grad.shape[-1]).float()
-            cam = (grad * cam).clamp(min=0).mean(dim=0)
-            R_tt = R_tt + cam @ R_tt
-        w = R_tt.mean(dim=0).detach().cpu().numpy()
-        if w.max() > 0:
-            temporal_weights = (w / w.max()).astype(np.float32)
-        print(f"  Head R_tt temporal weights (normalized): "
-              f"min={temporal_weights.min():.3f} max={temporal_weights.max():.3f} "
-              f"argmax_frame={int(temporal_weights.argmax())}")
-
-    # Min-max normalization per frame, then scale by temporal weight so that
-    # cross-frame mean intensity (the signal T-IoU consumes) reflects the
-    # head's temporal attention rather than uniform [0,1].
+    # Min-max normalization per frame (no temporal weighting in strict mode).
     for t in range(T):
         h = heatmaps[t]
         if h.max() > h.min():
             heatmaps[t] = (h - h.min()) / (h.max() - h.min())
         else:
             heatmaps[t] = np.zeros_like(h)
-        heatmaps[t] *= temporal_weights[t]
 
     return heatmaps
 

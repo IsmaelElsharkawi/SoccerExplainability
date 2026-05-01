@@ -1,3 +1,21 @@
 # Model checkpoints (keep directory, ignore contents)
 model/SoccerMaster/pretrained_models/*
 !model/SoccerMaster/pretrained_models/.gitkeep
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Inference outputs
+output_*/
+
+# Slurm logs
+slurm_outputs/
+
+# Stray DCGM dirs (script duplicates)
+/dcgm/
+/inference/dcgm/
+
+# Loose frame dumps at repo root
+/*.png

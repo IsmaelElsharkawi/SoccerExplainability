@@ -41,6 +41,7 @@ Based on:
 import argparse
 import os
 import sys
+import time
 from typing import Optional
 
 import numpy as np
@@ -57,7 +58,7 @@ from inference_utils import (
     evaluate_and_print_video, print_and_save_eval_summary,
     LABEL_NAMES, LABEL_TO_IDX,
     wrap_siglip_attention_module, wrap_pooling_head_attention,
-    wrap_transformer_encoder_layer,
+    wrap_transformer_encoder_layer, wrap_temporal_attention_module,
     chefer_attribution_renderer,
 )
 from visualization_video import save_lowres_visualization_video
@@ -129,14 +130,17 @@ def wrap_soccermaster_model(model):
     """
     Wrap SoccerMaster's attention modules for Chefer explainability.
 
-    Wraps all 27 spatial self_attn layers in VisionBackbone, the pooling
-    head cross-attention, and the CaptionClassificationHead's
-    TransformerEncoder layers (single-axis temporal self-attention; ICCV 2021
-    Chefer applies directly). Backbone temporal attention (factored
-    space-time in layers 16-26) remains excluded.
+    Wraps:
+      - 27 spatial self_attn layers in VisionBackbone (R_pp accumulation).
+      - Backbone temporal_attn modules in layers >= temporal_start_layer (11
+        layers; per-spatial-position R_tt accumulation, Option B).
+      - Pooling head cross-attention (spatial extraction).
+      - 2 CaptionClassificationHead TransformerEncoder layers (broadcast
+        R_tt accumulation over T frames after spatial pooling).
     """
     wrapped = {
         'spatial_attn': [],
+        'temporal_attn': [],
         'pooling_head_attn': None,
         'head_te_attn': [],
     }
@@ -146,6 +150,9 @@ def wrap_soccermaster_model(model):
     for i, block in enumerate(vision_backbone.encoder_blocks):
         wrapped_spatial = wrap_siglip_attention_module(block.encoder.self_attn)
         wrapped['spatial_attn'].append((i, wrapped_spatial))
+        if getattr(block, 'use_temporal', False) and hasattr(block, 'temporal_attn'):
+            wrapped_temporal = wrap_temporal_attention_module(block.temporal_attn)
+            wrapped['temporal_attn'].append((i, wrapped_temporal))
 
     wrapped['pooling_head_attn'] = wrap_pooling_head_attention(vision_backbone.head.attention)
 
@@ -154,8 +161,9 @@ def wrap_soccermaster_model(model):
         for i, te_layer in enumerate(cls_head.transformer_encoder.layers):
             wrapped['head_te_attn'].append((i, wrap_transformer_encoder_layer(te_layer)))
 
-    print(f"Wrapped attention modules (SoccerMaster per-frame spatial + head temporal):")
-    print(f"  - Spatial (SigLIP2): {len(wrapped['spatial_attn'])} layers")
+    print(f"Wrapped attention modules (SoccerMaster spatial + temporal):")
+    print(f"  - Backbone spatial (SigLIP2): {len(wrapped['spatial_attn'])} layers")
+    print(f"  - Backbone temporal (per-position): {len(wrapped['temporal_attn'])} layers")
     print(f"  - Pooling head (probe->patches): yes")
     print(f"  - Classifier head TransformerEncoder: {len(wrapped['head_te_attn'])} layers")
 
@@ -219,8 +227,6 @@ def generate_per_frame_heatmaps_soccermaster(
     T = num_frames
     num_patches = patch_size * patch_size  # 1024
 
-    R_pp_per_frame = [torch.eye(num_patches, device=device, dtype=torch.float16) for _ in range(T)]
-
     model.zero_grad()
 
     vision_backbone = model.backbone.vision_model
@@ -283,71 +289,159 @@ def generate_per_frame_heatmaps_soccermaster(
     print(f"Computed backward pass. Target value: {target.item():.4f}")
 
     # =========================================================================
-    # Relevance propagation
+    # Four-matrix relevance propagation (see chefer_matchvision_fourmatrix.py
+    # for the full derivation; this is the SoccerMaster-specific application).
+    #
+    # State:
+    #   R_T [N, T, T]    fp32  per-spatial-position temporal relevance, init=I
+    #   R_S [T, N, N]    fp32  per-frame spatial relevance, init=I
+    #   R_X [T, N, T, N] fp16  cross-axis joint relevance, init=0
+    # SoccerMaster: N=1024, T=30. R_X = 1.9 GB fp16.
+    #
+    # Per-block updates (interleaved, in forward order):
+    #   Layers 0-15: spatial sub-block only (use_temporal=False)
+    #   Layers 16-23: temporal sub-block (gated g=tanh(α)) then spatial sub-block
+    # After backbone: 2 head TE layers contribute to R_T (broadcast across N).
     # =========================================================================
-    for layer_idx, attn_module in wrapped['spatial_attn']:
-        attn_probs = attn_module.get_attn()       # [B*T, num_heads, N, N]
-        attn_grad = attn_module.get_attn_gradients()  # [B*T, num_heads, N, N]
 
-        if attn_probs is not None:
-            for t in range(T):
-                cam = attn_probs[t]   # [num_heads, N, N]
-                grad = attn_grad[t]   # [num_heads, N, N]
-                cam = cam.reshape(-1, cam.shape[-1], cam.shape[-1])
-                grad = grad.reshape(-1, grad.shape[-1], grad.shape[-1])
-                cam = grad * cam
-                cam = cam.clamp(min=0).mean(dim=0)
-                R_pp_per_frame[t] += torch.matmul(cam, R_pp_per_frame[t])
+    spatial_by_layer = {layer_idx: m for (layer_idx, m) in wrapped['spatial_attn']}
+    temporal_by_layer = {layer_idx: m for (layer_idx, m) in wrapped['temporal_attn']}
+    num_backbone_layers = max(spatial_by_layer.keys()) + 1 if spatial_by_layer else 0
+
+    R_T = torch.eye(T, device=device, dtype=torch.float32)\
+        .unsqueeze(0).expand(num_patches, T, T).contiguous()              # [N, T, T]
+    R_S = torch.eye(num_patches, device=device, dtype=torch.float32)\
+        .unsqueeze(0).expand(T, num_patches, num_patches).contiguous()    # [T, N, N]
+    R_X = torch.zeros(T, num_patches, T, num_patches,
+                      device=device, dtype=torch.float16)                  # [T, N, T, N]
+
+    encoder_blocks = vision_backbone.encoder_blocks
+    per_layer_times = []
+
+    for layer_idx in range(num_backbone_layers):
+        layer_t0 = time.time()
+
+        # ----- Temporal sub-block (gated; only layers with use_temporal=True) -----
+        if layer_idx in temporal_by_layer:
+            t_attn_module = temporal_by_layer[layer_idx]
+            attn = t_attn_module.get_attn()
+            grad = t_attn_module.get_attn_gradients()
+            if attn is not None and grad is not None:
+                A_T = (grad.float() * attn.float()).clamp(min=0).mean(dim=1)  # [N, T, T]
+                g = float(encoder_blocks[layer_idx].temporal_alpha_attn.tanh().item())
+
+                if g != 0.0:
+                    R_X_f = R_X.float()
+                    R_X_diag_t = R_X_f.diagonal(dim1=0, dim2=2).permute(2, 0, 1).contiguous()  # [T, N, N]
+                    A_T_diag = A_T.diagonal(dim1=1, dim2=2)                                     # [N, T]
+
+                    delta_R_T_temp = g * torch.bmm(A_T, R_T)                                    # [N, T, T]
+
+                    delta_R_S_self = g * A_T_diag.T.unsqueeze(-1) * R_S                         # [T, N, N]
+                    full_S = torch.einsum('abc, cabd -> bad', A_T, R_X_f)                       # [T, N, N]
+                    sub_S = A_T_diag.T.unsqueeze(-1) * R_X_diag_t                               # [T, N, N]
+                    delta_R_S_cross = g * (full_S - sub_S)
+                    del full_S, sub_S
+
+                    delta_R_X_temp = torch.einsum('abc, caed -> baed', A_T, R_X_f)              # [T, N, T, N]
+                    delta_R_X_temp.sub_(torch.einsum('abe, ead -> baed', A_T, R_X_diag_t))
+                    delta_R_X_temp.add_(torch.einsum('abe, ead -> baed', A_T, R_S))
+                    delta_R_X_temp.mul_(g)
+
+                    R_T = R_T + delta_R_T_temp
+                    R_S = R_S + delta_R_S_self + delta_R_S_cross
+                    R_X_f.add_(delta_R_X_temp)
+                    del delta_R_X_temp, R_X_diag_t, delta_R_T_temp
+                    del delta_R_S_self, delta_R_S_cross
+                    R_X = R_X_f.half()
+                    del R_X_f
+
+        # ----- Spatial sub-block (no gate) -----
+        if layer_idx in spatial_by_layer:
+            s_attn_module = spatial_by_layer[layer_idx]
+            attn = s_attn_module.get_attn()
+            grad = s_attn_module.get_attn_gradients()
+            if attn is not None and grad is not None:
+                A_S = (grad.float() * attn.float()).clamp(min=0).mean(dim=1)  # [T, N, N]
+                A_S_diag = A_S.diagonal(dim1=1, dim2=2)                       # [T, N]
+
+                R_X_f = R_X.float()
+                R_X_diag_p = R_X_f.diagonal(dim1=1, dim2=3).contiguous()      # [T, T, N]
+
+                delta_R_S_spat = torch.bmm(A_S, R_S)                          # [T, N, N]
+
+                delta_R_T_self = A_S_diag.T.unsqueeze(-1) * R_T               # [N, T, T]
+                full_T = torch.einsum('bac, bcda -> abd', A_S, R_X_f)         # [N, T, T]
+                sub_T = torch.einsum('ba, bda -> abd', A_S_diag, R_X_diag_p)  # [N, T, T]
+                delta_R_T_cross = full_T - sub_T
+                del full_T, sub_T
+
+                # Spatial sub-block: diffusion only on R_X (no injection).
+                full_X_spat = torch.einsum('bac, badc -> bad', A_S, R_X_f)    # [T, N, T]
+                delta_R_X_spat = full_X_spat.unsqueeze(-1) - A_S.unsqueeze(2) * R_X_f  # [T, N, T, N]
+                del full_X_spat
+
+                R_S = R_S + delta_R_S_spat
+                R_T = R_T + delta_R_T_self + delta_R_T_cross
+                R_X_f.add_(delta_R_X_spat)
+                del delta_R_X_spat, R_X_diag_p
+                del delta_R_S_spat, delta_R_T_self, delta_R_T_cross
+                R_X = R_X_f.half()
+                del R_X_f
+
+        per_layer_times.append(time.time() - layer_t0)
+
+    # ----- Head TE layers (after backbone) — update R_T only, broadcast over N -----
+    for layer_idx, te_attn in wrapped['head_te_attn']:
+        cam_h = te_attn.get_attn()
+        grad_h = te_attn.get_attn_gradients()
+        if cam_h is None or grad_h is None:
+            print(f'  WARNING: head TE layer {layer_idx} attn/grad not captured.')
+            continue
+        cam_h = cam_h.reshape(-1, T, T).float()
+        grad_h = grad_h.reshape(-1, T, T).float()
+        cam_global = (grad_h * cam_h).clamp(min=0).mean(dim=0)               # [T, T]
+        R_T = R_T + cam_global @ R_T
+
+    print(f'  Per-backbone-layer four-matrix update times (sec): '
+          f'mean={np.mean(per_layer_times):.4f}  max={max(per_layer_times):.4f}  '
+          f'total={sum(per_layer_times):.3f}')
 
     # =========================================================================
-    # Extract heatmaps via pooling head cross-attention
+    # Pooling-head cam_pool[t], same as chefer_*_temporal.py.
     # =========================================================================
     head_attn_module = wrapped['pooling_head_attn']
     head_attn = head_attn_module.get_attn()           # [B*T, num_heads, 1, N]
-    head_grad = head_attn_module.get_attn_gradients()  # [B*T, num_heads, 1, N]
+    head_grad = head_attn_module.get_attn_gradients()
     print(f"  Pooling head: cross-attention {head_attn.shape} + gradients {head_grad.shape}")
+
+    cam_pool = torch.zeros(T, num_patches, device=device, dtype=torch.float32)
+    for t in range(T):
+        cam = head_attn[t]
+        grad = head_grad[t]
+        cam = cam.reshape(-1, cam.shape[-2], cam.shape[-1])
+        grad = grad.reshape(-1, grad.shape[-2], grad.shape[-1])
+        cam = (grad * cam).clamp(min=0).mean(dim=0)
+        cam_pool[t] = cam.float().squeeze(0)
+
+    H_self = torch.einsum('tn, tnp -> tp', cam_pool, R_S)                     # [T, N]
+    H_cross = torch.einsum('ab, abcd -> cd', cam_pool, R_X.float())           # [T, N]
+    image_relevance = H_self + H_cross                                         # [T, N]
 
     heatmaps = []
     for t in range(T):
-        cam = head_attn[t]   # [num_heads, 1, N]
-        grad = head_grad[t]  # [num_heads, 1, N]
-        cam = cam.reshape(-1, cam.shape[-2], cam.shape[-1])
-        grad = grad.reshape(-1, grad.shape[-2], grad.shape[-1])
-        cam = grad * cam
-        cam = cam.clamp(min=0).mean(dim=0)          # [1, N]
-
-        image_relevance = torch.matmul(cam, R_pp_per_frame[t]).squeeze(0)  # [N]
-
-        heatmap = image_relevance.detach().cpu().numpy().reshape(patch_size, patch_size)
-        heatmaps.append(heatmap)
-
+        hm = image_relevance[t].detach().cpu().numpy().reshape(patch_size, patch_size)
+        heatmaps.append(hm)
     heatmaps = np.stack(heatmaps, axis=0).astype(np.float32)  # [T, patch_size, patch_size]
 
-    # =========================================================================
-    # Per-frame temporal weighting via R_tt over the CaptionClassificationHead's
-    # TransformerEncoder. Single-axis self-attention over the T frame
-    # embeddings, so canonical ICCV 2021 Chefer applies directly. Mean-pool
-    # follows, so per-frame contribution = R_tt.mean(dim=0)[t].
-    # =========================================================================
+    # Per-frame temporal weights from R_T (same as temporal pipeline).
+    w = R_T.mean(dim=(0, 1)).detach().cpu().numpy()
     temporal_weights = np.ones(T, dtype=np.float32)
-    if wrapped['head_te_attn']:
-        R_tt = torch.eye(T, device=device, dtype=torch.float32)
-        for _, te_attn in wrapped['head_te_attn']:
-            cam = te_attn.get_attn()
-            grad = te_attn.get_attn_gradients()
-            if cam is None or grad is None:
-                print('  WARNING: head TE attn/grad not captured; skipping R_tt update.')
-                continue
-            cam = cam.reshape(-1, cam.shape[-1], cam.shape[-1]).float()
-            grad = grad.reshape(-1, grad.shape[-1], grad.shape[-1]).float()
-            cam = (grad * cam).clamp(min=0).mean(dim=0)
-            R_tt = R_tt + cam @ R_tt
-        w = R_tt.mean(dim=0).detach().cpu().numpy()
-        if w.max() > 0:
-            temporal_weights = (w / w.max()).astype(np.float32)
-        print(f"  Head R_tt temporal weights (normalized): "
-              f"min={temporal_weights.min():.3f} max={temporal_weights.max():.3f} "
-              f"argmax_frame={int(temporal_weights.argmax())}")
+    if w.max() > 0:
+        temporal_weights = (w / w.max()).astype(np.float32)
+    print(f"  R_T temporal weights (normalized): "
+          f"min={temporal_weights.min():.3f} max={temporal_weights.max():.3f} "
+          f"argmax_frame={int(temporal_weights.argmax())}")
 
     # Min-max normalization per frame, then scale by temporal weight so that
     # cross-frame mean intensity (the signal T-IoU consumes) reflects the

@@ -57,7 +57,7 @@ from inference_utils import (
     evaluate_and_print_video, print_and_save_eval_summary,
     LABEL_NAMES, LABEL_TO_IDX,
     wrap_siglip_attention_module, wrap_pooling_head_attention,
-    wrap_transformer_encoder_layer,
+    wrap_transformer_encoder_layer, wrap_temporal_attention_module,
     chefer_attribution_renderer,
 )
 from visualization_video import save_lowres_visualization_video
@@ -129,14 +129,17 @@ def wrap_soccermaster_model(model):
     """
     Wrap SoccerMaster's attention modules for Chefer explainability.
 
-    Wraps all 27 spatial self_attn layers in VisionBackbone, the pooling
-    head cross-attention, and the CaptionClassificationHead's
-    TransformerEncoder layers (single-axis temporal self-attention; ICCV 2021
-    Chefer applies directly). Backbone temporal attention (factored
-    space-time in layers 16-26) remains excluded.
+    Wraps:
+      - 27 spatial self_attn layers in VisionBackbone (R_pp accumulation).
+      - Backbone temporal_attn modules in layers >= temporal_start_layer (11
+        layers; per-spatial-position R_tt accumulation, Option B).
+      - Pooling head cross-attention (spatial extraction).
+      - 2 CaptionClassificationHead TransformerEncoder layers (broadcast
+        R_tt accumulation over T frames after spatial pooling).
     """
     wrapped = {
         'spatial_attn': [],
+        'temporal_attn': [],
         'pooling_head_attn': None,
         'head_te_attn': [],
     }
@@ -146,6 +149,9 @@ def wrap_soccermaster_model(model):
     for i, block in enumerate(vision_backbone.encoder_blocks):
         wrapped_spatial = wrap_siglip_attention_module(block.encoder.self_attn)
         wrapped['spatial_attn'].append((i, wrapped_spatial))
+        if getattr(block, 'use_temporal', False) and hasattr(block, 'temporal_attn'):
+            wrapped_temporal = wrap_temporal_attention_module(block.temporal_attn)
+            wrapped['temporal_attn'].append((i, wrapped_temporal))
 
     wrapped['pooling_head_attn'] = wrap_pooling_head_attention(vision_backbone.head.attention)
 
@@ -154,8 +160,9 @@ def wrap_soccermaster_model(model):
         for i, te_layer in enumerate(cls_head.transformer_encoder.layers):
             wrapped['head_te_attn'].append((i, wrap_transformer_encoder_layer(te_layer)))
 
-    print(f"Wrapped attention modules (SoccerMaster per-frame spatial + head temporal):")
-    print(f"  - Spatial (SigLIP2): {len(wrapped['spatial_attn'])} layers")
+    print(f"Wrapped attention modules (SoccerMaster spatial + temporal):")
+    print(f"  - Backbone spatial (SigLIP2): {len(wrapped['spatial_attn'])} layers")
+    print(f"  - Backbone temporal (per-position): {len(wrapped['temporal_attn'])} layers")
     print(f"  - Pooling head (probe->patches): yes")
     print(f"  - Classifier head TransformerEncoder: {len(wrapped['head_te_attn'])} layers")
 
@@ -324,28 +331,48 @@ def generate_per_frame_heatmaps_soccermaster(
     heatmaps = np.stack(heatmaps, axis=0).astype(np.float32)  # [T, patch_size, patch_size]
 
     # =========================================================================
-    # Per-frame temporal weighting via R_tt over the CaptionClassificationHead's
-    # TransformerEncoder. Single-axis self-attention over the T frame
-    # embeddings, so canonical ICCV 2021 Chefer applies directly. Mean-pool
-    # follows, so per-frame contribution = R_tt.mean(dim=0)[t].
+    # Per-frame temporal weighting via R_tt accumulated through:
+    #   (a) 8 backbone temporal_attn modules (layers 16-23) -- per-spatial-
+    #       position cam. attn shape: [B*N, H, T, T]. R_tt has shape [N, T, T].
+    #   (b) 2 classifier head TransformerEncoder layers -- single global cam
+    #       [T, T] applied (broadcast) to every spatial position.
+    # Final per-frame weight: w[t] = R_tt.mean(dim=(0, 1))[t].
+    # See chefer_matchvision.py for the parallel derivation (Option B).
     # =========================================================================
     temporal_weights = np.ones(T, dtype=np.float32)
-    if wrapped['head_te_attn']:
-        R_tt = torch.eye(T, device=device, dtype=torch.float32)
-        for _, te_attn in wrapped['head_te_attn']:
-            cam = te_attn.get_attn()
-            grad = te_attn.get_attn_gradients()
-            if cam is None or grad is None:
-                print('  WARNING: head TE attn/grad not captured; skipping R_tt update.')
+    if wrapped['temporal_attn'] or wrapped['head_te_attn']:
+        N_patches_check = num_patches  # 1024 for SoccerMaster (32x32)
+        R_tt = torch.eye(T, device=device, dtype=torch.float32)\
+            .unsqueeze(0).expand(N_patches_check, T, T).contiguous()
+
+        # (a) Backbone temporal layers (per-spatial-position)
+        for layer_idx, t_attn in wrapped['temporal_attn']:
+            attn = t_attn.get_attn()
+            grad = t_attn.get_attn_gradients()
+            if attn is None or grad is None:
+                print(f'  WARNING: backbone temporal layer {layer_idx} attn/grad not captured.')
                 continue
-            cam = cam.reshape(-1, cam.shape[-1], cam.shape[-1]).float()
-            grad = grad.reshape(-1, grad.shape[-1], grad.shape[-1]).float()
-            cam = (grad * cam).clamp(min=0).mean(dim=0)
-            R_tt = R_tt + cam @ R_tt
-        w = R_tt.mean(dim=0).detach().cpu().numpy()
+            attn = attn.float()
+            grad = grad.float()
+            cam = (grad * attn).clamp(min=0).mean(dim=1)   # [N, T, T]
+            R_tt = R_tt + torch.bmm(cam, R_tt)
+
+        # (b) Head TE layers (broadcast across N positions)
+        for layer_idx, te_attn in wrapped['head_te_attn']:
+            cam_h = te_attn.get_attn()
+            grad_h = te_attn.get_attn_gradients()
+            if cam_h is None or grad_h is None:
+                print(f'  WARNING: head TE layer {layer_idx} attn/grad not captured.')
+                continue
+            cam_h = cam_h.reshape(-1, T, T).float()
+            grad_h = grad_h.reshape(-1, T, T).float()
+            cam_global = (grad_h * cam_h).clamp(min=0).mean(dim=0)
+            R_tt = R_tt + cam_global @ R_tt
+
+        w = R_tt.mean(dim=(0, 1)).detach().cpu().numpy()
         if w.max() > 0:
             temporal_weights = (w / w.max()).astype(np.float32)
-        print(f"  Head R_tt temporal weights (normalized): "
+        print(f"  R_tt temporal weights (normalized, backbone+head): "
               f"min={temporal_weights.min():.3f} max={temporal_weights.max():.3f} "
               f"argmax_frame={int(temporal_weights.argmax())}")
 
