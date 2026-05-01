@@ -1,9 +1,10 @@
+import argparse
 import json
 import os
 import cv2
 
 JSON_PATH = "train_data/json/one_video.json"
-VIDEOS_BASE = (
+DEFAULT_VIDEOS_BASE = (
     "/mnt/c/Users/z004kjmt/Downloads"
     "/SoccerLensVisualizations-no-bboxes-20260421T231816Z-3-001_v2"
     "/SoccerLensVisualizations-no-bboxes"
@@ -48,6 +49,16 @@ def extract_frame(video_path, time_sec):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Extract single frames from visualization videos for paper figures."
+    )
+    parser.add_argument(
+        "--videos_base",
+        default=DEFAULT_VIDEOS_BASE,
+        help="Root directory containing <Model>/<Method>/<match>/<clip>.mp4",
+    )
+    args = parser.parse_args()
+
     with open(JSON_PATH, "r") as f:
         entries = json.load(f)
 
@@ -67,7 +78,7 @@ def main():
 
         for model in MODELS:
             for method in METHODS:
-                video_path = os.path.join(VIDEOS_BASE, model, method, match_clip)
+                video_path = os.path.join(args.videos_base, model, method, match_clip)
                 if not os.path.exists(video_path):
                     print(f"  MISSING: {video_path}")
                     continue

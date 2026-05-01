@@ -7,6 +7,7 @@
 #SBATCH --partition=batch
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=ahmed.sait@kaust.edu.sa
+#SBATCH --account conf-neurips-2026.05.15-ghanembs
 #SBATCH --output=/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability/slurm_outputs/chefer-%j.out
 # Run chefer_matchvision.py — Chefer spatial-only explainability pipeline
 
@@ -18,7 +19,7 @@ set -e
 export HF_HOME="/ibex/ai/home/saitaa0b/.cache/huggingface"
 
 SOCCER_DIR="/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability"
-OUTPUT_DIR="${SOCCER_DIR}/output_chefer_matchvision"
+OUTPUT_DIR="${SOCCER_DIR}/output_chefer_matchvision_spatial_only"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"
 mkdir -p "${OUTPUT_DIR}"

@@ -29,9 +29,9 @@ config = dict(
             balanced_or_not = 'unbalanced'
         ),
         test = dict(
-            json = ["/content/SoccerExplainability/train_data/json/one_video.json"],
+            json = ["/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability/train_data/json/one_video.json"],
             keywords = ["var", "end of half game", "clearance", "second yellow card", "injury", "ball possession", "throw in", "show added time", "shot off target", "start of half game", "substitution", "saved by goal-keeper", "red card", "lead to corner", "ball out of play", "off side", "goal", "penalty", "yellow card", "foul lead to penalty", "corner", "free kick", "foul with no card"],
-            video_base = ["/content/drive/MyDrive/SoccerLens/"],
+            video_base = ["/ibex/ai/home/saitaa0b/Projects/XMatchVision/Data/"],
             batch_size = 1,
             num_workers = 4,
             sample = 'middle',

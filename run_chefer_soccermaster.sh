@@ -7,6 +7,7 @@
 #SBATCH --partition=batch
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=ahmed.sait@kaust.edu.sa
+#SBATCH --account conf-neurips-2026.05.15-ghanembs
 #SBATCH --output=/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability/slurm_outputs/chefer_soccermaster-%j.out
 # Run chefer_soccermaster.py — Chefer per-frame spatial-only explainability for SoccerMaster
 
@@ -18,7 +19,7 @@ set -e
 export HF_HOME="/ibex/ai/home/saitaa0b/.cache/huggingface"
 
 SOCCER_DIR="/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability"
-OUTPUT_DIR="${SOCCER_DIR}/output_chefer_soccermaster"
+OUTPUT_DIR="${SOCCER_DIR}/output_chefer_soccermaster_spatial_only"
 CHECKPOINT_DIR="${SOCCER_DIR}/model/SoccerMaster/pretrained_models/SoccerMaster"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"
