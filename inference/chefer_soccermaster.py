@@ -331,7 +331,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Chefer explainability inference (per-frame spatial-only) for SoccerMaster classification.')
     parser.add_argument('--config_path', type=str,
-                        default='config/pretrain_classification_ibex.py',
+                        default='config/pretrain_classification_cluster.py',
                         help='Path to the dataset Python config file')
     parser.add_argument('--checkpoint_dir', type=str, required=True,
                         help='Path to SoccerMaster checkpoint dir (backbone.pt + CaptionClassification.pt)')

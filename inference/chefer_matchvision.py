@@ -49,7 +49,7 @@ Use target_label / target_label_name to specify class:
 
 Usage:
     python chefer_matchvision.py \\
-        --config_path ../config/pretrain_classification_ibex.py \\
+        --config_path ../config/pretrain_classification_cluster.py \\
         --checkpoint_path /path/to/pretrained_classification.pth \\
         --output_dir /path/to/output
 """
@@ -295,7 +295,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Chefer explainability inference (per-frame spatial-only) for MatchVision classification.')
     parser.add_argument('--config_path', type=str,
-                        default='config/pretrain_classification_ibex.py',
+                        default='config/pretrain_classification_cluster.py',
                         help='Path to the Python config file')
     parser.add_argument('--checkpoint_path', type=str,
                         default='/path/to/pretrained_classification.pth',

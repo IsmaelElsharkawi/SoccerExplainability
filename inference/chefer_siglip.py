@@ -189,7 +189,7 @@ def main():
         description='Chefer explainability inference (per-frame spatial-only) for plain SigLIP classification.'
     )
     parser.add_argument('--config_path', type=str,
-                        default='config/pretrain_classification_ibex.py',
+                        default='config/pretrain_classification_cluster.py',
                         help='Path to the Python config file')
     parser.add_argument('--model_name', type=str,
                         default='google/siglip-base-patch16-224',

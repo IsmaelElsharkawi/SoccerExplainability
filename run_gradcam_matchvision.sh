@@ -6,9 +6,9 @@
 #SBATCH --time=03:59:59
 #SBATCH --partition=batch
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --mail-user=ahmed.sait@kaust.edu.sa
-#SBATCH --account conf-neurips-2026.05.15-ghanembs
-#SBATCH --output=/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability/slurm_outputs/gradcam_matchvision-%j.out
+#SBATCH --mail-user=anon@example.com
+#SBATCH --account <your-slurm-account>
+#SBATCH --output=/path/to/SoccerExplainability/slurm_outputs/gradcam_matchvision-%j.out
 # Run gradcam_inference.py for MatchVision
 
 eval "$(conda shell.bash hook)"
@@ -16,9 +16,9 @@ conda activate UniSoccer
 
 set -e
 
-export HF_HOME="/ibex/ai/home/saitaa0b/.cache/huggingface"
+export HF_HOME="/path/to/huggingface_cache"
 
-SOCCER_DIR="/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability"
+SOCCER_DIR="/path/to/SoccerExplainability"
 OUTPUT_DIR="${SOCCER_DIR}/output_gradcam_matchvision"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"
@@ -28,8 +28,8 @@ cd "${SOCCER_DIR}/inference"
 
 python gradcam_inference.py \
     --model_type matchvision \
-    --config_path "${SOCCER_DIR}/config/pretrain_classification_ibex.py" \
-    --checkpoint_path "/ibex/ai/home/saitaa0b/.cache/huggingface/hub/models--Homie0609--UniSoccer/snapshots/c8b4f77a2951f067ad2afd1ffb6cd479ff39601f/pretrained_classification.pth" \
+    --config_path "${SOCCER_DIR}/config/pretrain_classification_cluster.py" \
+    --checkpoint_path "/path/to/UniSoccer/pretrained_classification.pth" \
     --coco_json "${SOCCER_DIR}/annotations-coco.json" \
     --cam_threshold 0.5 \
     --eval_output_json "${OUTPUT_DIR}/gradcam_matchvision_eval_results.json" \
