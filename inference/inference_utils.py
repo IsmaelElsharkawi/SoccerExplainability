@@ -104,6 +104,99 @@ def wrap_siglip_attention_module(attn_module):
     return attn_module
 
 
+def wrap_temporal_attention_module(mha_module):
+    """
+    Wrap a backbone temporal nn.MultiheadAttention(batch_first=True) for Chefer.
+
+    The underlying module is structurally identical to the SigLIP pooling head
+    (both are nn.MultiheadAttention), so we delegate to wrap_pooling_head_attention.
+    Renamed for call-site clarity in chefer_matchvision/soccermaster scripts.
+
+    Captures attention of shape [B*N, H, T, T] -- one [T, T] attention per
+    spatial position, since MatchVision's temporal_attn is called on tensors
+    rearranged via 'b t n m -> (b n) t m' (each spatial position attended over
+    time independently).
+    """
+    return wrap_pooling_head_attention(mha_module)
+
+
+def wrap_transformer_encoder_layer(te_layer):
+    """
+    Wrap an nn.TransformerEncoderLayer's self-attention for Chefer relevance.
+
+    The underlying nn.MultiheadAttention is structurally identical to the
+    SigLIP pooling head, so we use the same wrapping pattern. Differences:
+      - Self-attention (q == k == v == sequence), not cross-attention.
+      - Convention can be batch_first=True (SoccerMaster) or False (MatchVision);
+        we read `self_attn.batch_first` and transpose accordingly.
+
+    The wrapped module exposes `get_attn()` / `get_attn_gradients()` returning
+    tensors of shape [B, num_heads, T, T] regardless of batch_first.
+
+    Returns the inner self-attention module (same convention as the other
+    wrappers in this file).
+    """
+    self_attn = te_layer.self_attn
+
+    if hasattr(self_attn, '_chefer_wrapped'):
+        return self_attn
+
+    embed_dim = self_attn.embed_dim
+    num_heads = self_attn.num_heads
+    head_dim = embed_dim // num_heads
+    scale = 1.0 / math.sqrt(head_dim)
+    batch_first = getattr(self_attn, 'batch_first', False)
+
+    attn_storage = {}
+    grad_storage = {}
+
+    def wrapped_forward(query, key, value, **kwargs):
+        if not batch_first:
+            query = query.transpose(0, 1)
+            key = key.transpose(0, 1)
+            value = value.transpose(0, 1)
+
+        B, Nq, C = query.shape
+        _, Nk, _ = key.shape
+
+        w = self_attn.in_proj_weight
+        b = self_attn.in_proj_bias
+
+        Q = F.linear(query, w[:embed_dim], None if b is None else b[:embed_dim])
+        K = F.linear(key, w[embed_dim:2*embed_dim],
+                     None if b is None else b[embed_dim:2*embed_dim])
+        V = F.linear(value, w[2*embed_dim:],
+                     None if b is None else b[2*embed_dim:])
+
+        Q = Q.view(B, Nq, num_heads, head_dim).transpose(1, 2)
+        K = K.view(B, Nk, num_heads, head_dim).transpose(1, 2)
+        V = V.view(B, Nk, num_heads, head_dim).transpose(1, 2)
+
+        attn = (Q @ K.transpose(-2, -1)) * scale
+        attn = attn.softmax(dim=-1)
+
+        attn_storage['attn'] = attn.detach()
+        if attn.requires_grad:
+            def grad_hook(grad):
+                grad_storage['grad'] = grad.detach()
+            attn.register_hook(grad_hook)
+
+        out = (attn @ V).transpose(1, 2).reshape(B, Nq, C)
+        out = self_attn.out_proj(out)
+
+        if not batch_first:
+            out = out.transpose(0, 1)
+
+        return out, attn
+
+    self_attn.forward = wrapped_forward
+    self_attn.get_attn = lambda: attn_storage.get('attn')
+    self_attn.get_attn_gradients = lambda: grad_storage.get('grad')
+    self_attn._chefer_wrapped = True
+
+    return self_attn
+
+
 def wrap_pooling_head_attention(mha_module):
     """
     Wrap SigLIP's pooling head nn.MultiheadAttention for cross-attention capture.
