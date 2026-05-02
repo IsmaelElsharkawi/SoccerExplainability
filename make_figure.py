@@ -75,9 +75,17 @@ ROW_LABEL_W = 80   # width reserved for row labels (vertical text)
 MODEL_LABEL_H = 50  # height for top model group header
 COL_LABEL_H = 50   # height for sub-column method labels
 HEADER_H = MODEL_LABEL_H + COL_LABEL_H  # total header height
+LEGEND_H = 70  # height for the bbox color legend at the bottom
 BG_COLOR = (255, 255, 255)
 TEXT_COLOR = (0, 0, 0)
 LINE_COLOR = (180, 180, 180)
+
+# BGR colors from extract_frames.py converted to RGB for PIL
+LEGEND_ITEMS = [
+    ("Primary Cue",   (150,   0, 255)),   # BGR(255,   0, 150) → RGB
+    ("Secondary Cue", (255,  20, 147)),   # BGR(147,  20, 255) → RGB
+    ("Common Cue",    (255, 182, 220)),   # light pink RGB
+]
 
 
 def get_font(size):
@@ -96,7 +104,7 @@ def build_figure(classes, output_path):
     n_cols = len(COLUMNS)
 
     total_w = ROW_LABEL_W + n_cols * CELL_SIZE + (n_cols - 1) * PAD
-    total_h = HEADER_H + n_rows * CELL_SIZE + (n_rows - 1) * PAD
+    total_h = HEADER_H + n_rows * CELL_SIZE + (n_rows - 1) * PAD + LEGEND_H
 
     canvas = Image.new("RGB", (total_w, total_h), BG_COLOR)
     draw = ImageDraw.Draw(canvas)
@@ -156,16 +164,30 @@ def build_figure(classes, output_path):
                 print(f"  MISSING: {fpath}")
                 continue
             img = Image.open(fpath).convert("RGB")
-            if method is None:
-                # Center-crop to square then resize to CELL_SIZE
-                w, h = img.size
-                side = min(w, h)
-                left = (w - side) // 2
-                top = (h - side) // 2
-                img = img.crop((left, top, left + side, top + side))
             img = img.resize((CELL_SIZE, CELL_SIZE), Image.LANCZOS)
             x = ROW_LABEL_W + ci * (CELL_SIZE + PAD)
             canvas.paste(img, (x, y_top))
+
+    # ---- Legend ----
+    legend_y = HEADER_H + n_rows * CELL_SIZE + (n_rows - 1) * PAD
+    legend_font = get_font(24)
+    swatch_size = 24
+    swatch_pad = 10
+    # Centre the legend items horizontally across the full canvas
+    item_w = swatch_size + swatch_pad + 400  # approx width per item (wider spacing)
+    total_legend_w = len(LEGEND_ITEMS) * item_w
+    legend_x = (total_w - total_legend_w) // 2
+    legend_cy = legend_y + LEGEND_H // 2
+    for label, rgb in LEGEND_ITEMS:
+        # Coloured square swatch
+        sx, sy = legend_x, legend_cy - swatch_size // 2
+        draw.rectangle([sx, sy, sx + swatch_size, sy + swatch_size], fill=rgb)
+        # Label to the right of the swatch
+        draw.text(
+            (sx + swatch_size + swatch_pad, legend_cy),
+            label, fill=TEXT_COLOR, font=legend_font, anchor="lm",
+        )
+        legend_x += item_w
 
     canvas.save(output_path, dpi=(300, 300))
     print(f"Saved {output_path} ({canvas.size[0]}x{canvas.size[1]})")

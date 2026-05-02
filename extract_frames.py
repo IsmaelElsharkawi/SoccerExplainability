@@ -9,7 +9,7 @@ JSON_PATH = "train_data/json/one_video.json"
 TIER_COLORS = {
     "small label": (255, 0, 150),   # vivid purple RGB(150,0,255)
     "large label": (147, 20, 255),  # deep pink   RGB(255,20,147)
-    "visual cue":  (0,   80, 255),  # bright orange RGB(255,80,0)
+    "visual cue":  (220, 182, 255),  # light pink BGR → RGB(255,182,220)
 }
 BOX_THICKNESS = 5
 VIDEOS_BASE = (
