@@ -68,15 +68,16 @@ def _annotation_type_key(annotation, categories):
 
 
 def _color_for_type(type_key):
+    # Colors in BGR order (OpenCV convention) — no green, blue, yellow, or red/magenta
     palette = [
-        (0, 255, 255),
-        (255, 140, 0),
-        (0, 220, 0),
-        (255, 0, 255),
-        (0, 128, 255),
-        (255, 255, 0),
-        (180, 105, 255),
-        (255, 80, 80),
+        (255, 0, 150),    # vivid purple RGB(150,0,255)
+        (0,  80, 255),    # deep orange RGB(255,80,0)
+        (255, 0, 128),    # deep purple RGB(128,0,255)
+        (255, 0, 200),    # violet      RGB(200,0,255)
+        (255, 255, 255),  # white
+        (147, 20, 255),   # deep pink   RGB(255,20,147)
+        (80, 127, 255),   # coral       RGB(255,127,80)
+        (0, 140, 255),    # dark orange RGB(255,140,0)
     ]
     return palette[sum(ord(char) for char in str(type_key)) % len(palette)]
 
@@ -90,8 +91,17 @@ def draw_gt_bboxes_on_frame(frame, annotations, categories, thickness=4):
         x, y, w, h = annotation["bbox"]
         x1, y1 = int(round(x * width)), int(round(y * height))
         x2, y2 = int(round((x + w) * width)), int(round((y + h) * height))
-        color = _color_for_type(_annotation_type_key(annotation, categories))
+        type_key = _annotation_type_key(annotation, categories)
+        color = _color_for_type(type_key)
         cv2.rectangle(out, (x1, y1), (x2, y2), color, thickness)
+        label_text = str(type_key)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.6
+        font_thickness = 2
+        (tw, th), baseline = cv2.getTextSize(label_text, font, font_scale, font_thickness)
+        ty = max(y1 - 4, th + 4)
+        cv2.rectangle(out, (x1, ty - th - baseline - 2), (x1 + tw + 4, ty + 2), (0, 0, 0), -1)
+        cv2.putText(out, label_text, (x1 + 2, ty - baseline), font, font_scale, color, font_thickness, cv2.LINE_AA)
 
     return out
 

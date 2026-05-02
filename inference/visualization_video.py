@@ -45,8 +45,8 @@ def create_combined_visualization(high_res_frame, attribution_overlay, attributi
 def _render_text_free_graph(attribution_scores, current_idx, panel_width, panel_height=180):
     fig, ax = plt.subplots(figsize=(panel_width / 100, panel_height / 100), dpi=100)
     frame_numbers = np.arange(len(attribution_scores))
-    ax.plot(frame_numbers, attribution_scores, linewidth=2, color="blue")
-    ax.scatter([current_idx], [attribution_scores[current_idx]], s=60, color="red", zorder=5)
+    ax.plot(frame_numbers, attribution_scores, linewidth=2, color="darkorange")
+    ax.scatter([current_idx], [attribution_scores[current_idx]], s=60, color="white", zorder=5)
     ax.set_xlim(0, max(len(attribution_scores) - 1, 1))
 
     score_min = float(np.min(attribution_scores))
@@ -91,8 +91,8 @@ def save_combined_video(video_directory, video_name, high_res_video_file,
     for idx in range(30):
         plt.figure(figsize=(6, 3))
         frame_numbers = np.arange(len(attribution_scores))
-        plt.plot(frame_numbers, attribution_scores, marker="o", linewidth=2, markersize=4, color="blue")
-        plt.plot(idx, attribution_scores[idx], marker="o", markersize=10, color="red", zorder=5)
+        plt.plot(frame_numbers, attribution_scores, marker="o", linewidth=2, markersize=4, color="darkorange")
+        plt.plot(idx, attribution_scores[idx], marker="o", markersize=10, color="white", zorder=5)
         plt.xlabel("Frame Number")
         plt.ylabel("Attribution Score")
         plt.title(f"Attribution Scores - {ground_truth_text}")

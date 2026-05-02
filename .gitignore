@@ -1,3 +1,7 @@
 # Model checkpoints (keep directory, ignore contents)
 model/SoccerMaster/pretrained_models/*
 !model/SoccerMaster/pretrained_models/.gitkeep
+
+# Generated figures and extracted frames
+*.png
+extracted_frames/

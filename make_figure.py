@@ -8,24 +8,24 @@ FIGURE_SPLITS = [
     {
         "output": "paper_figure_part1.png",
         "classes": [
+            "injury",
             "red_card",
             "yellow_card",
             "corner",
-            "penalty",
-            "foul_with_no_card",
-            "injury",
+            "substitution",
             "lead_to_corner",
+            "second_yellow_card",
         ],
     },
     {
         "output": "paper_figure_part2.png",
         "classes": [
+            "penalty",
+            "foul_with_no_card",
             "throw_in",
-            "substitution",
             "free_kick",
             "goal",
             "foul_lead_to_penalty",
-            "second_yellow_card",
         ],
     },
 ]
@@ -47,8 +47,9 @@ CLASS_LABELS = {
     "second_yellow_card": "2nd Yellow Card",
 }
 
-# Column order: (method, model)
+# Column order: (method, model) — None means original
 COLUMNS = [
+    (None, None),            # Original
     ("chefer", "MatchVision"),
     ("gradcam", "MatchVision"),
     ("chefer", "SigLip"),
@@ -57,18 +58,20 @@ COLUMNS = [
     ("gradcam", "SoccerMaster"),
 ]
 
-COL_LABELS = ["Chefer", "Grad-CAM", "Chefer", "Grad-CAM", "Chefer", "Grad-CAM"]
+COL_LABELS = ["", "Chefer", "Grad-CAM", "Chefer", "Grad-CAM", "Chefer", "Grad-CAM"]
 
 # Model group headers spanning 2 columns each
+# start_col indices are relative to the full COLUMNS list
 MODEL_GROUPS = [
-    ("MatchVision", 0, 2),   # label, start_col, span
-    ("SigLIP", 2, 2),
-    ("SoccerMaster", 4, 2),
+    ("Original", 0, 1),      # label, start_col, span
+    ("MatchVision", 1, 2),
+    ("SigLIP", 3, 2),
+    ("SoccerMaster", 5, 2),
 ]
 
 CELL_SIZE = 448  # native resolution per image
 PAD = 4  # padding between cells
-ROW_LABEL_W = 280  # width reserved for row labels
+ROW_LABEL_W = 80   # width reserved for row labels (vertical text)
 MODEL_LABEL_H = 50  # height for top model group header
 COL_LABEL_H = 50   # height for sub-column method labels
 HEADER_H = MODEL_LABEL_H + COL_LABEL_H  # total header height
@@ -129,22 +132,38 @@ def build_figure(classes, output_path):
     for ri, cls in enumerate(classes):
         y_top = HEADER_H + ri * (CELL_SIZE + PAD)
 
-        # Row label
+        # Row label — drawn vertically
         label = CLASS_LABELS.get(cls, cls)
         y_center = y_top + CELL_SIZE // 2
-        draw.text(
-            (ROW_LABEL_W - 16, y_center), label, fill=TEXT_COLOR,
-            font=row_font, anchor="rm",
+        # Render text onto a temporary image then rotate 90°
+        tmp = Image.new("RGB", (CELL_SIZE, ROW_LABEL_W), BG_COLOR)
+        tmp_draw = ImageDraw.Draw(tmp)
+        tmp_draw.text(
+            (CELL_SIZE // 2, ROW_LABEL_W // 2), label, fill=TEXT_COLOR,
+            font=row_font, anchor="mm",
         )
+        rotated = tmp.rotate(90, expand=True)  # becomes (ROW_LABEL_W, CELL_SIZE)
+        canvas.paste(rotated, (0, y_top))
 
         # Paste images
         for ci, (method, model) in enumerate(COLUMNS):
-            fname = f"{cls}_{method}_{model}.png"
+            if method is None:
+                fname = f"{cls}_original.png"
+            else:
+                fname = f"{cls}_{method}_{model}.png"
             fpath = os.path.join(FRAMES_DIR, fname)
             if not os.path.exists(fpath):
                 print(f"  MISSING: {fpath}")
                 continue
-            img = Image.open(fpath)
+            img = Image.open(fpath).convert("RGB")
+            if method is None:
+                # Center-crop to square then resize to CELL_SIZE
+                w, h = img.size
+                side = min(w, h)
+                left = (w - side) // 2
+                top = (h - side) // 2
+                img = img.crop((left, top, left + side, top + side))
+            img = img.resize((CELL_SIZE, CELL_SIZE), Image.LANCZOS)
             x = ROW_LABEL_W + ci * (CELL_SIZE + PAD)
             canvas.paste(img, (x, y_top))
 

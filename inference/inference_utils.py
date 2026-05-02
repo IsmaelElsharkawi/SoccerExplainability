@@ -188,7 +188,7 @@ def chefer_attribution_renderer(frame_float, attribution_map):
 
     heatmap = np.clip(heatmap, 0, 1)
     heatmap_uint8 = (heatmap * 255).astype(np.uint8)
-    heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
+    heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_INFERNO)
     heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
 
     alpha = 0.5
