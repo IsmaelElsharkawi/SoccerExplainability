@@ -8,8 +8,8 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=ahmed.sait@kaust.edu.sa
 #SBATCH --account conf-neurips-2026.05.15-ghanembs
-#SBATCH --output=/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability/slurm_outputs/chefer-%j.out
-# Run chefer_matchvision.py — Chefer spatial-only explainability pipeline
+#SBATCH --output=/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability/slurm_outputs/gradcam_siglip-%j.out
+# Run gradcam_inference.py for SigLIP
 
 eval "$(conda shell.bash hook)"
 conda activate UniSoccer
@@ -19,17 +19,17 @@ set -e
 export HF_HOME="/ibex/ai/home/saitaa0b/.cache/huggingface"
 
 SOCCER_DIR="/ibex/ai/home/saitaa0b/Projects/XMatchVision/SoccerExplainability"
-OUTPUT_DIR="${SOCCER_DIR}/output_chefer_matchvision_spatial"
+OUTPUT_DIR="${SOCCER_DIR}/output_gradcam_siglip"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"
 mkdir -p "${OUTPUT_DIR}"
 
 cd "${SOCCER_DIR}/inference"
 
-python chefer_matchvision.py \
+python gradcam_inference.py \
+    --model_type siglip \
     --config_path "${SOCCER_DIR}/config/pretrain_classification_ibex.py" \
-    --checkpoint_path "/ibex/ai/home/saitaa0b/.cache/huggingface/hub/models--Homie0609--UniSoccer/snapshots/c8b4f77a2951f067ad2afd1ffb6cd479ff39601f/pretrained_classification.pth" \
     --coco_json "${SOCCER_DIR}/annotations-coco.json" \
     --cam_threshold 0.5 \
-    --eval_output_json "${OUTPUT_DIR}/chefer_matchvision_eval_results.json" \
+    --eval_output_json "${OUTPUT_DIR}/gradcam_siglip_eval_results.json" \
     --output_dir "${OUTPUT_DIR}"
