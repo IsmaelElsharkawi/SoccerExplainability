@@ -20,6 +20,7 @@ from inference_utils import (
     load_config, reshape_transform, create_test_dataloader,
     load_classifier, setup_attribution_evaluator, match_video_id,
     evaluate_and_print_video, print_and_save_eval_summary,
+    chefer_attribution_renderer,
 )
 from visualization_video import save_lowres_visualization_video
 
@@ -305,6 +306,7 @@ def main():
                 matched_video_id=matched_video_id if attribution_evaluator else None,
                 cam_threshold=args.cam_threshold,
                 attribution_method_name='GradCAM',
+                attribution_renderer=chefer_attribution_renderer,
             )
 
             i += 1

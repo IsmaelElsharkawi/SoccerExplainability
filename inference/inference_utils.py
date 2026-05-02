@@ -188,9 +188,8 @@ def chefer_attribution_renderer(frame_float, attribution_map):
 
     heatmap = np.clip(heatmap, 0, 1)
     heatmap_uint8 = (heatmap * 255).astype(np.uint8)
-    # Magenta colormap: black (low) → magenta (high).  R=h, G=0, B=h in RGB.
-    zeros = np.zeros_like(heatmap_uint8)
-    heatmap_colored = cv2.merge([heatmap_uint8, zeros, heatmap_uint8]).astype(np.float32) / 255.0  # RGB
+    heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_INFERNO)
+    heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
 
     alpha = 0.5
     overlay = alpha * heatmap_colored + (1 - alpha) * frame_float
