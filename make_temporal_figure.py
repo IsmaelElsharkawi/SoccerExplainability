@@ -50,6 +50,11 @@ LINE_COLOR  = (180, 180, 180)
 
 COLUMNS  = ["Original", "MatchVision", "SigLIP", "SoccerMaster"]
 
+# Pre-build the INFERNO LUT (BGR) so we can invert the rendered heatmap.
+_INFERNO_LUT_BGR = cv2.applyColorMap(
+    np.arange(256, dtype=np.uint8).reshape(1, 256), cv2.COLORMAP_INFERNO
+).reshape(256, 3)  # shape (256, 3), each row is B,G,R for that intensity
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -92,10 +97,58 @@ def to_square(img_rgb: np.ndarray, size: int = CELL_SIZE) -> Image.Image:
 
 
 def crop_heatmap(img_rgb: np.ndarray, size: int = CELL_SIZE) -> Image.Image:
-    """Take only the top `size` rows (the attribution overlay) and resize."""
-    overlay = img_rgb[:size, :, :]          # 448 rows × 448 cols
+    """Take only the top `size` rows (the attribution overlay), recolor INFERNO→magenta, and resize."""
+    overlay = img_rgb[:size, :, :]          # 448 rows × 448 cols — RGB
+    overlay = recolor_inferno_to_magenta(overlay)
     pil = Image.fromarray(overlay)
     return pil.resize((size, size), Image.LANCZOS)
+
+
+def recolor_inferno_to_magenta(overlay_rgb: np.ndarray) -> np.ndarray:
+    """
+    Convert a frame rendered with INFERNO (alpha=0.5 blend) to the same blend
+    using a magenta colormap.
+
+    Strategy:
+      The rendered pixel = 0.5 * inferno(h) + 0.5 * frame_pixel
+      => inferno(h) ≈ 2 * rendered - frame_pixel  (but we don't have frame separately)
+
+      Instead we recover the heatmap intensity `h` via nearest-neighbour lookup in
+      the INFERNO BGR LUT using the rendered pixel's BGR value, then re-blend with
+      magenta(h) at the same alpha.  The error is small because INFERNO is
+      perceptually monotone and distinct from typical video colours.
+    """
+    alpha = 0.5
+
+    # Work in BGR float [0,1]
+    bgr = cv2.cvtColor(overlay_rgb, cv2.COLOR_RGB2BGR).astype(np.float32) / 255.0
+
+    # Build a (256,3) float version of the INFERNO LUT in BGR
+    inferno_f = _INFERNO_LUT_BGR.astype(np.float32) / 255.0  # (256, 3)
+
+    # Reshape overlay to (N,3) and find nearest INFERNO entry per pixel
+    h, w = bgr.shape[:2]
+    pixels = bgr.reshape(-1, 3)                     # (N, 3)
+    # Squared distances to each of 256 INFERNO entries
+    diffs = pixels[:, None, :] - inferno_f[None, :, :]   # (N, 256, 3)
+    dist2 = (diffs ** 2).sum(axis=2)                      # (N, 256)
+    h_idx = dist2.argmin(axis=1).astype(np.float32) / 255.0  # (N,) in [0,1]
+
+    # Build magenta channel: R=h, G=0, B=h  in RGB
+    magenta_rgb = np.stack([h_idx, np.zeros_like(h_idx), h_idx], axis=1)  # (N,3)
+
+    # We don't have the original frame separately, so approximate it from the blend:
+    # frame ≈ (rendered - alpha * inferno(h)) / (1 - alpha)
+    inferno_pixels = inferno_f[dist2.argmin(axis=1)]       # (N,3) BGR
+    inferno_rgb = inferno_pixels[:, ::-1]                  # convert to RGB
+
+    rendered_rgb = overlay_rgb.astype(np.float32).reshape(-1, 3) / 255.0
+    frame_approx = np.clip((rendered_rgb - alpha * inferno_rgb) / (1 - alpha), 0, 1)
+
+    # Re-blend with magenta
+    result = alpha * magenta_rgb + (1 - alpha) * frame_approx
+    result = np.clip(result * 255, 0, 255).astype(np.uint8).reshape(h, w, 3)
+    return result
 
 
 # ---------------------------------------------------------------------------
