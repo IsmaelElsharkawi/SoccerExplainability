@@ -51,30 +51,19 @@ CLASS_LABELS = {
 COLUMNS = [
     (None, None),            # Original
     ("chefer", "MatchVision"),
-    ("gradcam", "MatchVision"),
     ("chefer", "SigLip"),
-    ("gradcam", "SigLip"),
     ("chefer", "SoccerMaster"),
-    ("gradcam", "SoccerMaster"),
 ]
 
-COL_LABELS = ["", "Chefer", "Grad-CAM", "Chefer", "Grad-CAM", "Chefer", "Grad-CAM"]
+COL_LABELS = ["Original", "MatchVision", "SigLIP", "SoccerMaster"]
 
-# Model group headers spanning 2 columns each
-# start_col indices are relative to the full COLUMNS list
-MODEL_GROUPS = [
-    ("Original", 0, 1),      # label, start_col, span
-    ("MatchVision", 1, 2),
-    ("SigLIP", 3, 2),
-    ("SoccerMaster", 5, 2),
-]
+# No model group headers needed — single row of column labels
+MODEL_GROUPS = []
 
 CELL_SIZE = 448  # native resolution per image
-PAD = 4  # padding between cells
-ROW_LABEL_W = 80   # width reserved for row labels (vertical text)
-MODEL_LABEL_H = 50  # height for top model group header
-COL_LABEL_H = 50   # height for sub-column method labels
-HEADER_H = MODEL_LABEL_H + COL_LABEL_H  # total header height
+PAD = 6  # padding between cells
+ROW_LABEL_W = 110  # width reserved for row labels (model names)
+COL_LABEL_H = 55   # height for class column headers
 LEGEND_H = 70  # height for the bbox color legend at the bottom
 BG_COLOR = (255, 255, 255)
 TEXT_COLOR = (0, 0, 0)
@@ -100,61 +89,50 @@ def get_font(size):
 
 
 def build_figure(classes, output_path):
-    n_rows = len(classes)
-    n_cols = len(COLUMNS)
+    """
+    Horizontal layout: rows = models (Original, MatchVision, SigLIP, SoccerMaster)
+                       cols = event classes
+    """
+    n_cols = len(classes)   # e.g. 6 or 7
+    n_rows = len(COLUMNS)   # 4
 
     total_w = ROW_LABEL_W + n_cols * CELL_SIZE + (n_cols - 1) * PAD
-    total_h = HEADER_H + n_rows * CELL_SIZE + (n_rows - 1) * PAD + LEGEND_H
+    total_h = COL_LABEL_H + n_rows * CELL_SIZE + (n_rows - 1) * PAD + LEGEND_H
 
     canvas = Image.new("RGB", (total_w, total_h), BG_COLOR)
     draw = ImageDraw.Draw(canvas)
 
-    model_font = get_font(32)
     header_font = get_font(26)
-    row_font = get_font(26)
+    row_font    = get_font(26)
 
-    # Draw model group headers (top row)
-    for label, start_col, span in MODEL_GROUPS:
-        x_left = ROW_LABEL_W + start_col * (CELL_SIZE + PAD)
-        x_right = x_left + span * CELL_SIZE + (span - 1) * PAD
-        x_center = (x_left + x_right) // 2
-        draw.text(
-            (x_center, MODEL_LABEL_H // 2), label, fill=TEXT_COLOR,
-            font=model_font, anchor="mm",
-        )
-        # Draw underline for the group
-        draw.line(
-            [(x_left, MODEL_LABEL_H - 2), (x_right, MODEL_LABEL_H - 2)],
-            fill=LINE_COLOR, width=2,
-        )
-
-    # Draw sub-column method labels
-    for ci, label in enumerate(COL_LABELS):
-        x_center = ROW_LABEL_W + ci * (CELL_SIZE + PAD) + CELL_SIZE // 2
-        draw.text(
-            (x_center, MODEL_LABEL_H + COL_LABEL_H // 2), label,
-            fill=TEXT_COLOR, font=header_font, anchor="mm",
-        )
-
-    # Draw rows
-    for ri, cls in enumerate(classes):
-        y_top = HEADER_H + ri * (CELL_SIZE + PAD)
-
-        # Row label — drawn vertically
+    # ---- Column headers (class names) ----
+    for ci, cls in enumerate(classes):
         label = CLASS_LABELS.get(cls, cls)
-        y_center = y_top + CELL_SIZE // 2
-        # Render text onto a temporary image then rotate 90°
+        x_center = ROW_LABEL_W + ci * (CELL_SIZE + PAD) + CELL_SIZE // 2
+        draw.text((x_center, COL_LABEL_H // 2), label,
+                  fill=TEXT_COLOR, font=header_font, anchor="mm")
+        xl = ROW_LABEL_W + ci * (CELL_SIZE + PAD)
+        xr = xl + CELL_SIZE
+        draw.line([(xl, COL_LABEL_H - 2), (xr, COL_LABEL_H - 2)],
+                  fill=LINE_COLOR, width=2)
+
+    # ---- Rows (models) ----
+    for ri, (method, model) in enumerate(COLUMNS):
+        y_top = COL_LABEL_H + ri * (CELL_SIZE + PAD)
+
+        # Row label (vertical text in the left margin)
+        row_label = COL_LABELS[ri]
         tmp = Image.new("RGB", (CELL_SIZE, ROW_LABEL_W), BG_COLOR)
         tmp_draw = ImageDraw.Draw(tmp)
-        tmp_draw.text(
-            (CELL_SIZE // 2, ROW_LABEL_W // 2), label, fill=TEXT_COLOR,
-            font=row_font, anchor="mm",
-        )
-        rotated = tmp.rotate(90, expand=True)  # becomes (ROW_LABEL_W, CELL_SIZE)
+        tmp_draw.text((CELL_SIZE // 2, ROW_LABEL_W // 2), row_label,
+                      fill=TEXT_COLOR, font=row_font, anchor="mm")
+        rotated = tmp.rotate(90, expand=True)  # (ROW_LABEL_W, CELL_SIZE)
         canvas.paste(rotated, (0, y_top))
+        draw.line([(0, y_top), (ROW_LABEL_W - 4, y_top)],
+                  fill=LINE_COLOR, width=1)
 
-        # Paste images
-        for ci, (method, model) in enumerate(COLUMNS):
+        # ---- Cells ----
+        for ci, cls in enumerate(classes):
             if method is None:
                 fname = f"{cls}_original.png"
             else:
@@ -169,24 +147,19 @@ def build_figure(classes, output_path):
             canvas.paste(img, (x, y_top))
 
     # ---- Legend ----
-    legend_y = HEADER_H + n_rows * CELL_SIZE + (n_rows - 1) * PAD
+    legend_y  = COL_LABEL_H + n_rows * CELL_SIZE + (n_rows - 1) * PAD
     legend_font = get_font(24)
     swatch_size = 24
-    swatch_pad = 10
-    # Centre the legend items horizontally across the full canvas
-    item_w = swatch_size + swatch_pad + 400  # approx width per item (wider spacing)
+    swatch_pad  = 10
+    item_w = swatch_size + swatch_pad + 400
     total_legend_w = len(LEGEND_ITEMS) * item_w
-    legend_x = (total_w - total_legend_w) // 2
+    legend_x  = (total_w - total_legend_w) // 2
     legend_cy = legend_y + LEGEND_H // 2
     for label, rgb in LEGEND_ITEMS:
-        # Coloured square swatch
         sx, sy = legend_x, legend_cy - swatch_size // 2
         draw.rectangle([sx, sy, sx + swatch_size, sy + swatch_size], fill=rgb)
-        # Label to the right of the swatch
-        draw.text(
-            (sx + swatch_size + swatch_pad, legend_cy),
-            label, fill=TEXT_COLOR, font=legend_font, anchor="lm",
-        )
+        draw.text((sx + swatch_size + swatch_pad, legend_cy),
+                  label, fill=TEXT_COLOR, font=legend_font, anchor="lm")
         legend_x += item_w
 
     canvas.save(output_path, dpi=(300, 300))

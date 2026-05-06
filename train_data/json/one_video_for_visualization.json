@@ -5,15 +5,8 @@
         "comments_text": "The corner from Salva Sevilla (Espanyol) is cleared away by the defence.",
         "comments_text_anonymized": "The corner from [PLAYER] ([TEAM]) is cleared away by the defence.",
         "match": "2015-04-25 - 17-00 Espanyol 0 - 2 Barcelona",
-        "league": "spain_laliga_2014-2015"
-    },
-    {
-        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_37_49.mp4",
-        "caption": "corner",
-        "comments_text": "The resulting corner from Raphael Guerreiro (Dortmund) only finds one of the defenders, who heads it out of danger.",
-        "comments_text_anonymized": "The resulting corner from [PLAYER] ([TEAM]) only finds one of the defenders, who heads it out of danger.",
-        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
-        "league": "germany_bundesliga_2016-2017"
+        "league": "spain_laliga_2014-2015",
+        "timestamp": 15
     },
     {
         "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_42_55.mp4",
@@ -21,7 +14,8 @@
         "comments_text": "A yellow card for a tackle by Hakan Calhanoglu (Bayer Leverkusen). Manuel Grafe doesn't hesitate at all to make this decision.",
         "comments_text_anonymized": "A yellow card for a tackle by [PLAYER] ([TEAM]). [REFEREE] doesn't hesitate at all to make this decision.",
         "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
-        "league": "germany_bundesliga_2016-2017"
+        "league": "germany_bundesliga_2016-2017",
+        "timestamp": 17
     },
     {
         "video": "england_epl_2015-2016/2015-10-24 - 17-00 West Ham 2 - 1 Chelsea/1_19_05.mp4",
@@ -29,7 +23,8 @@
         "comments_text": "Mark Noble (West Ham) attempts a long crossfield pass, but the defence does well to intercept the ball. The ball has crossed the sideline. West Ham are taking a throw-in.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) attempts a long crossfield pass, but the defence does well to intercept the ball. The ball has crossed the sideline. [TEAM] are taking a throw-in.",
         "match": "2015-10-24 - 17-00 West Ham 2 - 1 Chelsea",
-        "league": "england_epl_2015-2016"
+        "league": "england_epl_2015-2016",
+        "timestamp": 25
     },
     {
         "video": "italy_serie-a_2016-2017/2016-11-20 - 17-00 Atalanta 2 - 1 AS Roma/2_44_45.mp4",
@@ -37,6 +32,25 @@
         "comments_text": "Franck Kessie (Atalanta) is heading towards the penalty spot to take it.",
         "comments_text_anonymized": "[PLAYER] ([TEAM]) is heading towards the penalty spot to take it.",
         "match": "2016-11-20 - 17-00 Atalanta 2 - 1 AS Roma",
-        "league": "italy_serie-a_2016-2017"
+        "league": "italy_serie-a_2016-2017",
+        "timestamp": 24
+    },
+    {
+        "video": "europe_uefa-champions-league_2014-2015/2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona/2_13_47.mp4",
+        "caption": "free kick",
+        "comments_text": "Ivan Rakitic (Barcelona) takes the free kick and sends the ball into the penalty area, but the opposition's defence is ready.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) takes the free kick and sends the ball into the penalty area, but the opposition's defence is ready.",
+        "match": "2015-02-24 - 22-45 Manchester City 1 - 2 Barcelona",
+        "league": "europe_uefa-champions-league_2014-2015",
+        "timestamp": 10
+    },
+    {
+        "video": "germany_bundesliga_2016-2017/2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund/2_32_19.mp4",
+        "caption": "foul with no card",
+        "comments_text": "Hakan Calhanoglu (Bayer Leverkusen) knocks his opponent down with an over-the-top tackle.",
+        "comments_text_anonymized": "[PLAYER] ([TEAM]) knocks his opponent down with an over-the-top tackle.",
+        "match": "2016-10-01 - 19-30 Bayer Leverkusen 2 - 0 Dortmund",
+        "league": "germany_bundesliga_2016-2017",
+        "timestamp": 12
     }
 ]
