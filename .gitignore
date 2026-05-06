@@ -17,5 +17,5 @@ slurm_outputs/
 /dcgm/
 /inference/dcgm/
 
-# Loose frame dumps at repo root
-/*.png
+# PNG outputs
+*.png
