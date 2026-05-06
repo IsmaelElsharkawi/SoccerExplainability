@@ -19,3 +19,4 @@ slurm_outputs/
 
 # PNG outputs
 *.png
+!assets/*.png

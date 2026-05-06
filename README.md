@@ -1,5 +1,7 @@
 # SoccerLens
 
+![Teaser](assets/teaser.png)
+
 Explainability benchmark for soccer video event-classification models, evaluating **Chefer** (transformer attention-based) attribution methods on three vision backbones: SigLIP, MatchVision, and SoccerMaster.
 
 ---
