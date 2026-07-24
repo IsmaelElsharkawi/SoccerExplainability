@@ -201,6 +201,9 @@ def main():
                         help='Fraction of max to binarise heatmap for IoU (default: 0.5)')
     parser.add_argument('--eval_output_json', type=str, default=None,
                         help='Optional path to save per-video evaluation results as JSON')
+    # [Step 3] Directory for saving per-clip saliency maps and scores.
+    parser.add_argument('--saliency_save_dir', type=str, default=None,
+                        help='Optional directory to save per-clip saliency maps and scores for convergence analysis')
     parser.add_argument('--output_dir', type=str,
                         default='../output_chefer_siglip/',
                         help='Directory to save attribution visualization outputs')
@@ -288,6 +291,7 @@ def main():
                 video_name,
                 args.cam_threshold,
                 all_eval_results,
+                saliency_save_dir=getattr(args, 'saliency_save_dir', None),  # [Step 3]
             )
 
             prediction_text = test_dataset.keywords[predictions[sample_idx, 0].item()]

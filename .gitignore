@@ -20,3 +20,5 @@ slurm_outputs/
 # PNG outputs
 *.png
 !assets/*.png
+
+NEURIPS_REVIEWS.md

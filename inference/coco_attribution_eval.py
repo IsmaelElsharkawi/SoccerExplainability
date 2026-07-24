@@ -23,8 +23,26 @@ def _combine_bbox_masks(bboxes, height, width):
     return combined
 
 
+def _spatial_auc(attribution_map, gt_mask):
+    """[Step 2] Threshold-free spatial grounding score.
+
+    Reviewers noted that S-IoU binarizes a continuous heatmap with an arbitrary
+    cutoff, which can severely penalize models. This treats the attribution map
+    as a continuous per-pixel prediction score and evaluates it against the
+    discrete GT bbox mask via pixel-level ROC-AUC (no threshold). Returns NaN
+    when the mask is all-foreground or all-background (AUC undefined).
+    """
+    from sklearn.metrics import roc_auc_score
+
+    y_true = (gt_mask.flatten() > 0).astype(np.int32)
+    positives = int(y_true.sum())
+    if positives == 0 or positives == y_true.size:
+        return float("nan")
+    return float(roc_auc_score(y_true, attribution_map.flatten()))
+
+
 def _compute_attribution_metrics_for_bboxes(attribution_map, bboxes, cam_threshold=0.5):
-    """Compute Energy / Pointing / IoU for a given bbox subset."""
+    """Compute Energy / Pointing / IoU / S-AUC for a given bbox subset."""
     height, width = attribution_map.shape[:2]
     gt_mask = _combine_bbox_masks(bboxes, height, width)
 
@@ -42,10 +60,14 @@ def _compute_attribution_metrics_for_bboxes(attribution_map, bboxes, cam_thresho
     union = np.clip(cam_binary + gt_mask, 0, 1).sum()
     iou = float(intersection / union) if union > 0 else 0.0
 
+    # [Step 2] Threshold-free complement to S-IoU.
+    s_auc = _spatial_auc(attribution_map, gt_mask)
+
     return {
         "energy_inside_bbox": energy_inside_bbox,
         "pointing_accuracy": pointing_accuracy,
         "iou": iou,
+        "s_auc": s_auc,
     }
 
 
@@ -57,6 +79,59 @@ def _frame_set_iou(gt_frames, pred_frames):
     if not union:
         return 0.0
     return float(len(gt_frames & pred_frames) / len(union))
+
+
+# Threshold values used for the T-IoU sensitivity sweep (ratio of per-clip
+# max frame score). Answers the reviewer request for a threshold sensitivity
+# analysis instead of a single fixed adaptive cutoff.
+TIOU_THRESHOLD_SWEEP = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+
+def _temporal_tiou_sweep(frame_scores, gt_idx_set, thresholds=TIOU_THRESHOLD_SWEEP):
+    """T-IoU as a function of the salient-frame threshold ratio.
+
+    For each ratio r, predicted salient frames are those with mean intensity
+    >= r * max(frame_scores); returns per-threshold T-IoU plus the mean over
+    the sweep (a threshold-integrated summary of temporal overlap).
+    """
+    max_score = float(np.max(frame_scores)) if len(frame_scores) else 0.0
+    per_threshold = {}
+    values = []
+    for ratio in thresholds:
+        if max_score > 0:
+            pred_idx_set = set(np.where(frame_scores >= ratio * max_score)[0].tolist())
+        else:
+            pred_idx_set = set()
+        tiou = _frame_set_iou(gt_idx_set, pred_idx_set)
+        per_threshold[f"{ratio:.1f}"] = float(tiou)
+        values.append(float(tiou))
+    return {
+        "per_threshold": per_threshold,
+        "mean_over_thresholds": float(np.mean(values)) if values else float("nan"),
+    }
+
+
+def _temporal_auc_ap(frame_scores, gt_idx_set, num_frames):
+    """Threshold-free temporal localization scores.
+
+    Treats the per-frame attribution intensity as a continuous saliency signal
+    over time and scores it against the binary active-frame ground truth using
+    ROC-AUC (temporal ranking quality) and Average Precision (top-of-ranking
+    quality, robust to the sparse-positive regime). Returns NaN when only one
+    class is present, since AUC/AP are undefined there.
+    """
+    from sklearn.metrics import average_precision_score, roc_auc_score
+
+    y_true = np.zeros(num_frames, dtype=np.int32)
+    if gt_idx_set:
+        y_true[list(gt_idx_set)] = 1
+    positives = int(y_true.sum())
+    if positives == 0 or positives == num_frames:
+        return {"tAUC": float("nan"), "tAP": float("nan")}
+    return {
+        "tAUC": float(roc_auc_score(y_true, frame_scores)),
+        "tAP": float(average_precision_score(y_true, frame_scores)),
+    }
 
 
 def _annotation_display_name(annotation, categories):
@@ -214,6 +289,7 @@ class CocoAttributionEvaluator:
             metrics["energy_inside_bbox"] = float("nan")
             metrics["pointing_accuracy"] = float("nan")
             metrics["iou"] = float("nan")
+            metrics["s_auc"] = float("nan")  # [Step 2]
             return metrics
 
         bboxes = [a["bbox"] for a in roi_annots]
@@ -264,6 +340,7 @@ class CocoAttributionEvaluator:
                     "energy_inside_bbox": float("nan"),
                     "pointing_accuracy": float("nan"),
                     "iou": float("nan"),
+                    "s_auc": float("nan"),  # [Step 2]
                     "frames_with_group": 0,
                 }
         metrics["label_group_scores"] = group_scores
@@ -273,10 +350,11 @@ class CocoAttributionEvaluator:
         num_frames = attribution_maps.shape[0]
         per_frame = []
         energies, pointings, ious = [], [], []
+        s_aucs = []  # [Step 2]
         group_acc = {
-            "small_only": {"energy": [], "pointing": [], "iou": []},
-            "small_large": {"energy": [], "pointing": [], "iou": []},
-            "small_large_visual_cues": {"energy": [], "pointing": [], "iou": []},
+            "small_only": {"energy": [], "pointing": [], "iou": [], "s_auc": []},
+            "small_large": {"energy": [], "pointing": [], "iou": [], "s_auc": []},
+            "small_large_visual_cues": {"energy": [], "pointing": [], "iou": [], "s_auc": []},
         }
 
         for frame_idx in range(num_frames):
@@ -294,6 +372,8 @@ class CocoAttributionEvaluator:
                 energies.append(frame_metrics["energy_inside_bbox"])
                 pointings.append(frame_metrics["pointing_accuracy"])
                 ious.append(frame_metrics["iou"])
+                if not np.isnan(frame_metrics.get("s_auc", np.nan)):  # [Step 2]
+                    s_aucs.append(frame_metrics["s_auc"])
 
                 for group_name, group_metrics in frame_metrics.get("label_group_scores", {}).items():
                     if not np.isnan(group_metrics.get("energy_inside_bbox", np.nan)):
@@ -302,18 +382,22 @@ class CocoAttributionEvaluator:
                         group_acc[group_name]["pointing"].append(group_metrics["pointing_accuracy"])
                     if not np.isnan(group_metrics.get("iou", np.nan)):
                         group_acc[group_name]["iou"].append(group_metrics["iou"])
+                    if not np.isnan(group_metrics.get("s_auc", np.nan)):  # [Step 2]
+                        group_acc[group_name]["s_auc"].append(group_metrics["s_auc"])
 
         if energies:
             summary = {
                 "mean_energy_inside_bbox": float(np.mean(energies)),
                 "mean_pointing_accuracy": float(np.mean(pointings)),
                 "mean_iou": float(np.mean(ious)),
+                "mean_s_auc": float(np.mean(s_aucs)) if s_aucs else float("nan"),  # [Step 2]
             }
         else:
             summary = {
                 "mean_energy_inside_bbox": float("nan"),
                 "mean_pointing_accuracy": float("nan"),
                 "mean_iou": float("nan"),
+                "mean_s_auc": float("nan"),  # [Step 2]
             }
 
         summary["annotated_frames"] = len(energies)
@@ -326,6 +410,7 @@ class CocoAttributionEvaluator:
                     "mean_energy_inside_bbox": float(np.mean(vals["energy"])),
                     "mean_pointing_accuracy": float(np.mean(vals["pointing"])),
                     "mean_iou": float(np.mean(vals["iou"])),
+                    "mean_s_auc": float(np.mean(vals["s_auc"])) if vals["s_auc"] else float("nan"),  # [Step 2]
                     "annotated_frames": len(vals["energy"]),
                 }
             else:
@@ -333,6 +418,7 @@ class CocoAttributionEvaluator:
                     "mean_energy_inside_bbox": float("nan"),
                     "mean_pointing_accuracy": float("nan"),
                     "mean_iou": float("nan"),
+                    "mean_s_auc": float("nan"),  # [Step 2]
                     "annotated_frames": 0,
                 }
 
@@ -364,6 +450,9 @@ class CocoAttributionEvaluator:
 
         temporal_tier_scores = {}
         valid_tious = []
+        valid_taucs = []
+        valid_taps = []
+        valid_sweep_means = []
 
         for tier_name in ["small_only", "small_large", "small_large_visual_cues"]:
             gt_idx_set = gt_idx_by_tier[tier_name]
@@ -371,25 +460,42 @@ class CocoAttributionEvaluator:
             if len(gt_idx_set) == 0:
                 temporal_tier_scores[tier_name] = {
                     "tIoU": float("nan"),
+                    "tAUC": float("nan"),
+                    "tAP": float("nan"),
+                    "tIoU_sweep": None,
                     "gt_frames": 0,
                     "pred_frames": int(len(pred_idx_set)),
                 }
                 continue
 
             tier_tiou = _frame_set_iou(gt_idx_set, pred_idx_set)
+            tier_sweep = _temporal_tiou_sweep(frame_scores, gt_idx_set)
+            tier_auc_ap = _temporal_auc_ap(frame_scores, gt_idx_set, num_frames)
 
             temporal_tier_scores[tier_name] = {
                 "tIoU": float(tier_tiou),
+                "tAUC": tier_auc_ap["tAUC"],
+                "tAP": tier_auc_ap["tAP"],
+                "tIoU_sweep": tier_sweep,
                 "gt_frames": int(len(gt_idx_set)),
                 "pred_frames": int(len(pred_idx_set)),
             }
             valid_tious.append(float(tier_tiou))
+            if not np.isnan(tier_auc_ap["tAUC"]):
+                valid_taucs.append(tier_auc_ap["tAUC"])
+            if not np.isnan(tier_auc_ap["tAP"]):
+                valid_taps.append(tier_auc_ap["tAP"])
+            if not np.isnan(tier_sweep["mean_over_thresholds"]):
+                valid_sweep_means.append(tier_sweep["mean_over_thresholds"])
 
         summary["temporal_localization"] = {
             "score_threshold_ratio": float(cam_threshold),
             "score_threshold": float(score_threshold),
             "tiers": temporal_tier_scores,
             "mean_tIoU": float(np.mean(valid_tious)) if valid_tious else float("nan"),
+            "mean_tIoU_sweep": float(np.mean(valid_sweep_means)) if valid_sweep_means else float("nan"),
+            "mean_tAUC": float(np.mean(valid_taucs)) if valid_taucs else float("nan"),
+            "mean_tAP": float(np.mean(valid_taps)) if valid_taps else float("nan"),
         }
 
         return {"per_frame": per_frame, "summary": summary}

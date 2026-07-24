@@ -452,12 +452,89 @@ def match_video_id(attribution_evaluator, video_path):
     return ids[0] if ids else None
 
 
+def _sanitize_clip_id(clip_id):
+    """[Step 3] Make a filesystem-safe filename stem from a clip id."""
+    return ''.join(c if (c.isalnum() or c in ('-', '_')) else '_' for c in str(clip_id))
+
+
+def save_clip_saliency_and_scores(save_dir, clip_id, video_name, heatmaps,
+                                  eval_result, attribution_scores=None,
+                                  prediction_text=None, ground_truth_text=None):
+    """[Step 3] Persist per-clip saliency maps and scores for later analysis.
+
+    Writes two files per clip into ``save_dir``:
+      * ``<clip>.npz``  -- saliency maps + per-frame score arrays (compressed).
+      * ``<clip>.json`` -- the full eval summary plus lightweight metadata.
+
+    These artifacts are consumed by ``convergence_analysis.py`` (Step 4) so the
+    convergence study and per-class tables can be built without re-running the
+    attribution models.
+    """
+    os.makedirs(save_dir, exist_ok=True)
+    stem = _sanitize_clip_id(clip_id)
+
+    heatmaps_np = np.asarray(heatmaps, dtype=np.float32)
+    num_frames = heatmaps_np.shape[0]
+
+    # Per-frame mean intensity: the temporal saliency signal used by T-* metrics.
+    frame_scores = np.mean(heatmaps_np.reshape(num_frames, -1), axis=1)
+
+    # Per-frame spatial metric arrays (NaN where a frame has no ROI/annotation).
+    energy_arr, pointing_arr, iou_arr, sauc_arr = [], [], [], []
+    for frame_item in eval_result.get('per_frame', []):
+        fm = frame_item.get('metrics') or {}
+        energy_arr.append(fm.get('energy_inside_bbox', np.nan))
+        pointing_arr.append(fm.get('pointing_accuracy', np.nan))
+        iou_arr.append(fm.get('iou', np.nan))
+        sauc_arr.append(fm.get('s_auc', np.nan))
+
+    npz_payload = {
+        'saliency_maps': heatmaps_np,
+        'frame_scores': frame_scores.astype(np.float32),
+        'frame_energy': np.asarray(energy_arr, dtype=np.float32),
+        'frame_pointing': np.asarray(pointing_arr, dtype=np.float32),
+        'frame_s_iou': np.asarray(iou_arr, dtype=np.float32),
+        'frame_s_auc': np.asarray(sauc_arr, dtype=np.float32),
+    }
+    if attribution_scores is not None:
+        npz_payload['attribution_scores'] = np.asarray(attribution_scores, dtype=np.float32)
+
+    np.savez_compressed(os.path.join(save_dir, f'{stem}.npz'), **npz_payload)
+
+    def _conv(obj):
+        if isinstance(obj, (np.floating,)):
+            return float(obj)
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
+    meta = {
+        'clip_id': str(clip_id),
+        'video_name': str(video_name),
+        'num_frames': int(num_frames),
+        'prediction_text': prediction_text,
+        'ground_truth_text': ground_truth_text,
+        'summary': eval_result.get('summary', {}),
+    }
+    with open(os.path.join(save_dir, f'{stem}.json'), 'w') as f:
+        json.dump(meta, f, indent=2, default=_conv)
+
+
 def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
-                             video_name, cam_threshold, all_eval_results):
+                             video_name, cam_threshold, all_eval_results,
+                             saliency_save_dir=None, attribution_scores=None,
+                             prediction_text=None, ground_truth_text=None):
     """Run per-video COCO attribution evaluation and print results.
 
     ``matched_video_ids`` may be a single string, a list of strings, or
     *None*.  Each variant is evaluated independently.
+
+    [Step 3] When ``saliency_save_dir`` is provided, the raw saliency maps and
+    per-clip scores are persisted to disk (one artifact bundle per clip) so
+    that a later convergence analysis can reload them without re-running the
+    models.
     """
     if attribution_evaluator is None or matched_video_ids is None:
         return
@@ -474,6 +551,20 @@ def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
             cam_threshold=cam_threshold,
         )
         all_eval_results[matched_video_id] = eval_result
+
+        # [Step 3] Persist saliency maps + scores for this clip.
+        if saliency_save_dir is not None:
+            save_clip_saliency_and_scores(
+                saliency_save_dir,
+                clip_id=matched_video_id,
+                video_name=video_name,
+                heatmaps=heatmaps,
+                eval_result=eval_result,
+                attribution_scores=attribution_scores,
+                prediction_text=prediction_text,
+                ground_truth_text=ground_truth_text,
+            )
+
         es = eval_result['summary']
         print(f"  [COCO Eval] {video_name} ({matched_video_id}): "
               f"Energy={es['mean_energy_inside_bbox']:.3f}  "
@@ -490,6 +581,7 @@ def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
                 f"Energy={gs['mean_energy_inside_bbox']:.3f}  "
                 f"Pointing={gs['mean_pointing_accuracy']:.3f}  "
                 f"IoU={gs['mean_iou']:.3f}  "
+                f"S-AUC={gs.get('mean_s_auc', float('nan')):.3f}  "
                 f"({gs['annotated_frames']} frames)"
             )
 
@@ -499,6 +591,9 @@ def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
             print(
                 f"    - temporal mean: "
                 f"mean_tIoU={temporal_scores.get('mean_tIoU', float('nan')):.3f}  "
+                f"mean_tIoU_sweep={temporal_scores.get('mean_tIoU_sweep', float('nan')):.3f}  "
+                f"mean_tAUC={temporal_scores.get('mean_tAUC', float('nan')):.3f}  "
+                f"mean_tAP={temporal_scores.get('mean_tAP', float('nan')):.3f}  "
                 f"(thr_ratio={temporal_scores.get('score_threshold_ratio', float('nan')):.2f})"
             )
             for tier_name in ['small_only', 'small_large', 'small_large_visual_cues']:
@@ -508,6 +603,8 @@ def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
                 print(
                     f"      * {tier_name}: "
                     f"tIoU={ts['tIoU']:.3f}  "
+                    f"tAUC={ts.get('tAUC', float('nan')):.3f}  "
+                    f"tAP={ts.get('tAP', float('nan')):.3f}  "
                     f"(gt={ts['gt_frames']}, pred={ts['pred_frames']})"
                 )
 
@@ -520,14 +617,14 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
 
     print(f'\n===== {summary_title} =====')
     group_video_means = {
-        'small_only': {'energy': [], 'pointing': [], 'iou': [], 'frames': 0},
-        'small_large': {'energy': [], 'pointing': [], 'iou': [], 'frames': 0},
-        'small_large_visual_cues': {'energy': [], 'pointing': [], 'iou': [], 'frames': 0},
+        'small_only': {'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0},
+        'small_large': {'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0},
+        'small_large_visual_cues': {'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0},
     }
     temporal_video_means = {
-        'small_only': {'tiou': [], 'gt_frames': 0},
-        'small_large': {'tiou': [], 'gt_frames': 0},
-        'small_large_visual_cues': {'tiou': [], 'gt_frames': 0},
+        'small_only': {'tiou': [], 'tiou_sweep': [], 'tauc': [], 'tap': [], 'sweep_per_threshold': {}, 'gt_frames': 0},
+        'small_large': {'tiou': [], 'tiou_sweep': [], 'tauc': [], 'tap': [], 'sweep_per_threshold': {}, 'gt_frames': 0},
+        'small_large_visual_cues': {'tiou': [], 'tiou_sweep': [], 'tauc': [], 'tap': [], 'sweep_per_threshold': {}, 'gt_frames': 0},
     }
     videos_with_any_group = 0
     for _, res in all_eval_results.items():
@@ -545,6 +642,8 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 group_video_means[group_name]['pointing'].append(gs['mean_pointing_accuracy'])
             if not np.isnan(gs['mean_iou']):
                 group_video_means[group_name]['iou'].append(gs['mean_iou'])
+            if not np.isnan(gs.get('mean_s_auc', np.nan)):  # [Step 2]
+                group_video_means[group_name]['s_auc'].append(gs['mean_s_auc'])
             group_video_means[group_name]['frames'] += int(gs.get('annotated_frames', 0))
         if has_group_data:
             videos_with_any_group += 1
@@ -557,6 +656,17 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 continue
             if not np.isnan(ts.get('tIoU', np.nan)):
                 temporal_video_means[tier_name]['tiou'].append(float(ts['tIoU']))
+            sweep = ts.get('tIoU_sweep')
+            if sweep and not np.isnan(sweep.get('mean_over_thresholds', np.nan)):
+                temporal_video_means[tier_name]['tiou_sweep'].append(float(sweep['mean_over_thresholds']))
+                # Keep each threshold's IoU so it can be reported (averaged over clips).
+                for ratio, tiou_val in (sweep.get('per_threshold', {}) or {}).items():
+                    if not np.isnan(tiou_val):
+                        temporal_video_means[tier_name]['sweep_per_threshold'].setdefault(ratio, []).append(float(tiou_val))
+            if not np.isnan(ts.get('tAUC', np.nan)):
+                temporal_video_means[tier_name]['tauc'].append(float(ts['tAUC']))
+            if not np.isnan(ts.get('tAP', np.nan)):
+                temporal_video_means[tier_name]['tap'].append(float(ts['tAP']))
             temporal_video_means[tier_name]['gt_frames'] += int(ts.get('gt_frames', 0))
 
     print(f'  Videos evaluated: {videos_with_any_group}')
@@ -567,6 +677,7 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 'mean_energy_inside_bbox': float(np.mean(vals['energy'])),
                 'mean_pointing_accuracy': float(np.mean(vals['pointing'])),
                 'mean_iou': float(np.mean(vals['iou'])),
+                'mean_s_auc': float(np.mean(vals['s_auc'])) if vals['s_auc'] else float('nan'),  # [Step 2]
                 'annotated_frames': int(vals['frames']),
             }
             print(
@@ -574,6 +685,7 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 f"Energy={global_group_summary[group_name]['mean_energy_inside_bbox']:.4f}  "
                 f"Pointing={global_group_summary[group_name]['mean_pointing_accuracy']:.4f}  "
                 f"IoU={global_group_summary[group_name]['mean_iou']:.4f}  "
+                f"S-AUC={global_group_summary[group_name]['mean_s_auc']:.4f}  "
                 f"(frames={global_group_summary[group_name]['annotated_frames']})"
             )
         else:
@@ -581,6 +693,7 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 'mean_energy_inside_bbox': float('nan'),
                 'mean_pointing_accuracy': float('nan'),
                 'mean_iou': float('nan'),
+                'mean_s_auc': float('nan'),  # [Step 2]
                 'annotated_frames': 0,
             }
             print(f'  {group_name}: no matching annotated frames')
@@ -591,16 +704,36 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
         if vals['tiou']:
             global_temporal_summary[tier_name] = {
                 'mean_tIoU': float(np.mean(vals['tiou'])),
+                'mean_tIoU_sweep': float(np.mean(vals['tiou_sweep'])) if vals['tiou_sweep'] else float('nan'),
+                'mean_tIoU_per_threshold': {
+                    ratio: float(np.mean(tious))
+                    for ratio, tious in sorted(vals['sweep_per_threshold'].items())
+                },
+                'mean_tAUC': float(np.mean(vals['tauc'])) if vals['tauc'] else float('nan'),
+                'mean_tAP': float(np.mean(vals['tap'])) if vals['tap'] else float('nan'),
                 'gt_frames': int(vals['gt_frames']),
             }
             print(
                 f"    {tier_name}: "
                 f"mean_tIoU={global_temporal_summary[tier_name]['mean_tIoU']:.4f}  "
+                f"mean_tIoU_sweep={global_temporal_summary[tier_name]['mean_tIoU_sweep']:.4f}  "
+                f"mean_tAUC={global_temporal_summary[tier_name]['mean_tAUC']:.4f}  "
+                f"mean_tAP={global_temporal_summary[tier_name]['mean_tAP']:.4f}  "
                 f"(gt_frames={global_temporal_summary[tier_name]['gt_frames']})"
             )
+            if global_temporal_summary[tier_name]['mean_tIoU_per_threshold']:
+                per_thr = '  '.join(
+                    f"{ratio}={val:.4f}"
+                    for ratio, val in global_temporal_summary[tier_name]['mean_tIoU_per_threshold'].items()
+                )
+                print(f"        per-threshold tIoU: {per_thr}")
         else:
             global_temporal_summary[tier_name] = {
                 'mean_tIoU': float('nan'),
+                'mean_tIoU_sweep': float('nan'),
+                'mean_tIoU_per_threshold': {},
+                'mean_tAUC': float('nan'),
+                'mean_tAP': float('nan'),
                 'gt_frames': 0,
             }
             print(f'    {tier_name}: no temporal GT-positive frames')
@@ -609,12 +742,30 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
         vals['mean_tIoU'] for vals in global_temporal_summary.values()
         if not np.isnan(vals['mean_tIoU'])
     ]
+    valid_global_sweeps = [
+        vals['mean_tIoU_sweep'] for vals in global_temporal_summary.values()
+        if not np.isnan(vals['mean_tIoU_sweep'])
+    ]
+    valid_global_taucs = [
+        vals['mean_tAUC'] for vals in global_temporal_summary.values()
+        if not np.isnan(vals['mean_tAUC'])
+    ]
+    valid_global_taps = [
+        vals['mean_tAP'] for vals in global_temporal_summary.values()
+        if not np.isnan(vals['mean_tAP'])
+    ]
     global_temporal_means = {
         'mean_tIoU_across_tiers': float(np.mean(valid_global_tious)) if valid_global_tious else float('nan'),
+        'mean_tIoU_sweep_across_tiers': float(np.mean(valid_global_sweeps)) if valid_global_sweeps else float('nan'),
+        'mean_tAUC_across_tiers': float(np.mean(valid_global_taucs)) if valid_global_taucs else float('nan'),
+        'mean_tAP_across_tiers': float(np.mean(valid_global_taps)) if valid_global_taps else float('nan'),
     }
     print(
         f"  Temporal means across tiers: "
-        f"mean_tIoU={global_temporal_means['mean_tIoU_across_tiers']:.4f}"
+        f"mean_tIoU={global_temporal_means['mean_tIoU_across_tiers']:.4f}  "
+        f"mean_tIoU_sweep={global_temporal_means['mean_tIoU_sweep_across_tiers']:.4f}  "
+        f"mean_tAUC={global_temporal_means['mean_tAUC_across_tiers']:.4f}  "
+        f"mean_tAP={global_temporal_means['mean_tAP_across_tiers']:.4f}"
     )
 
     if eval_output_path:

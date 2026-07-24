@@ -26,7 +26,11 @@ METRICS = [
     ("Energy",   "spatial",  "mean_energy_inside_bbox"),
     ("Pointing", "spatial",  "mean_pointing_accuracy"),
     ("S-IoU",    "spatial",  "mean_iou"),
+    ("S-AUC",    "spatial",  "mean_s_auc"),
     ("T-IoU",    "temporal", "mean_tIoU"),
+    ("T-IoU (sweep)", "temporal", "mean_tIoU_sweep"),
+    ("T-AUC",    "temporal", "mean_tAUC"),
+    ("T-AP",     "temporal", "mean_tAP"),
 ]
 
 # Candidate (directory, json_filename) pairs to try for each (model, method).
@@ -123,7 +127,7 @@ def build_table():
         for ri, (metric_label, metric_kind, metric_key) in enumerate(METRICS):
             if ri == 0:
                 row_head = (
-                    r"        \multirow{4}{*}{\textbf{" + model + r"}}"
+                    r"        \multirow{8}{*}{\textbf{" + model + r"}}"
                     r" & " + metric_label
                 )
             else:
