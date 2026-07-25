@@ -20,9 +20,11 @@ export HF_HOME="/content/huggingface_cache"
 SOCCER_DIR="/content/SoccerExplainability"
 GOOGLE_DRIVE_DIR="/content/drive/MyDrive/SoccerExplainability-output-$(date +%Y-%m-%d)"
 OUTPUT_DIR="${GOOGLE_DRIVE_DIR}/output_chefer_siglip"
+SALIENCY_DIR="${OUTPUT_DIR}/saliency"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"
 mkdir -p "${OUTPUT_DIR}"
+mkdir -p "${SALIENCY_DIR}"
 
 cd "${SOCCER_DIR}/inference"
 
@@ -32,4 +34,7 @@ python chefer_siglip.py \
     --coco_json "${SOCCER_DIR}/annotations-coco.json" \
     --cam_threshold 0.5 \
     --eval_output_json "${OUTPUT_DIR}/chefer_siglip_eval_results.json" \
-    --output_dir "${OUTPUT_DIR}"
+    --output_dir "${OUTPUT_DIR}" \
+    --saliency_save_dir "${SALIENCY_DIR}"
+
+python convergence_analysis.py --saliency_dir "${SALIENCY_DIR}"

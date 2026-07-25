@@ -32,10 +32,12 @@ export HF_HOME="/content/huggingface_cache"
 SOCCER_DIR="/content/SoccerExplainability"
 GOOGLE_DRIVE_DIR="/content/drive/MyDrive/SoccerExplainability-output-$(date +%Y-%m-%d)"
 OUTPUT_DIR="${GOOGLE_DRIVE_DIR}/output_chefer_soccermaster_temporal"
+SALIENCY_DIR="${OUTPUT_DIR}/saliency"
 CHECKPOINT_DIR="/content/models/SoccerMaster/pretrained_models/SoccerMaster"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"
 mkdir -p "${OUTPUT_DIR}"
+mkdir -p "${SALIENCY_DIR}"
 
 cd "${SOCCER_DIR}/inference"
 
@@ -47,4 +49,7 @@ python chefer_soccermaster_temporal.py \
     --cam_threshold 0.5 \
     --eval_output_json "${OUTPUT_DIR}/chefer_soccermaster_temporal_eval_results.json" \
     --output_dir "${OUTPUT_DIR}" \
-    --input_size 512
+    --input_size 512 \
+    --saliency_save_dir "${SALIENCY_DIR}"
+
+python convergence_analysis.py --saliency_dir "${SALIENCY_DIR}"
