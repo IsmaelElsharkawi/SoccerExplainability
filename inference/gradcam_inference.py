@@ -14,7 +14,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
-from config.model_type import MODEL_TYPE
 from model.SigLIP_classifier import SigLIP_Classifier
 from model.SoccerMaster.SoccerMaster_multi_task import MultiTaskingModel
 
@@ -132,8 +131,8 @@ def main():
                         help='Temporal aggregation for SigLIP frame embeddings (default: mean)')
     parser.add_argument('--soccermaster_checkpoint_dir', type=str, default=None,
                         help='Path to SoccerMaster checkpoint directory (backbone.pt + CaptionClassification.pt)')
-    parser.add_argument('--model_type', type=str, default=None, choices=['siglip', 'matchvision', 'soccermaster'],
-                        help='Override config/model_type.py MODEL_TYPE (siglip | matchvision | soccermaster).')
+    parser.add_argument('--model_type', type=str, required=True, choices=['siglip', 'matchvision', 'soccermaster'],
+                        help='Model type to run (siglip | matchvision | soccermaster).')
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -163,7 +162,7 @@ def main():
     # ----------------------------------------------------------------
     # Model
     # ----------------------------------------------------------------
-    configured_model_type = (args.model_type or MODEL_TYPE).lower()
+    configured_model_type = args.model_type.lower()
     if configured_model_type == 'siglip':
         classifier = SigLIP_Classifier(
             keywords=config_test_dataset['keywords'],

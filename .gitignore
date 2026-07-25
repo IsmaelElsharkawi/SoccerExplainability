@@ -22,3 +22,4 @@ slurm_outputs/
 !assets/*.png
 
 NEURIPS_REVIEWS.md
+inference/chat_new_metrics.json

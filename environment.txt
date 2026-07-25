@@ -1,5 +1,6 @@
 decord==0.6.0
 einops==0.8.0
+grad-cam
 imageio==2.34.2
 numpy
 opencv-python==4.10.0.84
