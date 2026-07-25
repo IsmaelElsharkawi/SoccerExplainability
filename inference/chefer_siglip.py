@@ -284,6 +284,11 @@ def main():
             new_frames = dummy_frames[sample_idx]
             new_frames = new_frames.permute(0, 2, 3, 1)
 
+            prediction_text = test_dataset.keywords[predictions[sample_idx, 0].item()]
+            ground_truth_text = caption_text[sample_idx]
+            print(f'Prediction: {prediction_text}')
+            print(f'Ground Truth: {ground_truth_text}')
+
             evaluate_and_print_video(
                 attribution_evaluator,
                 chefer_heatmaps,
@@ -292,12 +297,9 @@ def main():
                 args.cam_threshold,
                 all_eval_results,
                 saliency_save_dir=getattr(args, 'saliency_save_dir', None),  # [Step 3]
+                prediction_text=prediction_text,
+                ground_truth_text=ground_truth_text,
             )
-
-            prediction_text = test_dataset.keywords[predictions[sample_idx, 0].item()]
-            ground_truth_text = caption_text[sample_idx]
-            print(f'Prediction: {prediction_text}')
-            print(f'Ground Truth: {ground_truth_text}')
 
             save_lowres_visualization_video(
                 video_directory=video_directory,

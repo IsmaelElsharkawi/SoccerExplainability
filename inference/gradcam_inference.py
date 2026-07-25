@@ -271,15 +271,6 @@ def main():
                 visualizations.append(visualization)
 
             # ----------------------------------------------------------
-            # COCO evaluation
-            # ----------------------------------------------------------
-            evaluate_and_print_video(
-                attribution_evaluator, grad_cam_result, matched_video_ids,
-                video_name, args.cam_threshold, all_eval_results,
-                saliency_save_dir=getattr(args, 'saliency_save_dir', None),  # [Step 3]
-            )
-
-            # ----------------------------------------------------------
             # Predictions
             # ----------------------------------------------------------
             predictions = classifier.module.get_types(logits)
@@ -288,6 +279,17 @@ def main():
             ground_truth_text = caption_text[0]
             print(f'Prediction: {prediction_text}')
             print(f'Ground Truth: {ground_truth_text}')
+
+            # ----------------------------------------------------------
+            # COCO evaluation
+            # ----------------------------------------------------------
+            evaluate_and_print_video(
+                attribution_evaluator, grad_cam_result, matched_video_ids,
+                video_name, args.cam_threshold, all_eval_results,
+                saliency_save_dir=getattr(args, 'saliency_save_dir', None),  # [Step 3]
+                prediction_text=prediction_text,
+                ground_truth_text=ground_truth_text,
+            )
 
             # ----------------------------------------------------------
             # Visualization

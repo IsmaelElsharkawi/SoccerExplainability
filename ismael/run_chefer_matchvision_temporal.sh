@@ -45,4 +45,6 @@ python chefer_matchvision_temporal.py \
     --output_dir "${OUTPUT_DIR}" \
     --saliency_save_dir "${SALIENCY_DIR}"
 
-python convergence_analysis.py --saliency_dir "${SALIENCY_DIR}"
+python convergence_analysis.py \
+    --saliency_dir "${SALIENCY_DIR}" \
+    --selected_videos_json "${SOCCER_DIR}/train_data/json/selected_videos_for_annotations.json"
