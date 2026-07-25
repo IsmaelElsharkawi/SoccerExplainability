@@ -13,16 +13,20 @@
 
 set -e
 
+cd /content/SoccerExplainability
+git checkout Rebuttal
+cd /content/
+
 pip install -r /content/SoccerExplainability/environment.txt
 
-!mkdir models && cd models && git clone https://huggingface.co/xleprime/SoccerMaster
+mkdir models && cd models && git clone https://huggingface.co/xleprime/SoccerMaster
 
 # Needed for G4 instances on Colab
 # Uninstall current PyTorch
-!pip uninstall torch torchvision torchaudio -y
+pip uninstall torch torchvision torchaudio -y
 
 # Install latest nightly with CUDA 12.8 (Blackwell requires 12.4+)
-!pip install --pre torch torchvision torchaudio \
+pip install --pre torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/nightly/cu128
 
 export HF_HOME="/content/huggingface_cache"

@@ -13,9 +13,13 @@
 
 set -e
 
+cd /content/SoccerExplainability
+git checkout Rebuttal
+cd /content/
+
 pip install -r /content/SoccerExplainability/environment.txt
 
-!wget https://huggingface.co/Homie0609/UniSoccer/resolve/main/pretrained_classification.pth
+wget https://huggingface.co/Homie0609/UniSoccer/resolve/main/pretrained_classification.pth
 
 export HF_HOME="/content/huggingface_cache"
 

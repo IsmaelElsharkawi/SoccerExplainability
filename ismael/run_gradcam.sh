@@ -12,6 +12,10 @@
 
 set -e
 
+cd /content/SoccerExplainability
+git checkout Rebuttal
+cd /content/
+
 pip install -r /content/SoccerExplainability/environment.txt
 
 export HF_HOME="/content/huggingface_cache"
