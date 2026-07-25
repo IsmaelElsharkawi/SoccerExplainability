@@ -17,6 +17,8 @@ set -e
 
 pip install -r /content/SoccerExplainability/environment.txt
 
+!mkdir models && cd models && git clone https://huggingface.co/xleprime/SoccerMaster
+
 # Needed for G4 instances on Colab
 # Uninstall current PyTorch
 !pip uninstall torch torchvision torchaudio -y
@@ -30,7 +32,7 @@ export HF_HOME="/content/huggingface_cache"
 SOCCER_DIR="/content/SoccerExplainability"
 GOOGLE_DRIVE_DIR="/content/drive/MyDrive/SoccerExplainability-output-$(date +%Y-%m-%d)"
 OUTPUT_DIR="${GOOGLE_DRIVE_DIR}/output_chefer_soccermaster_temporal"
-CHECKPOINT_DIR="${SOCCER_DIR}/model/SoccerMaster/pretrained_models/SoccerMaster"
+CHECKPOINT_DIR="/content/models/SoccerMaster/pretrained_models/SoccerMaster"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"
 mkdir -p "${OUTPUT_DIR}"
