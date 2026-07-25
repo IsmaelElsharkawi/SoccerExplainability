@@ -27,9 +27,9 @@ mkdir models && cd models && git clone https://huggingface.co/xleprime/SoccerMas
 # Uninstall current PyTorch
 pip uninstall torch torchvision torchaudio -y
 
-# Install latest nightly with CUDA 12.8 (Blackwell requires 12.4+)
-pip install --pre torch torchvision torchaudio \
-  --index-url https://download.pytorch.org/whl/nightly/cu128
+# Install stable PyTorch with CUDA 12.8 (Blackwell requires 12.4+)
+pip install torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu128
 
 export HF_HOME="/content/huggingface_cache"
 
