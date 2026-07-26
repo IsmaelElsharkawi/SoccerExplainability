@@ -21,8 +21,37 @@ pip install -r /content/SoccerExplainability/environment.txt
 export HF_HOME="/content/huggingface_cache"
 
 SOCCER_DIR="/content/SoccerExplainability"
-GOOGLE_DRIVE_DIR="/content/drive/MyDrive/SoccerExplainability-output-$(date +%Y-%m-%d)"
-OUTPUT_DIR="${GOOGLE_DRIVE_DIR}/output_gradcam"
+DRIVE_ROOT="/content/drive/MyDrive/SoccerExplainability-output"
+EXPERIMENT_NAME="gradcam"
+EXPERIMENT_DIR="${DRIVE_ROOT}/${EXPERIMENT_NAME}"
+
+# Claim a fresh run directory. `mkdir` without -p fails when the directory
+# already exists, so the claim is atomic: two jobs starting at the same instant
+# can never be handed the same run id, and an id is never reused.
+mkdir -p "${EXPERIMENT_DIR}"
+RUN_DIR=""
+for _attempt in $(seq 1 50); do
+    RUN_ID=$(python3 -c 'import random; print("%04d" % random.randrange(10000))')
+    if mkdir "${EXPERIMENT_DIR}/run_${RUN_ID}" 2>/dev/null; then
+        RUN_DIR="${EXPERIMENT_DIR}/run_${RUN_ID}"
+        break
+    fi
+done
+if [ -z "${RUN_DIR}" ]; then
+    echo "ERROR: no unused run id found under ${EXPERIMENT_DIR} after 50 tries." >&2
+    exit 1
+fi
+echo "Run directory: ${RUN_DIR}"
+
+# Minimal provenance so a downloaded run can always be identified later.
+{
+    echo "experiment:  ${EXPERIMENT_NAME}"
+    echo "run_id:      ${RUN_ID}"
+    echo "started_utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "git_commit:  $(git -C "${SOCCER_DIR}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+} > "${RUN_DIR}/run_info.txt"
+
+OUTPUT_DIR="${RUN_DIR}"
 SALIENCY_DIR="${OUTPUT_DIR}/saliency"
 
 mkdir -p "${SOCCER_DIR}/slurm_outputs"

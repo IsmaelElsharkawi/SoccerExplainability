@@ -23,22 +23,72 @@ def _combine_bbox_masks(bboxes, height, width):
     return combined
 
 
-def _spatial_auc(attribution_map, gt_mask):
-    """[Step 2] Threshold-free spatial grounding score.
+# Single threshold sweep shared by every threshold-dependent metric: S-AUC,
+# T-AUC, T-AP and the T-IoU sweep. Ratios of the per-frame max heatmap value
+# (spatial) / per-clip max frame score (temporal).
+#
+# The range starts at 0.5 because a cutoff below half of max admits the
+# method's own noise floor, so operating points down there describe noise
+# ranking rather than grounding quality.
+THRESHOLD_SWEEP = [0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
 
-    Reviewers noted that S-IoU binarizes a continuous heatmap with an arbitrary
-    cutoff, which can severely penalize models. This treats the attribution map
-    as a continuous per-pixel prediction score and evaluates it against the
-    discrete GT bbox mask via pixel-level ROC-AUC (no threshold). Returns NaN
-    when the mask is all-foreground or all-background (AUC undefined).
+# Backwards-compatible alias: the T-IoU sweep now uses the same range as
+# everything else rather than its own 0.1-0.9 grid.
+TIOU_THRESHOLD_SWEEP = THRESHOLD_SWEEP
+
+
+def _curve_auc(values, thresholds=THRESHOLD_SWEEP):
+    """Normalized area under a metric-vs-threshold curve.
+
+    `values[i]` is the metric (here: IoU) obtained at `thresholds[i]`. The
+    trapezoidal area is divided by the threshold range so the result stays on
+    the same 0-1 scale as the underlying IoU regardless of how wide the sweep
+    is or how the points are spaced. With an evenly spaced grid this is the
+    mean IoU over the range; the trapezoid form keeps it correct if the grid
+    is ever made non-uniform.
     """
-    from sklearn.metrics import roc_auc_score
-
-    y_true = (gt_mask.flatten() > 0).astype(np.int32)
-    positives = int(y_true.sum())
-    if positives == 0 or positives == y_true.size:
+    r = np.asarray(thresholds, dtype=np.float64)
+    v = np.asarray(values, dtype=np.float64)
+    if v.size == 0:
         return float("nan")
-    return float(roc_auc_score(y_true, attribution_map.flatten()))
+    if v.size == 1:
+        return float(v[0])
+    span = float(r[-1] - r[0])
+    if span <= 0:
+        return float(np.mean(v))
+    return float(np.trapz(v, r) / span)
+
+
+def _spatial_iou_at(attribution_map, gt_mask, ratio):
+    """S-IoU with the heatmap binarized at `ratio * max`."""
+    max_val = float(attribution_map.max())
+    if max_val > 0:
+        cam_binary = (attribution_map >= ratio * max_val).astype(np.float32)
+    else:
+        cam_binary = np.zeros_like(attribution_map)
+    intersection = (cam_binary * gt_mask).sum()
+    union = np.clip(cam_binary + gt_mask, 0, 1).sum()
+    return float(intersection / union) if union > 0 else 0.0
+
+
+def _spatial_auc(attribution_map, gt_mask, thresholds=THRESHOLD_SWEEP):
+    """[Step 2] Spatial grounding integrated over the threshold sweep.
+
+    Reviewers noted that S-IoU binarizes a continuous heatmap with a single
+    arbitrary cutoff, which can severely penalize models. This scores the
+    heatmap across the whole range instead: S-IoU is recomputed at every ratio
+    in THRESHOLD_SWEEP, and the area under the resulting IoU-vs-threshold
+    curve is the S-AUC. It is therefore on the same scale as S-IoU itself
+    (an IoU, not a ranking probability) and subsumes the old separate S-IoU
+    sweep, which no longer needs to be reported alongside it.
+
+    Returns NaN when the mask is all-foreground or all-background.
+    """
+    positives = float((gt_mask > 0).sum())
+    if positives == 0 or positives == gt_mask.size:
+        return float("nan")
+    ious = [_spatial_iou_at(attribution_map, gt_mask, r) for r in thresholds]
+    return _curve_auc(ious, thresholds)
 
 
 def _compute_attribution_metrics_for_bboxes(attribution_map, bboxes, cam_threshold=0.5):
@@ -60,7 +110,8 @@ def _compute_attribution_metrics_for_bboxes(attribution_map, bboxes, cam_thresho
     union = np.clip(cam_binary + gt_mask, 0, 1).sum()
     iou = float(intersection / union) if union > 0 else 0.0
 
-    # [Step 2] Threshold-free complement to S-IoU.
+    # [Step 2] Threshold-integrated complement to single-cutoff S-IoU. This
+    # replaces the separate S-IoU sweep, which is no longer computed.
     s_auc = _spatial_auc(attribution_map, gt_mask)
 
     return {
@@ -81,13 +132,7 @@ def _frame_set_iou(gt_frames, pred_frames):
     return float(len(gt_frames & pred_frames) / len(union))
 
 
-# Threshold values used for the T-IoU sensitivity sweep (ratio of per-clip
-# max frame score). Answers the reviewer request for a threshold sensitivity
-# analysis instead of a single fixed adaptive cutoff.
-TIOU_THRESHOLD_SWEEP = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-
-
-def _temporal_tiou_sweep(frame_scores, gt_idx_set, thresholds=TIOU_THRESHOLD_SWEEP):
+def _temporal_tiou_sweep(frame_scores, gt_idx_set, thresholds=THRESHOLD_SWEEP):
     """T-IoU as a function of the salient-frame threshold ratio.
 
     For each ratio r, predicted salient frames are those with mean intensity
@@ -103,7 +148,9 @@ def _temporal_tiou_sweep(frame_scores, gt_idx_set, thresholds=TIOU_THRESHOLD_SWE
         else:
             pred_idx_set = set()
         tiou = _frame_set_iou(gt_idx_set, pred_idx_set)
-        per_threshold[f"{ratio:.1f}"] = float(tiou)
+        # 2 decimals: the sweep is on a 0.05 grid, so ".1f" would collide
+        # (0.50 and 0.55 would both key as "0.5").
+        per_threshold[f"{ratio:.2f}"] = float(tiou)
         values.append(float(tiou))
     return {
         "per_threshold": per_threshold,
@@ -111,27 +158,69 @@ def _temporal_tiou_sweep(frame_scores, gt_idx_set, thresholds=TIOU_THRESHOLD_SWE
     }
 
 
-def _temporal_auc_ap(frame_scores, gt_idx_set, num_frames):
-    """Threshold-free temporal localization scores.
+def _temporal_auc_ap(frame_scores, gt_idx_set, num_frames, thresholds=THRESHOLD_SWEEP):
+    """Temporal localization scores, both built from the T-IoU sweep.
 
-    Treats the per-frame attribution intensity as a continuous saliency signal
-    over time and scores it against the binary active-frame ground truth using
-    ROC-AUC (temporal ranking quality) and Average Precision (top-of-ranking
-    quality, robust to the sparse-positive regime). Returns NaN when only one
-    class is present, since AUC/AP are undefined there.
+    At every ratio r in THRESHOLD_SWEEP the predicted salient-frame set is
+    `frame_scores >= r * max(frame_scores)` — the same binarization T-IoU and
+    S-AUC use — and its T-IoU against the annotated-frame set is recorded.
+
+    * T-AUC is the area under that T-IoU-vs-threshold curve, normalized by the
+      threshold range. Directly parallel to S-AUC on the spatial side.
+    * T-AP weights the same per-threshold T-IoU values by how much recall each
+      step contributes, i.e. the average-precision style of integration rather
+      than the flat area. It therefore emphasises the thresholds that actually
+      recover annotated frames, which matters in the sparse-positive regime
+      where annotated frames are a small minority of the 30-frame clip.
+
+    Both are on the same 0-1 scale as T-IoU itself. Previously both called
+    sklearn, which ranks frames and sweeps every score down to ~0. Returns NaN
+    when only one class is present.
     """
-    from sklearn.metrics import average_precision_score, roc_auc_score
-
     y_true = np.zeros(num_frames, dtype=np.int32)
     if gt_idx_set:
         y_true[list(gt_idx_set)] = 1
     positives = int(y_true.sum())
     if positives == 0 or positives == num_frames:
         return {"tAUC": float("nan"), "tAP": float("nan")}
+
+    max_score = float(np.max(frame_scores)) if len(frame_scores) else 0.0
+    ious, recalls = [], []
+    for ratio in thresholds:
+        if max_score > 0:
+            pred_idx_set = set(np.where(frame_scores >= ratio * max_score)[0].tolist())
+        else:
+            pred_idx_set = set()
+        ious.append(_frame_set_iou(gt_idx_set, pred_idx_set))
+        recalls.append(len(gt_idx_set & pred_idx_set) / positives)
+
     return {
-        "tAUC": float(roc_auc_score(y_true, frame_scores)),
-        "tAP": float(average_precision_score(y_true, frame_scores)),
+        "tAUC": _curve_auc(ious, thresholds),
+        "tAP": _recall_weighted_auc(ious, recalls),
     }
+
+
+def _recall_weighted_auc(values, recalls):
+    """AP-style integration of a metric curve against recall.
+
+    Standard AP sums `precision * delta_recall`; this sums `IoU * delta_recall`
+    over the sweep and divides by the recall range covered, so the result stays
+    on the 0-1 IoU scale instead of shrinking with the range. Thresholds that
+    recover no additional annotated frames contribute nothing, which is what
+    separates this from the flat area used by T-AUC.
+    """
+    order = np.argsort(np.asarray(recalls, dtype=np.float64), kind="stable")
+    rec = np.asarray(recalls, dtype=np.float64)[order]
+    val = np.asarray(values, dtype=np.float64)[order]
+    if rec.size == 0:
+        return float("nan")
+
+    span = float(rec[-1] - rec[0])
+    if span <= 0:
+        # Recall is flat across the sweep, so there is no recall axis to
+        # integrate over; the curve is a single operating level.
+        return float(np.mean(val))
+    return float(np.sum(np.diff(rec) * val[1:]) / span)
 
 
 def _annotation_display_name(annotation, categories):
@@ -352,9 +441,10 @@ class CocoAttributionEvaluator:
         energies, pointings, ious = [], [], []
         s_aucs = []  # [Step 2]
         group_acc = {
-            "small_only": {"energy": [], "pointing": [], "iou": [], "s_auc": []},
-            "small_large": {"energy": [], "pointing": [], "iou": [], "s_auc": []},
-            "small_large_visual_cues": {"energy": [], "pointing": [], "iou": [], "s_auc": []},
+            group_name: {
+                "energy": [], "pointing": [], "iou": [], "s_auc": [],
+            }
+            for group_name in ("small_only", "small_large", "small_large_visual_cues")
         }
 
         for frame_idx in range(num_frames):
@@ -491,6 +581,9 @@ class CocoAttributionEvaluator:
         summary["temporal_localization"] = {
             "score_threshold_ratio": float(cam_threshold),
             "score_threshold": float(score_threshold),
+            # Provenance for the banded T-AUC/T-AP (and S-AUC), so a results
+            # JSON records which threshold band produced its numbers.
+            "threshold_sweep": [float(t) for t in THRESHOLD_SWEEP],
             "tiers": temporal_tier_scores,
             "mean_tIoU": float(np.mean(valid_tious)) if valid_tious else float("nan"),
             "mean_tIoU_sweep": float(np.mean(valid_sweep_means)) if valid_sweep_means else float("nan"),

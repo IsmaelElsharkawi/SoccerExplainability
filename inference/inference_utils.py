@@ -617,9 +617,10 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
 
     print(f'\n===== {summary_title} =====')
     group_video_means = {
-        'small_only': {'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0},
-        'small_large': {'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0},
-        'small_large_visual_cues': {'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0},
+        group_name: {
+            'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0,
+        }
+        for group_name in ('small_only', 'small_large', 'small_large_visual_cues')
     }
     temporal_video_means = {
         'small_only': {'tiou': [], 'tiou_sweep': [], 'tauc': [], 'tap': [], 'sweep_per_threshold': {}, 'gt_frames': 0},

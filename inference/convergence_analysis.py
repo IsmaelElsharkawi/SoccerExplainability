@@ -48,6 +48,8 @@ def _spatial_metrics(summary, tier):
         "Energy": gs.get("mean_energy_inside_bbox", np.nan),
         "Pointing": gs.get("mean_pointing_accuracy", np.nan),
         "S-IoU": gs.get("mean_iou", np.nan),
+        # S-AUC is itself the threshold-integrated S-IoU, so there is no
+        # separate "S-IoU (sweep)" column any more.
         "S-AUC": gs.get("mean_s_auc", np.nan),
     }
 
@@ -124,29 +126,47 @@ def load_clip_records(saliency_dir, tier, event_map, load_npz=False):
 # ---------------------------------------------------------------------------
 # [Step 4] Convergence analysis via bootstrap resampling.
 # ---------------------------------------------------------------------------
-def _bootstrap_mean_ci(values, n_bootstrap, rng, alpha=0.05):
-    """Return (mean, ci_low, ci_high, ci_halfwidth) for a 1-D value array."""
+# Clip counts at which the bootstrap is evaluated. The analysis reports a CI
+# half-width at each of these sample sizes only, rather than tracing every
+# prefix n = 1..N.
+BOOTSTRAP_SAMPLE_SIZES = [50, 100, 150, 200]
+
+
+def _bootstrap_mean_ci(values, n_bootstrap, rng, alpha=0.05, sample_size=None):
+    """Return (mean, ci_low, ci_high, ci_halfwidth) for a 1-D value array.
+
+    ``sample_size`` is the size of each bootstrap resample. It defaults to the
+    number of available clips, which is the ordinary bootstrap. Passing a
+    smaller value answers "what CI would this metric have with that many
+    clips?" — resamples are still drawn from *all* clips, so no subset of the
+    data is privileged and there is no dependence on clip ordering.
+    """
     values = np.asarray([v for v in values if not np.isnan(v)], dtype=np.float64)
     if values.size == 0:
         return (np.nan, np.nan, np.nan, np.nan)
-    boot_means = np.empty(n_bootstrap, dtype=np.float64)
     n = values.size
-    for b in range(n_bootstrap):
-        sample = values[rng.integers(0, n, size=n)]
-        boot_means[b] = sample.mean()
+    m = n if sample_size is None else int(sample_size)
+    if m <= 0:
+        return (np.nan, np.nan, np.nan, np.nan)
+    # Draw all resamples at once: (n_bootstrap, m) indices into `values`.
+    boot_means = values[rng.integers(0, n, size=(n_bootstrap, m))].mean(axis=1)
     lo = float(np.percentile(boot_means, 100 * alpha / 2))
     hi = float(np.percentile(boot_means, 100 * (1 - alpha / 2)))
     return (float(values.mean()), lo, hi, float((hi - lo) / 2.0))
 
 
-def convergence_analysis(records, n_bootstrap, seed, tol, min_n=5):
-    """[Step 4] Bootstrap CIs at full N + a running convergence curve per metric.
+def convergence_analysis(records, n_bootstrap, seed, tol,
+                         sample_sizes=BOOTSTRAP_SAMPLE_SIZES, min_n=5):
+    """[Step 4] Bootstrap CIs at full N plus a CI half-width per sample size.
 
-    For each metric we compute the final bootstrap mean/CI over all clips, then
-    sweep the number of included clips (n = 1..N) and record the CI half-width,
-    reporting the smallest n at which it drops below ``tol`` (i.e. the estimate
-    is considered converged). Convergence is only declared for n >= ``min_n``,
-    since a bootstrap over very few clips yields a degenerately tight CI.
+    For each metric we compute the bootstrap mean/CI over all clips, then
+    repeat the bootstrap at each requested sample size (default 50/100/150/200)
+    and record the CI half-width. ``converged_at`` reports the smallest of
+    those sizes at which the half-width drops to ``tol`` or below.
+
+    A requested size larger than the number of clips carrying the metric is
+    clamped to that count; the effective size travels with each curve point so
+    the shortfall stays visible in the CSV and the printed table.
     """
     rng = np.random.default_rng(seed)
 
@@ -156,19 +176,32 @@ def convergence_analysis(records, n_bootstrap, seed, tol, min_n=5):
 
     for metric in METRIC_ORDER:
         all_vals = [rec["metrics"].get(metric, np.nan) for rec in records]
+        n_avail = sum(1 for v in all_vals if not np.isnan(v))
         mean, lo, hi, half = _bootstrap_mean_ci(all_vals, n_bootstrap, rng)
-        final[metric] = {"mean": mean, "ci_low": lo, "ci_high": hi, "ci_halfwidth": half}
+        final[metric] = {"mean": mean, "ci_low": lo, "ci_high": hi,
+                         "ci_halfwidth": half, "n_clips": n_avail}
 
-        # Running convergence curve over an increasing prefix of clips.
         curve = []
         conv_n = None
-        n_total = len(all_vals)
-        for n in range(1, n_total + 1):
-            sub = all_vals[:n]
-            _, _, _, sub_half = _bootstrap_mean_ci(sub, min(n_bootstrap, 300), rng)
-            curve.append((n, sub_half))
+        for n in sorted(sample_sizes):
+            # A metric can be NaN on a few clips (e.g. S-AUC is undefined when a
+            # frame's cue mask covers everything), so the usable count can sit
+            # just below a requested size. Clamp rather than drop the column,
+            # and record the size actually used so the gap stays visible.
+            n_used = min(int(n), n_avail)
+            if n_used <= 0:
+                continue
+            if n_used == n_avail:
+                # Same quantity as the full-sample bootstrap above; reuse it so
+                # the two tables cannot disagree through resampling noise alone.
+                sub_half = half
+            else:
+                _, _, _, sub_half = _bootstrap_mean_ci(
+                    all_vals, n_bootstrap, rng, sample_size=n_used
+                )
+            curve.append((int(n), sub_half, n_used))
             if conv_n is None and n >= min_n and not np.isnan(sub_half) and sub_half <= tol:
-                conv_n = n
+                conv_n = int(n)
         curves[metric] = curve
         converged_at[metric] = conv_n
 
@@ -224,22 +257,23 @@ def write_per_class_csv(table, path):
 def write_convergence_csv(result, path):
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["metric", "mean", "ci_low", "ci_high", "ci_halfwidth", "converged_at_n"])
+        writer.writerow(["metric", "mean", "ci_low", "ci_high", "ci_halfwidth",
+                         "converged_at_n", "n_clips"])
         for metric in METRIC_ORDER:
             fin = result["final"][metric]
             writer.writerow([
                 metric, fin["mean"], fin["ci_low"], fin["ci_high"],
-                fin["ci_halfwidth"], result["converged_at"][metric],
+                fin["ci_halfwidth"], result["converged_at"][metric], fin["n_clips"],
             ])
 
 
 def write_convergence_curves_csv(result, path):
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["metric", "n_clips", "ci_halfwidth"])
+        writer.writerow(["metric", "n_clips", "ci_halfwidth", "n_clips_used"])
         for metric in METRIC_ORDER:
-            for n, half in result["curves"][metric]:
-                writer.writerow([metric, n, half])
+            for n, half, n_used in result["curves"][metric]:
+                writer.writerow([metric, n, half, n_used])
 
 
 def maybe_plot_convergence(result, path):
@@ -256,10 +290,11 @@ def maybe_plot_convergence(result, path):
         curve = result["curves"][metric]
         if not curve:
             continue
-        xs = [n for n, _ in curve]
-        ys = [h for _, h in curve]
-        plt.plot(xs, ys, label=metric)
-    plt.xlabel("Number of clips included")
+        xs = [n for n, _, _ in curve]
+        ys = [h for _, h, _ in curve]
+        plt.plot(xs, ys, marker="o", label=metric)
+    plt.xticks(sorted({n for m in METRIC_ORDER for n, _, _ in result["curves"][m]}))
+    plt.xlabel("Number of clips (bootstrap resample size)")
     plt.ylabel("Bootstrap 95% CI half-width")
     plt.title("Metric convergence vs. number of clips")
     plt.legend(fontsize=7)
@@ -276,6 +311,33 @@ def print_per_class_table(table):
     for event_class, row in table.items():
         cells = "  ".join(f"{_fmt(row[m]['mean']):>13}" for m in METRIC_ORDER)
         print(f"{event_class:<22}{row['count']:>4}  {cells}")
+
+
+def print_sample_size_table(result):
+    """[Step 4] CI half-width at each requested sample size."""
+    sizes = sorted({n for m in METRIC_ORDER for n, _, _ in result["curves"][m]})
+    if not sizes:
+        return
+    print("\n[Step 4] Bootstrap 95% CI half-width by sample size (%):")
+    header = f"{'metric':<16}" + "".join(f"{'n=' + str(n):>10}" for n in sizes)
+    print(header)
+    print("-" * len(header))
+    notes = []
+    for metric in METRIC_ORDER:
+        got = {n: (h, u) for n, h, u in result["curves"][metric]}
+        cells = ""
+        for n in sizes:
+            if n not in got:
+                cells += f"{'--':>10}"
+                continue
+            half, used = got[n]
+            mark = "*" if used != n else ""
+            cells += f"{_fmt(half) + mark:>10}"
+            if mark:
+                notes.append(f"{metric} n={n} computed on {used} clips")
+        print(f"{metric:<16}{cells}")
+    for note in dict.fromkeys(notes):
+        print(f"  * {note} (metric undefined on the remainder)")
 
 
 def print_convergence(result):
@@ -310,6 +372,10 @@ def main():
                         help="CI half-width (fraction) below which a metric is 'converged'.")
     parser.add_argument("--min_n", type=int, default=5,
                         help="Minimum clip count before convergence can be declared.")
+    parser.add_argument("--sample_sizes", type=int, nargs="+", default=BOOTSTRAP_SAMPLE_SIZES,
+                        help="Clip counts at which to evaluate the bootstrap CI "
+                             "(default: 50 100 150 200). Sizes above the number of "
+                             "available clips are skipped.")
     parser.add_argument("--load_npz", action="store_true",
                         help="Also load frame_scores arrays from the .npz files.")
     args = parser.parse_args()
@@ -327,8 +393,10 @@ def main():
     print(f"[Step 4] Loaded {len(records)} clips (tier={args.tier}).")
 
     # [Step 4] Convergence analysis.
-    result = convergence_analysis(records, args.n_bootstrap, args.seed, args.tol, min_n=args.min_n)
+    result = convergence_analysis(records, args.n_bootstrap, args.seed, args.tol,
+                                  sample_sizes=args.sample_sizes, min_n=args.min_n)
     print_convergence(result)
+    print_sample_size_table(result)
     write_convergence_csv(result, os.path.join(output_dir, "convergence_summary.csv"))
     write_convergence_curves_csv(result, os.path.join(output_dir, "convergence_curves.csv"))
     maybe_plot_convergence(result, os.path.join(output_dir, "convergence_curves.png"))
