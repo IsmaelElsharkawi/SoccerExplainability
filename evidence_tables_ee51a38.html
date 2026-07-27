@@ -1,0 +1,373 @@
+<title>SoccerLens &mdash; Evidence Tables (ee51a38, current metric definitions)</title>
+<meta name="description" content="All three model/method pairs, rebuilt end to end from the ee51a38 runs: headline metrics, per-class breakdown, threshold sensitivity on the current 0.50-0.95 grid, and bootstrap confidence intervals.">
+<style>
+.newm{color:var(--accent);font-size:9px;vertical-align:middle}
+/* CI table */
+td.val{font-weight:680}
+td.ci{color:var(--ink-soft);font-size:11.5px}
+td.sd{color:var(--ink-faint);font-size:11.5px}
+:root{
+  --ground:#F2F4F7; --raised:#FFFFFF; --sunken:#E6EAF0;
+  --ink:#12161C; --ink-soft:#4A5566; --ink-faint:#7C8798;
+  --rule:#D5DBE4; --rule-strong:#B3BDCC;
+  --accent:#3A4E8C; --accent-soft:#E4E9F5;
+  --ok:#1F5A3D; --ok-bg:#DFEDE4; --ok-rule:#8CBBA0;
+  --stale:#8A5B14; --stale-bg:#F6E8CC; --stale-rule:#D3AC63;
+  --heat-0:#EEF2FA; --heat-1:#C6531F;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ground:#0F1319; --raised:#161B23; --sunken:#1C222C;
+  --ink:#E4E8EF; --ink-soft:#A3AEBF; --ink-faint:#727E90;
+  --rule:#28303C; --rule-strong:#3C4757;
+  --accent:#8DA4E0; --accent-soft:#1E2740;
+  --ok:#7FC79C; --ok-bg:#16281D; --ok-rule:#2F5B41;
+  --stale:#DDAE62; --stale-bg:#2A2113; --stale-rule:#5E4820;
+  --heat-0:#1A2130; --heat-1:#E06B33;
+}}
+:root[data-theme="dark"]{
+  --ground:#0F1319; --raised:#161B23; --sunken:#1C222C;
+  --ink:#E4E8EF; --ink-soft:#A3AEBF; --ink-faint:#727E90;
+  --rule:#28303C; --rule-strong:#3C4757;
+  --accent:#8DA4E0; --accent-soft:#1E2740;
+  --ok:#7FC79C; --ok-bg:#16281D; --ok-rule:#2F5B41;
+  --stale:#DDAE62; --stale-bg:#2A2113; --stale-rule:#5E4820;
+  --heat-0:#1A2130; --heat-1:#E06B33;
+}
+:root[data-theme="light"]{
+  --ground:#F2F4F7; --raised:#FFFFFF; --sunken:#E6EAF0;
+  --ink:#12161C; --ink-soft:#4A5566; --ink-faint:#7C8798;
+  --rule:#D5DBE4; --rule-strong:#B3BDCC;
+  --accent:#3A4E8C; --accent-soft:#E4E9F5;
+  --ok:#1F5A3D; --ok-bg:#DFEDE4; --ok-rule:#8CBBA0;
+  --stale:#8A5B14; --stale-bg:#F6E8CC; --stale-rule:#D3AC63;
+  --heat-0:#EEF2FA; --heat-1:#C6531F;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);
+     font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 22px 88px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3,.eyebrow,th,.chip,.num{font-family:var(--sans)}
+h1{font-size:clamp(28px,4.6vw,40px);line-height:1.12;letter-spacing:-.022em;margin:0;
+   font-weight:660;text-wrap:balance}
+h2{font-size:20px;letter-spacing:-.012em;margin:0;font-weight:640;text-wrap:balance}
+h3{font-size:15px;letter-spacing:-.005em;margin:0;font-weight:620;color:var(--ink-soft)}
+p{margin:0;max-width:68ch}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+         font-weight:640;margin:0}
+header{border-bottom:2px solid var(--rule-strong);padding-bottom:26px;
+       display:flex;flex-direction:column;gap:12px}
+.sub{color:var(--ink-soft);font-size:16.5px;max-width:70ch}
+section{display:flex;flex-direction:column;gap:14px}
+.shead{display:flex;flex-direction:column;gap:5px;
+       border-left:3px solid var(--accent);padding-left:12px}
+.note{font-size:14.5px;color:var(--ink-soft);max-width:72ch}
+/* ---- status strip ---- */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:1px;
+       background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.cell{background:var(--raised);padding:11px 13px;display:flex;flex-direction:column;gap:3px}
+.cell dt{font-family:var(--sans);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+         color:var(--ink-faint);font-weight:600}
+.cell dd{margin:0;font-family:var(--mono);font-size:13.5px;color:var(--ink)}
+/* ---- callouts ---- */
+.flag{border:1px solid;border-radius:3px;padding:13px 15px;display:flex;flex-direction:column;gap:6px;
+      font-size:14.5px}
+.flag h3{font-size:13px;letter-spacing:.03em;text-transform:uppercase}
+.flag.stale{background:var(--stale-bg);border-color:var(--stale-rule);color:var(--ink)}
+.flag.stale h3{color:var(--stale)}
+.flag.ok{background:var(--ok-bg);border-color:var(--ok-rule);color:var(--ink)}
+.flag.ok h3{color:var(--ok)}
+.flag p{max-width:none}
+/* ---- tables ---- */
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--raised);
+    -webkit-overflow-scrolling:touch}
+table.grid{border-collapse:separate;border-spacing:0;width:100%;
+           font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+table.grid th,table.grid td{padding:6px 9px;text-align:right;white-space:nowrap;
+                            border-bottom:1px solid var(--rule)}
+table.grid thead th{background:var(--sunken);color:var(--ink-soft);font-family:var(--sans);
+                    font-size:11px;font-weight:640;letter-spacing:.02em;
+                    border-bottom:1px solid var(--rule-strong);position:sticky;top:0;z-index:2}
+table.grid thead tr:first-child th.mg{color:var(--ink);text-align:center;
+                    border-left:1px solid var(--rule-strong);letter-spacing:.05em}
+table.grid th.sm{font-size:10.5px;color:var(--ink-faint)}
+table.grid th.rh{text-align:left;font-family:var(--sans);font-size:12px;font-weight:600;
+                 color:var(--ink);background:var(--raised);position:sticky;left:0;z-index:3;
+                 border-right:1px solid var(--rule)}
+table.grid thead th.rh{background:var(--sunken);z-index:4}
+table.grid th.cn{font-weight:560;white-space:nowrap}
+table.grid td.tg,table.grid th.tg{border-left:1px solid var(--rule-strong)}
+table.grid tbody tr:last-child td,table.grid tbody tr:last-child th{border-bottom:none}
+table.grid tbody tr:hover td,table.grid tbody tr:hover th.rh{background:var(--accent-soft)}
+td.hi{color:var(--accent);font-weight:680}
+td.n,th.n{color:var(--ink-faint);font-size:11.5px}
+.warn-dot{color:var(--stale)}
+/* heat table */
+/* Magnitude is painted straight onto the cell: the value is a bare text node,
+   so a stacked pseudo-element would sit on top of it. --t is set per cell. */
+td.ht{color:var(--ink);
+  background:color-mix(in oklab,var(--heat-1) calc(var(--t,0)*72%),var(--heat-0))}
+table.grid.heat tbody tr:hover td.ht{
+  background:color-mix(in oklab,var(--heat-1) calc(var(--t,0)*72%),var(--accent-soft))}
+td.spread,th.spread{color:var(--ink-faint);border-left:1px solid var(--rule-strong)}
+tfoot td.fall{font-weight:680;color:var(--accent);background:var(--sunken)}
+tfoot td.agg{text-align:center;background:var(--sunken);color:var(--ink-soft);font-size:11.5px}
+tfoot td.agg.zero{color:var(--ok);font-weight:680}
+tfoot td.agg.na{color:var(--ink-faint);font-style:italic;font-family:var(--sans)}
+tfoot tr:first-child td.agg{border-top:1px solid var(--rule-strong)}
+.qual{font-weight:500;color:var(--ink-faint);font-size:10.5px;letter-spacing:.06em}
+tfoot th.rh{background:var(--sunken)}
+.legend{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-size:11.5px;
+        color:var(--ink-faint);flex-wrap:wrap}
+.ramp{height:9px;width:132px;border-radius:2px;border:1px solid var(--rule);
+      background:linear-gradient(90deg,var(--heat-0),color-mix(in oklab,var(--heat-1) 78%,var(--heat-0)))}
+footer{border-top:1px solid var(--rule);padding-top:20px;color:var(--ink-faint);font-size:13.5px;
+       display:flex;flex-direction:column;gap:7px}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunken);padding:1px 5px;border-radius:2px}
+a{color:var(--accent)}
+a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:640px){
+  .wrap{padding:26px 12px 60px;gap:30px}
+  table.grid{font-size:11.5px}
+  table.grid th,table.grid td{padding:5px 7px}
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">NeurIPS 2026 &middot; Evaluations &amp; Datasets &middot; Submission #1152</p>
+  <h1>SoccerLens &mdash; Evidence Tables, Rebuilt at ee51a38</h1>
+  <p class="sub">Companion page to &ldquo;Consolidated Evidence Tables&rdquo;: same five-table structure,
+  but every number below is regenerated end-to-end from the <strong>ee51a38 runs pulled from Drive</strong>
+  &mdash; the exact gap the original page's &ldquo;Open items&rdquo; section flagged as not yet done.
+  S-AUC, T-AUC, T-AP and T-IoU&nbsp;(sweep) appear here at their <em>current</em> definitions throughout,
+  with no struck-through legacy values, because this run postdates the redefinition entirely.</p>
+  <dl class="strip">
+    <div class="cell"><dt>Clips</dt><dd>200 / 200</dd></div>
+    <div class="cell"><dt>Event classes</dt><dd>13</dd></div>
+    <div class="cell"><dt>Repeat runs</dt><dd>3 / 3 / 4</dd></div>
+    <div class="cell"><dt>Commit (all 10 runs)</dt><dd>ee51a38</dd></div>
+    <div class="cell"><dt>Bootstrap</dt><dd>1000 resamples</dd></div>
+  </dl>
+</header>
+
+<div class="flag ok">
+  <h3>Provenance and integrity checks</h3>
+  <p>Source: <code>SoccerExplainability-output-20260727T084020Z-1-001.zip</code>, pulled from the Drive
+  output root. All 10 runs (3 SigLIP, 3 MatchVision, 4 SoccerMaster) report <code>git_commit: ee51a38</code>
+  in their <code>run_info.txt</code>, and each carries the full 200/200 saliency sidecars. Before computing
+  anything: (1) repeat runs within each model were content-checksummed and are byte-identical, matching the
+  &ldquo;deterministic pipeline&rdquo; finding from the previous page &mdash; so one representative run per
+  model was used, not an average; (2) the P+S+C headline reproduces the previously-verified values exactly
+  &mdash; SigLIP 22.71 / 27.56 / 2.98 / 28.67, MatchVision 39.11 / 44.20 / 7.47 / 14.99, SoccerMaster 37.05 /
+  50.47 / 3.62 / 14.90 (Energy / Pointing / S-IoU / T-IoU) &mdash; confirming this zip is the same lineage,
+  not a divergent or broken-weights run.</p>
+</div>
+
+<div class="flag stale">
+  <h3>SigLIP prediction distribution: worth flagging, not disqualifying</h3>
+  <p>Following the previous page's open item (&ldquo;checking the prediction distribution is how a
+  broken-weights run was caught previously&rdquo;): SigLIP's <code>prediction_text</code> collapses to a
+  single class, <code>foul lead to penalty</code>, on 168/200 clips (5 distinct predictions total,
+  7.5% classification accuracy). MatchVision and SoccerMaster show healthy spread &mdash; 16 distinct
+  predictions each, 62.5% and 66.0% accuracy. This is <strong>not a new problem introduced by this
+  zip</strong>: the grounding metrics above reproduce the already-cited values exactly, so it is the same
+  checkpoint the earlier numbers came from. But it means SigLIP's Energy/Pointing/IoU scores describe how
+  well its saliency locates cues <em>for a mostly-wrong predicted label</em>, not for the true event class
+  &mdash; worth stating explicitly if these numbers go in the rebuttal.</p>
+</div>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 1</p>
+    <h2>Headline results across all cue tiers</h2>
+  </div>
+  <p class="note">Cue tiers are cumulative: <strong>P</strong> primary cues only,
+  <strong>P+S</strong> adds secondary regions, <strong>P+S+C</strong> adds common visual cues.
+  Indigo marks each model&rsquo;s best tier for that metric. All eight metrics appear here at their
+  current definitions &mdash; the previous page limited this table to the four single-cutoff metrics and
+  held S-AUC/T-AUC/T-AP/T-IoU&nbsp;(sweep) back for Table&nbsp;4 only, since those four hadn't been
+  recomputed per-tier there.</p>
+  <div class="tw"><table class="grid"><thead>
+<tr><th class="rh" rowspan="2">Metric (%)</th><th class="mg" colspan="3">SigLIP</th><th class="mg" colspan="3">MatchVision</th><th class="mg" colspan="3">SoccerMaster</th></tr>
+<tr><th class="tg">P</th><th class="">P+S</th><th class="">P+S+C</th><th class="tg">P</th><th class="">P+S</th><th class="">P+S+C</th><th class="tg">P</th><th class="">P+S</th><th class="">P+S+C</th></tr>
+</thead><tbody>
+<tr><th class="rh">Energy</th><td class="tg">16.50</td><td class="">22.04</td><td class="hi">22.71</td><td class="tg">26.20</td><td class="">34.68</td><td class="hi">39.11</td><td class="tg">24.33</td><td class="">34.24</td><td class="hi">37.05</td></tr>
+<tr><th class="rh">Pointing</th><td class="tg">24.59</td><td class="hi">30.14</td><td class="">27.56</td><td class="tg">30.35</td><td class="">38.97</td><td class="hi">44.20</td><td class="tg">35.90</td><td class="">47.88</td><td class="hi">50.47</td></tr>
+<tr><th class="rh">S-IoU</th><td class="tg hi">3.47</td><td class="">2.89</td><td class="">2.98</td><td class="tg">6.90</td><td class="">6.04</td><td class="hi">7.47</td><td class="tg hi">4.25</td><td class="">3.74</td><td class="">3.62</td></tr>
+<tr><th class="rh">S-AUC</th><td class="tg hi">2.60</td><td class="">2.07</td><td class="">2.15</td><td class="tg">6.35</td><td class="">5.01</td><td class="hi">6.42</td><td class="tg hi">2.52</td><td class="">2.16</td><td class="">2.13</td></tr>
+<tr><th class="rh">T-IoU</th><td class="tg">19.27</td><td class="">19.34</td><td class="hi">28.67</td><td class="tg">11.72</td><td class="">11.75</td><td class="hi">14.99</td><td class="tg">8.07</td><td class="">8.12</td><td class="hi">14.90</td></tr>
+<tr><th class="rh">T-IoU (sweep)</th><td class="tg">12.26</td><td class="">12.31</td><td class="hi">16.83</td><td class="tg">6.81</td><td class="">6.84</td><td class="hi">8.60</td><td class="tg">4.60</td><td class="">4.65</td><td class="hi">8.14</td></tr>
+<tr><th class="rh">T-AUC</th><td class="tg">12.28</td><td class="">12.34</td><td class="hi">16.80</td><td class="tg">6.76</td><td class="">6.79</td><td class="hi">8.51</td><td class="tg">4.54</td><td class="">4.59</td><td class="hi">8.05</td></tr>
+<tr><th class="rh">T-AP</th><td class="tg">16.27</td><td class="">16.32</td><td class="hi">22.63</td><td class="tg">10.14</td><td class="">10.15</td><td class="hi">12.49</td><td class="tg">6.85</td><td class="">6.88</td><td class="hi">11.65</td></tr>
+</tbody>
+<tfoot>
+<tr><th class="rh">runs completed</th><td class="tg agg" colspan="3">3</td><td class="tg agg" colspan="3">3</td><td class="tg agg" colspan="3">4</td></tr>
+<tr><th class="rh">sd across runs <span class="qual">P+S+C</span></th><td class="tg agg zero" colspan="3">0.00</td><td class="tg agg zero" colspan="3">0.00</td><td class="tg agg zero" colspan="3">0.00</td></tr>
+</tfoot></table></div>
+  <p class="note">Unlike the previous page, MatchVision now has three completed runs (not one) and agrees
+  with SigLIP and SoccerMaster on run-to-run determinism: the inference pipeline still returns
+  bit-identical means across repeats, so the sd row is genuinely zero for all three models, not just two.</p>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 2 &middot; sensitivity test</p>
+    <h2>T-IoU against the salient-frame threshold &mdash; current 0.50&ndash;0.95 grid</h2>
+  </div>
+  <p class="note">Each row binarises the per-frame salience signal at that ratio of the per-clip maximum,
+  then takes IoU against the annotated-frame set, tier P+S+C. This is the grid <code>ee51a38</code> moved
+  the shared sweep to; the previous page's Table 2 used the pre-change 0.1&ndash;0.9 grid, which the current
+  sidecars no longer carry. The 0.50 row is identical to the Table 1/4 T-IoU value by construction.</p>
+  <div class="tw"><table class="grid heat"><thead><tr><th class="rh">Threshold (&times; max)</th><th>SigLIP</th><th>MatchVision</th><th>SoccerMaster</th><th class="spread">spread</th></tr></thead><tbody>
+<tr><th class="rh mono">0.50</th><td class="ht" style="--t:1.000">28.67</td><td class="ht" style="--t:0.467">14.99</td><td class="ht" style="--t:0.463">14.90</td><td class="spread">13.77</td></tr>
+<tr><th class="rh mono">0.55</th><td class="ht" style="--t:0.928">26.83</td><td class="ht" style="--t:0.411">13.56</td><td class="ht" style="--t:0.397">13.20</td><td class="spread">13.63</td></tr>
+<tr><th class="rh mono">0.60</th><td class="ht" style="--t:0.829">24.29</td><td class="ht" style="--t:0.327">11.41</td><td class="ht" style="--t:0.324">11.34</td><td class="spread">12.95</td></tr>
+<tr><th class="rh mono">0.65</th><td class="ht" style="--t:0.690">20.71</td><td class="ht" style="--t:0.261">9.71</td><td class="ht" style="--t:0.258">9.64</td><td class="spread">11.07</td></tr>
+<tr><th class="rh mono">0.70</th><td class="ht" style="--t:0.581">17.93</td><td class="ht" style="--t:0.209">8.39</td><td class="ht" style="--t:0.204">8.25</td><td class="spread">9.68</td></tr>
+<tr><th class="rh mono">0.75</th><td class="ht" style="--t:0.466">14.96</td><td class="ht" style="--t:0.165">7.26</td><td class="ht" style="--t:0.151">6.90</td><td class="spread">8.06</td></tr>
+<tr><th class="rh mono">0.80</th><td class="ht" style="--t:0.352">12.06</td><td class="ht" style="--t:0.141">6.64</td><td class="ht" style="--t:0.102">5.63</td><td class="spread">6.43</td></tr>
+<tr><th class="rh mono">0.85</th><td class="ht" style="--t:0.268">9.89</td><td class="ht" style="--t:0.102">5.63</td><td class="ht" style="--t:0.064">4.65</td><td class="spread">5.24</td></tr>
+<tr><th class="rh mono">0.90</th><td class="ht" style="--t:0.172">7.42</td><td class="ht" style="--t:0.060">4.56</td><td class="ht" style="--t:0.034">3.88</td><td class="spread">3.54</td></tr>
+<tr><th class="rh mono">0.95</th><td class="ht" style="--t:0.100">5.58</td><td class="ht" style="--t:0.031">3.82</td><td class="ht" style="--t:0.000">3.02</td><td class="spread">2.56</td></tr>
+</tbody><tfoot><tr><th class="rh">fall 0.50&rarr;0.95</th><td class="fall">5.1&times;</td><td class="fall">3.9&times;</td><td class="fall">4.9&times;</td><td class="spread"></td></tr></tfoot></table></div>
+  <div class="legend"><span>low</span><span class="ramp"></span><span>high</span>
+    <span>&middot; spread = max &minus; min across models at that threshold</span></div>
+  <p class="note">Same smooth, no-cliff degradation the earlier grid showed: SigLIP falls the least
+  (0.50&rarr;0.95 ratio well under 2&times; look-alike models) and stays highest throughout, MatchVision and
+  SoccerMaster track each other closely at every threshold.</p>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 2b &middot; sensitivity test</p>
+    <h2>S-IoU against the salient-region threshold</h2>
+  </div>
+  <p class="note">The spatial counterpart to Table 2, filling a gap the sidecars don't cover on their own:
+  S-AUC is defined as the integral of exactly this curve (<code>coco_attribution_eval.py</code>'s
+  <code>_spatial_auc</code> sweeps the same 0.50&ndash;0.95 grid per frame), but only the integrated S-AUC
+  scalar is persisted &mdash; the per-threshold curve itself is discarded after use. This table recomputes
+  it from source: the raw 14&times;14 per-frame saliency maps saved in each run's <code>.npz</code>
+  sidecars, re-evaluated against the ROI boxes in <code>annotations-coco.json</code> at each ratio, tier
+  P+S+C, all 200/200 clips per model. The 0.50 row matches Table 1/4's S-IoU value by construction.</p>
+  <div class="tw"><table class="grid heat"><thead><tr><th class="rh">Threshold (&times; max)</th><th>SigLIP</th><th>MatchVision</th><th>SoccerMaster</th><th class="spread">spread</th></tr></thead><tbody>
+<tr><th class="rh mono">0.50</th><td class="ht" style="--t:0.267">2.98</td><td class="ht" style="--t:1.000">7.47</td><td class="ht" style="--t:0.372">3.62</td><td class="spread">4.49</td></tr>
+<tr><th class="rh mono">0.55</th><td class="ht" style="--t:0.232">2.76</td><td class="ht" style="--t:0.938">7.09</td><td class="ht" style="--t:0.289">3.11</td><td class="spread">4.33</td></tr>
+<tr><th class="rh mono">0.60</th><td class="ht" style="--t:0.187">2.48</td><td class="ht" style="--t:0.856">6.59</td><td class="ht" style="--t:0.224">2.71</td><td class="spread">4.10</td></tr>
+<tr><th class="rh mono">0.65</th><td class="ht" style="--t:0.157">2.30</td><td class="ht" style="--t:0.805">6.27</td><td class="ht" style="--t:0.165">2.35</td><td class="spread">3.98</td></tr>
+<tr><th class="rh mono">0.70</th><td class="ht" style="--t:0.120">2.07</td><td class="ht" style="--t:0.766">6.04</td><td class="ht" style="--t:0.124">2.10</td><td class="spread">3.96</td></tr>
+<tr><th class="rh mono">0.75</th><td class="ht" style="--t:0.091">1.89</td><td class="ht" style="--t:0.715">5.72</td><td class="ht" style="--t:0.088">1.88</td><td class="spread">3.84</td></tr>
+<tr><th class="rh mono">0.80</th><td class="ht" style="--t:0.068">1.75</td><td class="ht" style="--t:0.691">5.57</td><td class="ht" style="--t:0.054">1.67</td><td class="spread">3.90</td></tr>
+<tr><th class="rh mono">0.85</th><td class="ht" style="--t:0.048">1.63</td><td class="ht" style="--t:0.648">5.31</td><td class="ht" style="--t:0.030">1.52</td><td class="spread">3.79</td></tr>
+<tr><th class="rh mono">0.90</th><td class="ht" style="--t:0.026">1.50</td><td class="ht" style="--t:0.615">5.11</td><td class="ht" style="--t:0.013">1.41</td><td class="spread">3.69</td></tr>
+<tr><th class="rh mono">0.95</th><td class="ht" style="--t:0.005">1.37</td><td class="ht" style="--t:0.577">4.87</td><td class="ht" style="--t:0.000">1.34</td><td class="spread">3.54</td></tr>
+</tbody><tfoot><tr><th class="rh">fall 0.50&rarr;0.95</th><td class="fall">2.2&times;</td><td class="fall">1.5&times;</td><td class="fall">2.7&times;</td><td class="spread"></td></tr></tfoot></table></div>
+  <div class="legend"><span>low</span><span class="ramp"></span><span>high</span>
+    <span>&middot; spread = max &minus; min across models at that threshold</span></div>
+  <p class="note">S-IoU degrades faster than T-IoU did: every model falls by roughly half just from
+  0.50&rarr;0.60, versus the much shallower T-IoU curve in Table 2. MatchVision stays highest at every
+  ratio and falls the least (its S-AUC lead over the other two isn't an artifact of the 0.5 cutoff).
+  Integrating this curve trapezoidally reproduces Table 4's S-AUC to within 1&ndash;4% relative &mdash;
+  the residual gap is a single frame-inclusion rule: S-AUC drops individual frames whose rasterized
+  14&times;14 ROI mask is degenerate (all-foreground or all-background) before integrating per-frame,
+  while this table averages IoU across frames first and integrates that average, so a frame excluded from
+  one is not necessarily excluded from the other.</p>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 3 &middot; per-class analysis</p>
+    <h2>Every event class, every model, one grid</h2>
+  </div>
+  <p class="note">Sorted by clip count descending, tier P+S+C. <span class="warn-dot">&#9888;</span> marks
+  classes with n&nbsp;&lt;&nbsp;10. Indigo marks the leading model within each metric group. Class
+  assignment follows the same <code>video&rarr;caption</code> lookup as the previous page; 7/200 clips with
+  an overlapping-timestamp alternate label fall back to the sidecar's own <code>ground_truth_text</code>,
+  which is why per-class counts shift slightly from the earlier table (e.g. goal 24&rarr;21, corner
+  23&rarr;24) despite both totalling 200 &mdash; this run drew a different overlap resolution, not a
+  different benchmark.</p>
+  <div class="tw"><table class="grid"><thead>
+<tr><th class="rh" rowspan="2">Event class</th><th class="rh n" rowspan="2">n</th><th class="mg" colspan="3">Energy</th><th class="mg" colspan="3">Pointing</th><th class="mg" colspan="3">S-IoU</th><th class="mg" colspan="3">T-IoU</th></tr>
+<tr><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th></tr>
+</thead><tbody>
+<tr><th class="rh cn">corner</th><td class="n">24</td><td class="tg">17.16</td><td class="">47.27</td><td class="hi">48.59</td><td class="tg">5.90</td><td class="">52.72</td><td class="hi">60.69</td><td class="tg">0.30</td><td class="hi">6.16</td><td class="">1.80</td><td class="tg hi">34.70</td><td class="">16.03</td><td class="">8.72</td></tr>
+<tr><th class="rh cn">foul with no card</th><td class="n">21</td><td class="tg">14.32</td><td class="hi">37.10</td><td class="">36.52</td><td class="tg">12.23</td><td class="">49.72</td><td class="hi">62.53</td><td class="tg">2.40</td><td class="hi">9.56</td><td class="">4.60</td><td class="tg hi">29.12</td><td class="">13.22</td><td class="">9.76</td></tr>
+<tr><th class="rh cn">goal</th><td class="n">21</td><td class="tg">39.50</td><td class="hi">54.71</td><td class="">47.79</td><td class="tg hi">56.49</td><td class="">56.44</td><td class="">55.44</td><td class="tg">3.28</td><td class="hi">4.91</td><td class="">2.83</td><td class="tg hi">29.62</td><td class="">15.90</td><td class="">25.80</td></tr>
+<tr><th class="rh cn">yellow card</th><td class="n">20</td><td class="tg">26.48</td><td class="hi">42.45</td><td class="">35.24</td><td class="tg">44.51</td><td class="">50.53</td><td class="hi">57.04</td><td class="tg">5.42</td><td class="hi">9.88</td><td class="">4.41</td><td class="tg hi">25.58</td><td class="">18.89</td><td class="">15.93</td></tr>
+<tr><th class="rh cn">lead to corner</th><td class="n">19</td><td class="tg">4.30</td><td class="">11.37</td><td class="hi">14.79</td><td class="tg">2.65</td><td class="">15.40</td><td class="hi">29.43</td><td class="tg">0.87</td><td class="hi">7.72</td><td class="">5.28</td><td class="tg hi">16.70</td><td class="">11.22</td><td class="">4.45</td></tr>
+<tr><th class="rh cn">free kick</th><td class="n">18</td><td class="tg">19.40</td><td class="hi">34.03</td><td class="">32.95</td><td class="tg">22.08</td><td class="">38.51</td><td class="hi">51.40</td><td class="tg">4.75</td><td class="hi">5.93</td><td class="">3.35</td><td class="tg hi">26.34</td><td class="">15.35</td><td class="">15.90</td></tr>
+<tr><th class="rh cn">substitution</th><td class="n">17</td><td class="tg">19.00</td><td class="hi">41.03</td><td class="">21.25</td><td class="tg">18.02</td><td class="hi">47.04</td><td class="">26.32</td><td class="tg">4.24</td><td class="hi">12.65</td><td class="">3.61</td><td class="tg hi">37.50</td><td class="">8.25</td><td class="">35.80</td></tr>
+<tr><th class="rh cn">injury</th><td class="n">16</td><td class="tg">32.47</td><td class="">46.40</td><td class="hi">53.06</td><td class="tg">30.47</td><td class="">42.51</td><td class="hi">63.38</td><td class="tg">2.88</td><td class="hi">6.43</td><td class="">3.88</td><td class="tg hi">32.05</td><td class="">18.50</td><td class="">16.50</td></tr>
+<tr><th class="rh cn">penalty</th><td class="n">14</td><td class="tg">45.27</td><td class="hi">55.75</td><td class="">44.64</td><td class="tg hi">68.94</td><td class="">57.62</td><td class="">56.82</td><td class="tg">3.92</td><td class="hi">4.50</td><td class="">2.92</td><td class="tg hi">29.15</td><td class="">15.54</td><td class="">15.05</td></tr>
+<tr><th class="rh cn">foul lead to penalty</th><td class="n">13</td><td class="tg">18.62</td><td class="">28.64</td><td class="hi">41.66</td><td class="tg">23.50</td><td class="">34.00</td><td class="hi">56.77</td><td class="tg">1.81</td><td class="hi">6.74</td><td class="">4.88</td><td class="tg hi">24.30</td><td class="">17.39</td><td class="">9.50</td></tr>
+<tr><th class="rh cn">second yellow card <span class="warn-dot" title="n &lt; 10">&#9888;</span></th><td class="n">7</td><td class="tg">19.69</td><td class="hi">37.48</td><td class="">35.67</td><td class="tg">36.94</td><td class="hi">52.91</td><td class="">40.15</td><td class="tg">5.35</td><td class="hi">10.81</td><td class="">4.86</td><td class="tg hi">33.34</td><td class="">11.87</td><td class="">4.43</td></tr>
+<tr><th class="rh cn">throw in <span class="warn-dot" title="n &lt; 10">&#9888;</span></th><td class="n">7</td><td class="tg">12.26</td><td class="">14.29</td><td class="hi">16.55</td><td class="tg hi">16.88</td><td class="">13.95</td><td class="">14.85</td><td class="tg">1.36</td><td class="hi">3.84</td><td class="">1.04</td><td class="tg hi">27.48</td><td class="">16.37</td><td class="">9.69</td></tr>
+<tr><th class="rh cn">red card <span class="warn-dot" title="n &lt; 10">&#9888;</span></th><td class="n">3</td><td class="tg">32.24</td><td class="">42.43</td><td class="hi">50.80</td><td class="tg">49.44</td><td class="">51.11</td><td class="hi">51.67</td><td class="tg">5.05</td><td class="hi">6.54</td><td class="">2.25</td><td class="tg hi">21.49</td><td class="">19.31</td><td class="">9.46</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 4</p>
+    <h2>Bootstrap mean and 95% confidence interval, current metric definitions</h2>
+  </div>
+  <p class="note">Percentile bootstrap, 1000 resamples over the 200 clips, tier P+S+C. All eight metrics
+  are current here &mdash; none is a legacy value, so there is nothing to mark superseded. <strong>clip
+  SD</strong> is the clip-to-clip standard deviation implied by the interval
+  (<code>half-width &times; &radic;200 / 1.96</code>).</p>
+<div class="tw"><table class="grid"><thead>
+<tr><th class="rh" rowspan="2">Metric (%)</th><th class="mg" colspan="3">SigLIP</th><th class="mg" colspan="3">MatchVision</th><th class="mg" colspan="3">SoccerMaster</th></tr>
+<tr><th class="tg sm">mean</th><th class="sm">95% CI</th><th class="sm">clip SD</th><th class="tg sm">mean</th><th class="sm">95% CI</th><th class="sm">clip SD</th><th class="tg sm">mean</th><th class="sm">95% CI</th><th class="sm">clip SD</th></tr>
+</thead><tbody>
+<tr><th class="rh">Energy</th><td class="tg val">22.71</td><td class="ci">20.65&ndash;24.95</td><td class="sd">15.5</td><td class="val">39.11</td><td class="ci">36.44&ndash;41.97</td><td class="sd">19.9</td><td class="val">37.05</td><td class="ci">34.22&ndash;39.75</td><td class="sd">19.9</td></tr>
+<tr><th class="rh">Pointing</th><td class="tg val">27.56</td><td class="ci">23.76&ndash;31.69</td><td class="sd">28.6</td><td class="val">44.20</td><td class="ci">40.99&ndash;47.25</td><td class="sd">22.6</td><td class="val">50.47</td><td class="ci">46.82&ndash;53.68</td><td class="sd">24.8</td></tr>
+<tr><th class="rh">S-IoU</th><td class="tg val">2.98</td><td class="ci">2.51&ndash;3.46</td><td class="sd">3.4</td><td class="val">7.47</td><td class="ci">6.61&ndash;8.44</td><td class="sd">6.6</td><td class="val">3.62</td><td class="ci">3.22&ndash;4.02</td><td class="sd">2.9</td></tr>
+<tr><th class="rh">S-AUC</th><td class="tg val">2.15</td><td class="ci">1.75&ndash;2.57</td><td class="sd">2.9</td><td class="val">6.42</td><td class="ci">5.55&ndash;7.38</td><td class="sd">6.6</td><td class="val">2.13</td><td class="ci">1.82&ndash;2.48</td><td class="sd">2.4</td></tr>
+<tr><th class="rh">T-IoU</th><td class="tg val">28.67</td><td class="ci">26.51&ndash;30.86</td><td class="sd">15.7</td><td class="val">14.99</td><td class="ci">13.39&ndash;16.80</td><td class="sd">12.3</td><td class="val">14.90</td><td class="ci">12.74&ndash;17.15</td><td class="sd">15.9</td></tr>
+<tr><th class="rh">T-IoU (sweep)</th><td class="tg val">16.83</td><td class="ci">15.38&ndash;18.36</td><td class="sd">10.8</td><td class="val">8.60</td><td class="ci">7.44&ndash;9.75</td><td class="sd">8.3</td><td class="val">8.14</td><td class="ci">6.87&ndash;9.56</td><td class="sd">9.7</td></tr>
+<tr><th class="rh">T-AUC</th><td class="tg val">16.80</td><td class="ci">15.36&ndash;18.31</td><td class="sd">10.6</td><td class="val">8.51</td><td class="ci">7.44&ndash;9.64</td><td class="sd">7.9</td><td class="val">8.05</td><td class="ci">6.74&ndash;9.56</td><td class="sd">10.2</td></tr>
+<tr><th class="rh">T-AP</th><td class="tg val">22.63</td><td class="ci">21.09&ndash;24.23</td><td class="sd">11.3</td><td class="val">12.49</td><td class="ci">11.24&ndash;13.73</td><td class="sd">9.0</td><td class="val">11.65</td><td class="ci">9.99&ndash;13.29</td><td class="sd">11.9</td></tr>
+</tbody></table></div>
+  <p class="note">Read against the previous page's Table 4: every mean and CI here matches to two decimal
+  places, because both draw from the same ee51a38 lineage. The only change is framing &mdash; S-AUC,
+  T-AUC, T-AP and T-IoU&nbsp;(sweep) are presented as ordinary current metrics rather than annotated
+  &ldquo;redefined&rdquo; entries.</p>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 5 &middot; supporting</p>
+    <h2>Is 200 clips enough? CI half-width by sample size</h2>
+  </div>
+  <p class="note">Percentile bootstrap over the clip set, 1000 resamples, evaluated at 50 / 100 / 150 / 200
+  clips, tier P+S+C. Values are half-widths in percentage points &mdash; smaller is tighter.</p>
+  <div class="tw"><table class="grid"><thead>
+<tr><th class="rh" rowspan="2">Metric <span class="qual">&plusmn; pp</span></th><th class="mg" colspan="4">SigLIP</th><th class="mg" colspan="4">MatchVision</th><th class="mg" colspan="4">SoccerMaster</th></tr>
+<tr><th class="tg sm">50</th><th class="sm">100</th><th class="sm">150</th><th class="sm">200</th><th class="tg sm">50</th><th class="sm">100</th><th class="sm">150</th><th class="sm">200</th><th class="tg sm">50</th><th class="sm">100</th><th class="sm">150</th><th class="sm">200</th></tr>
+</thead><tbody>
+<tr><th class="rh">Energy</th><td class="tg">4.27</td><td class="">3.06</td><td class="">2.44</td><td class="">2.15</td><td class="tg">5.37</td><td class="">3.85</td><td class="">3.10</td><td class="">2.76</td><td class="tg">5.04</td><td class="">3.79</td><td class="">3.05</td><td class="">2.76</td></tr>
+<tr><th class="rh">Pointing</th><td class="tg">7.63</td><td class="">5.55</td><td class="">4.30</td><td class="">3.96</td><td class="tg">6.62</td><td class="">4.33</td><td class="">3.94</td><td class="">3.13</td><td class="tg">7.42</td><td class="">5.09</td><td class="">4.13</td><td class="">3.43</td></tr>
+<tr><th class="rh">S-IoU</th><td class="tg">0.92</td><td class="">0.64</td><td class="">0.53</td><td class="">0.47</td><td class="tg">1.80</td><td class="">1.32</td><td class="">1.02</td><td class="">0.91</td><td class="tg">0.85</td><td class="">0.59</td><td class="">0.49</td><td class="">0.40</td></tr>
+<tr><th class="rh">S-AUC</th><td class="tg">0.79</td><td class="">0.56</td><td class="">0.46</td><td class="">0.41</td><td class="tg">1.86</td><td class="">1.22</td><td class="">1.07</td><td class="">0.92</td><td class="tg">0.63</td><td class="">0.42</td><td class="">0.37</td><td class="">0.33</td></tr>
+<tr><th class="rh">T-IoU</th><td class="tg">4.28</td><td class="">3.20</td><td class="">2.52</td><td class="">2.17</td><td class="tg">3.33</td><td class="">2.38</td><td class="">2.02</td><td class="">1.71</td><td class="tg">4.45</td><td class="">3.14</td><td class="">2.64</td><td class="">2.20</td></tr>
+<tr><th class="rh">T-IoU (sweep)</th><td class="tg">3.07</td><td class="">2.21</td><td class="">1.74</td><td class="">1.49</td><td class="tg">2.26</td><td class="">1.57</td><td class="">1.27</td><td class="">1.16</td><td class="tg">2.63</td><td class="">1.88</td><td class="">1.54</td><td class="">1.34</td></tr>
+<tr><th class="rh">T-AUC</th><td class="tg">3.17</td><td class="">2.21</td><td class="">1.77</td><td class="">1.47</td><td class="tg">2.32</td><td class="">1.69</td><td class="">1.30</td><td class="">1.10</td><td class="tg">2.79</td><td class="">1.86</td><td class="">1.67</td><td class="">1.41</td></tr>
+<tr><th class="rh">T-AP</th><td class="tg">3.21</td><td class="">2.31</td><td class="">1.77</td><td class="">1.57</td><td class="tg">2.57</td><td class="">1.81</td><td class="">1.49</td><td class="">1.24</td><td class="tg">3.17</td><td class="">2.33</td><td class="">1.85</td><td class="">1.65</td></tr>
+</tbody></table></div>
+  <p class="note">Shrinkage still tracks &radic;n; nothing here changes the earlier page's conclusion that
+  200 clips is enough and no metric was still improving sharply when the benchmark stopped.</p>
+</section>
+
+<footer>
+  <p>Recomputed from the per-clip <code>saliency/*.json</code> sidecars inside
+  <code>SoccerExplainability-output-20260727T084020Z-1-001.zip</code> (Drive output root, all runs at
+  commit <code>ee51a38</code>), via <code>inference/convergence_analysis.py</code>. Every figure is
+  generated, not transcribed; this page does not modify or replace the earlier
+  &ldquo;Consolidated Evidence Tables&rdquo; page.</p>
+</footer>
+
+</div>
