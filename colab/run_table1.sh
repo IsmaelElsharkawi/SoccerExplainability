@@ -42,6 +42,8 @@ COCO_JSON="${SOCCER_DIR}/annotations-coco.json"
 EXPECTED_CLIPS=200
 export HF_HOME="/content/huggingface_cache"
 export PYTHONUNBUFFERED=1
+# Colab exports its notebook backend (matplotlib_inline), which the venvs do not have.
+export MPLBACKEND=Agg
 
 # ---------------------------------------------------------------------------
 # Preconditions
