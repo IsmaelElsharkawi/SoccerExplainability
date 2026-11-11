@@ -141,6 +141,8 @@ REQS_REPO="/tmp/reqs_repo.txt"
 grep -viE '^(torch|torchvision|torchaudio)([=<>~ ]|$)' "${SOCCER_DIR}/environment.txt" > "${REQS_REPO}"
 # grad-cam pulls opencv-python-headless, which shares the cv2 module; keep it on the same version.
 echo "opencv-python-headless==4.10.0.84" >> "${REQS_REPO}"
+# The SigLIP / SigLIP2 tokenizers need these; Colab's system Python ships them, the venv does not.
+printf '%s\n' sentencepiece protobuf >> "${REQS_REPO}"
 # Stage 2: only what chefer_baselines.py and the frame loader import.
 REQS_NEW="/tmp/reqs_baselines.txt"
 printf '%s\n' decord==0.6.0 einops imageio numpy opencv-python Pillow tqdm \
