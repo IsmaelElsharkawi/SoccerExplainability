@@ -184,11 +184,14 @@ if wants siglip || wants matchvision || wants soccermaster; then
 
     if wants soccermaster && needs_run soccermaster; then
         SM_CKPT="/content/models/SoccerMaster"
-        if [ ! -d "${SM_CKPT}" ]; then
-            git lfs install --skip-repo >/dev/null 2>&1 || true
-            mkdir -p /content/models
-            git clone -q https://huggingface.co/xleprime/SoccerMaster "${SM_CKPT}"
+        # A plain `git clone` leaves Git LFS pointer files (text starting with
+        # "version https://git-lfs") when git-lfs is missing; torch.load then fails.
+        if [ -d "${SM_CKPT}" ] && grep -lqs "^version https://git-lfs" "${SM_CKPT}"/*.pt; then
+            echo "[soccermaster] ${SM_CKPT} holds LFS pointers, not weights; re-downloading."
+            rm -rf "${SM_CKPT}"
         fi
+        "${PY}" -c "from huggingface_hub import snapshot_download; snapshot_download('xleprime/SoccerMaster', local_dir='${SM_CKPT}')"
+        ls -la "${SM_CKPT}"/*.pt
         "${PY}" chefer_soccermaster_temporal.py \
             --config_path "${CONFIG}" \
             --checkpoint_dir "${SM_CKPT}" \
