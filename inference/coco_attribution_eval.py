@@ -4,6 +4,9 @@ from collections import defaultdict
 
 import numpy as np
 
+# numpy 2 renamed trapz to trapezoid (and 2.4 removed trapz).
+_trapezoid = getattr(np, "trapezoid", None) or np.trapz
+
 
 def _normalised_bbox_to_mask(bbox, height, width):
     """Convert a normalized [x, y, w, h] bbox to a binary mask (H, W)."""
@@ -58,7 +61,7 @@ def _curve_auc(values, thresholds=THRESHOLD_SWEEP):
     span = float(r[-1] - r[0])
     if span <= 0:
         return float(np.mean(v))
-    return float(np.trapz(v, r) / span)
+    return float(_trapezoid(v, r) / span)
 
 
 def _spatial_iou_at(attribution_map, gt_mask, ratio):
@@ -125,7 +128,7 @@ def _spatial_pixel_auc(attribution_map, gt_mask):
 
     tpr = np.r_[0.0, tps / n_pos]
     fpr = np.r_[0.0, fps / n_neg]
-    auroc = float(np.trapz(tpr, fpr))
+    auroc = float(_trapezoid(tpr, fpr))
 
     # Average precision: sum of precision at each recall step weighted by the
     # recall increment, with precision anchored at 1.0 for the empty prefix.
