@@ -44,6 +44,7 @@ export HF_HOME="/content/huggingface_cache"
 export PYTHONUNBUFFERED=1
 # Colab exports its notebook backend (matplotlib_inline), which the venvs do not have.
 export MPLBACKEND=Agg
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # ---------------------------------------------------------------------------
 # Preconditions

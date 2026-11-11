@@ -40,6 +40,8 @@ class AttentionRecorder:
         self.names[id(module)] = name
 
     def reset(self):
+        for entry in self.records:
+            entry.pop("probs", None)
         self.records = []
 
     def record(self, module, probs):
@@ -47,11 +49,18 @@ class AttentionRecorder:
         name = self.names.get(id(module))
         if not self.enabled or name is None or not probs.requires_grad:
             return
-        entry = {"name": name, "cam": None}
+        # The hook must not close over `probs` itself: tensor -> hook -> tensor
+        # is a cycle through autograd's C++ hook storage that Python's GC
+        # cannot see, so every clip's attention maps would leak (this OOMed
+        # CLIP after ~110 clips). A detached view shares the storage without
+        # the autograd link, and is dropped as soon as the hook has run.
+        entry = {"name": name, "cam": None, "probs": probs.detach()}
         self.records.append(entry)
 
-        def _hook(grad, probs=probs, entry=entry):
-            entry["cam"] = (grad.detach().float() * probs.detach().float()).clamp(min=0).mean(dim=1)
+        def _hook(grad, entry=entry):
+            attn = entry.pop("probs", None)
+            if attn is not None:
+                entry["cam"] = (grad.detach().float() * attn.float()).clamp(min=0).mean(dim=1)
 
         probs.register_hook(_hook)
 
