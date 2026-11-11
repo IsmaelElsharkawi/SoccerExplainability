@@ -124,9 +124,10 @@ make_venv() {
     local venv="$1" reqs="$2"; shift 2
     command -v uv >/dev/null 2>&1 || pip install -q uv
     if [ ! -x "${venv}/bin/python" ]; then
-        uv venv -q --python "${PY_VERSION}" "${venv}"
+        uv venv --python "${PY_VERSION}" "${venv}"
     fi
-    uv pip install -q --python "${venv}/bin/python" \
+    echo "Building ${venv} (Python ${PY_VERSION}; torch with CUDA 12.8 is a multi-GB download, expect 3-10 min)..."
+    uv pip install --python "${venv}/bin/python" \
         --index-url https://download.pytorch.org/whl/cu128 --extra-index-url https://pypi.org/simple \
         --index-strategy unsafe-best-match \
         torch torchvision -r "${reqs}" "$@"
