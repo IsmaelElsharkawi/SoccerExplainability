@@ -110,26 +110,50 @@ needs_run() {
     return 0
 }
 
-install_repo_env() {
-    # environment.txt pins torch==2.3.1, which current Colab Pythons cannot
-    # install and which has no Blackwell (G4) kernels anyway. Install every
-    # other pin, then a CUDA 12.8 torch build (harmless on older GPUs).
-    grep -viE '^(torch|torchvision|torchaudio)([=<>~ ]|$)' "${SOCCER_DIR}/environment.txt" > /tmp/env_no_torch.txt
-    pip install -q -r /tmp/env_no_torch.txt
-    pip install -q --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-    python -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, torch.cuda.get_device_name(0))"
+# Each stage gets its own Python 3.11 venv (built with uv): the repo's 2024
+# pins (transformers 4.43.2 -> tokenizers 0.19) have no wheels for Colab's
+# current Python, and the two stages need different transformers versions.
+# torch is not taken from environment.txt (2.3.1 has no Blackwell kernels);
+# both venvs get a CUDA 12.8 build instead, which also works on older GPUs.
+PY_VERSION="3.11"
+VENV_REPO="/content/venv_repo"
+VENV_NEW="/content/venv_baselines"
+
+# make_venv VENV REQUIREMENTS_FILE [extra packages...]
+make_venv() {
+    local venv="$1" reqs="$2"; shift 2
+    command -v uv >/dev/null 2>&1 || pip install -q uv
+    if [ ! -x "${venv}/bin/python" ]; then
+        uv venv -q --python "${PY_VERSION}" "${venv}"
+    fi
+    uv pip install -q --python "${venv}/bin/python" \
+        --index-url https://download.pytorch.org/whl/cu128 --extra-index-url https://pypi.org/simple \
+        --index-strategy unsafe-best-match \
+        torch torchvision -r "${reqs}" "$@"
+    "${venv}/bin/python" -c "import sys, torch, transformers; print('python', sys.version.split()[0], '| torch', torch.__version__, 'cuda', torch.version.cuda, '|', torch.cuda.get_device_name(0), '| transformers', transformers.__version__)"
 }
+
+# Stage 1: every repo pin except torch/torchvision.
+REQS_REPO="/tmp/reqs_repo.txt"
+grep -viE '^(torch|torchvision|torchaudio)([=<>~ ]|$)' "${SOCCER_DIR}/environment.txt" > "${REQS_REPO}"
+# grad-cam pulls opencv-python-headless, which shares the cv2 module; keep it on the same version.
+echo "opencv-python-headless==4.10.0.84" >> "${REQS_REPO}"
+# Stage 2: only what chefer_baselines.py and the frame loader import.
+REQS_NEW="/tmp/reqs_baselines.txt"
+printf '%s\n' decord==0.6.0 einops imageio numpy opencv-python Pillow tqdm \
+    transformers==5.22.2 timm==1.0.31 sentencepiece protobuf > "${REQS_NEW}"
 
 # ---------------------------------------------------------------------------
 # Stage 1: soccer models + SigLIP with the repo's own scripts
 # ---------------------------------------------------------------------------
 if wants siglip || wants matchvision || wants soccermaster; then
     echo "=== Stage 1: repo environment ==="
-    install_repo_env
+    make_venv "${VENV_REPO}" "${REQS_REPO}"
+    PY="${VENV_REPO}/bin/python"
     cd "${SOCCER_DIR}/inference"
 
     if wants siglip && needs_run siglip; then
-        python chefer_siglip.py \
+        "${PY}" chefer_siglip.py \
             --config_path "${CONFIG}" \
             --model_name "google/siglip-base-patch16-224" \
             --coco_json "${COCO_JSON}" \
@@ -143,7 +167,7 @@ if wants siglip || wants matchvision || wants soccermaster; then
         MV_CKPT="/content/pretrained_classification.pth"
         [ -f "${MV_CKPT}" ] || wget -q -O "${MV_CKPT}" \
             https://huggingface.co/Homie0609/UniSoccer/resolve/main/pretrained_classification.pth
-        python chefer_matchvision_temporal.py \
+        "${PY}" chefer_matchvision_temporal.py \
             --config_path "${CONFIG}" \
             --checkpoint_path "${MV_CKPT}" \
             --coco_json "${COCO_JSON}" \
@@ -160,7 +184,7 @@ if wants siglip || wants matchvision || wants soccermaster; then
             mkdir -p /content/models
             git clone -q https://huggingface.co/xleprime/SoccerMaster "${SM_CKPT}"
         fi
-        python chefer_soccermaster_temporal.py \
+        "${PY}" chefer_soccermaster_temporal.py \
             --config_path "${CONFIG}" \
             --checkpoint_dir "${SM_CKPT}" \
             --siglip2_path "google/siglip2-large-patch16-512" \
@@ -178,14 +202,13 @@ fi
 # ---------------------------------------------------------------------------
 if wants clip || wants peav || wants videoprism; then
     echo "=== Stage 2: transformers 5.22.2 / timm 1.0.31 ==="
-    # decord, einops, imageio etc. come from the repo environment.
-    install_repo_env
-    pip install -q "transformers==5.22.2" "timm==1.0.31" sentencepiece protobuf
+    make_venv "${VENV_NEW}" "${REQS_NEW}"
+    PY="${VENV_NEW}/bin/python"
     cd "${SOCCER_DIR}/inference"
 
     for model in clip peav videoprism; do
         if wants "${model}" && needs_run "${model}"; then
-            python chefer_baselines.py \
+            "${PY}" chefer_baselines.py \
                 --model "${model}" \
                 --config_path "${CONFIG}" \
                 --saliency_save_dir "${RUN_DIR}/${model}/saliency" \
@@ -225,7 +248,11 @@ if [ "${#RUN_ARGS[@]}" -eq 0 ]; then
 fi
 
 cd "${SOCCER_DIR}/inference"
-python evaluate_grounding.py \
+# Scoring needs only numpy + opencv; use whichever venv exists.
+PY="${VENV_REPO}/bin/python"
+[ -x "${PY}" ] || PY="${VENV_NEW}/bin/python"
+[ -x "${PY}" ] || PY=python3
+"${PY}" evaluate_grounding.py \
     --coco_json "${COCO_JSON}" \
     "${RUN_ARGS[@]}" \
     --resolution frame native \
