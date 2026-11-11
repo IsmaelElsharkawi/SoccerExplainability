@@ -102,3 +102,15 @@ Table markup is generated rather than hand-written. To change numbers, rerun the
 generation step against fresh sidecars rather than editing cells by hand — hand-editing is
 how transcription errors enter, and the whole point of the provenance chain above is that
 no figure on the page was typed by a human.
+
+
+| Metric | SigLIP 50 | SigLIP 100 | SigLIP 150 | SigLIP 200 | MatchVision 50 | MatchVision 100 | MatchVision 150 | MatchVision 200 | SoccerMaster 50 | SoccerMaster 100 | SoccerMaster 150 | SoccerMaster 200 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Energy | 4.27 | 3.06 | 2.44 | 2.15 | 5.37 | 3.85 | 3.10 | 2.76 | 5.04 | 3.79 | 3.05 | 2.76 |
+| Pointing | 7.63 | 5.55 | 4.30 | 3.96 | 6.62 | 4.33 | 3.94 | 3.13 | 7.42 | 5.09 | 4.13 | 3.43 |
+| S-IoU | 0.92 | 0.64 | 0.53 | 0.47 | 1.80 | 1.32 | 1.02 | 0.91 | 0.85 | 0.59 | 0.49 | 0.40 |
+| S-AUC | 0.79 | 0.56 | 0.46 | 0.41 | 1.86 | 1.22 | 1.07 | 0.92 | 0.63 | 0.42 | 0.37 | 0.33 |
+| T-IoU | 4.28 | 3.20 | 2.52 | 2.17 | 3.33 | 2.38 | 2.02 | 1.71 | 4.45 | 3.14 | 2.64 | 2.20 |
+| T-IoU (sweep) | 3.07 | 2.21 | 1.74 | 1.49 | 2.26 | 1.57 | 1.27 | 1.16 | 2.63 | 1.88 | 1.54 | 1.34 |
+| T-AUC | 3.17 | 2.21 | 1.77 | 1.47 | 2.32 | 1.69 | 1.30 | 1.10 | 2.79 | 1.86 | 1.67 | 1.41 |
+| T-AP | 3.21 | 2.31 | 1.77 | 1.57 | 2.57 | 1.81 | 1.49 | 1.24 | 3.17 | 2.33 | 1.85 | 1.65 |

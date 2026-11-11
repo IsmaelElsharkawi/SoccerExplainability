@@ -23,9 +23,11 @@ def _combine_bbox_masks(bboxes, height, width):
     return combined
 
 
-# Single threshold sweep shared by every threshold-dependent metric: S-AUC,
-# T-AUC, T-AP and the T-IoU sweep. Ratios of the per-frame max heatmap value
-# (spatial) / per-clip max frame score (temporal).
+# Single threshold sweep shared by the threshold-dependent temporal metrics
+# (T-AUC, T-AP and the T-IoU sweep) and the standalone S-IoU sensitivity
+# curve. Ratios of the per-frame max heatmap value (spatial) / per-clip max
+# frame score (temporal). The spatial headline metric (pixel AUC-ROC/AUC-PR)
+# is rank-based and does NOT use this sweep.
 #
 # The range starts at 0.5 because a cutoff below half of max admits the
 # method's own noise floor, so operating points down there describe noise
@@ -60,7 +62,12 @@ def _curve_auc(values, thresholds=THRESHOLD_SWEEP):
 
 
 def _spatial_iou_at(attribution_map, gt_mask, ratio):
-    """S-IoU with the heatmap binarized at `ratio * max`."""
+    """S-IoU with the heatmap binarized at `ratio * max`.
+
+    Kept for the standalone S-IoU-vs-threshold sensitivity curve
+    (`spatial_sensitivity_sweep.py`); the headline spatial AUC no longer
+    integrates this, it uses rank-based pixel AUC (see `_spatial_pixel_auc`).
+    """
     max_val = float(attribution_map.max())
     if max_val > 0:
         cam_binary = (attribution_map >= ratio * max_val).astype(np.float32)
@@ -71,28 +78,66 @@ def _spatial_iou_at(attribution_map, gt_mask, ratio):
     return float(intersection / union) if union > 0 else 0.0
 
 
-def _spatial_auc(attribution_map, gt_mask, thresholds=THRESHOLD_SWEEP):
-    """[Step 2] Spatial grounding integrated over the threshold sweep.
+def _spatial_pixel_auc(attribution_map, gt_mask):
+    """Standard pixel-level AUC-ROC and AUC-PR for a heatmap vs. a cue-box mask.
 
-    Reviewers noted that S-IoU binarizes a continuous heatmap with a single
-    arbitrary cutoff, which can severely penalize models. This scores the
-    heatmap across the whole range instead: S-IoU is recomputed at every ratio
-    in THRESHOLD_SWEEP, and the area under the resulting IoU-vs-threshold
-    curve is the S-AUC. It is therefore on the same scale as S-IoU itself
-    (an IoU, not a ranking probability) and subsumes the old separate S-IoU
-    sweep, which no longer needs to be reported alongside it.
+    This is the AUC used throughout the saliency / visual-explanation
+    literature, and replaces the earlier IoU-vs-threshold integral (which was
+    on the IoU scale and had no chance baseline). Every pixel's attribution
+    value is treated as a continuous classifier score and the GT cue-box mask
+    as its binary label (1 inside a box, 0 outside):
 
-    Returns NaN when the mask is all-foreground or all-background.
+    * **AUROC** is the area under the TPR-vs-FPR curve swept over all score
+      levels. It equals the probability that a random in-box pixel outranks a
+      random out-of-box pixel, so a random heatmap scores 0.5 — the 50% chance
+      baseline reviewers expected.
+    * **AUPRC** (average precision) is the area under the precision-recall
+      curve. Its chance level is the foreground prevalence (fraction of pixels
+      inside a box), not 0.5, so it should be read against that prevalence.
+
+    Both are rank-based, so the arbitrary single-cutoff dependence that reviewers
+    flagged for S-IoU disappears. Ties in score are handled by collapsing equal
+    scores into one operating point (the scikit-learn convention), so the result
+    matches ``roc_auc_score`` / ``average_precision_score`` without the
+    dependency. Returns (NaN, NaN) when the mask is all-foreground or
+    all-background, since neither curve is defined then.
     """
-    positives = float((gt_mask > 0).sum())
-    if positives == 0 or positives == gt_mask.size:
-        return float("nan")
-    ious = [_spatial_iou_at(attribution_map, gt_mask, r) for r in thresholds]
-    return _curve_auc(ious, thresholds)
+    labels = (gt_mask > 0).astype(np.int8).ravel()
+    scores = np.asarray(attribution_map, dtype=np.float64).ravel()
+    n_pos = int(labels.sum())
+    n_neg = labels.size - n_pos
+    if n_pos == 0 or n_neg == 0:
+        return float("nan"), float("nan")
+
+    # Sort pixels by score, highest first; mergesort keeps ties deterministic.
+    order = np.argsort(-scores, kind="mergesort")
+    scores_sorted = scores[order]
+    labels_sorted = labels[order]
+
+    tp_cum = np.cumsum(labels_sorted)
+    fp_cum = np.cumsum(1 - labels_sorted)
+
+    # Keep only the last index of each run of equal scores: thresholds between
+    # tied scores are not distinct operating points.
+    last_of_run = np.r_[np.where(np.diff(scores_sorted) != 0)[0], scores_sorted.size - 1]
+    tps = tp_cum[last_of_run].astype(np.float64)
+    fps = fp_cum[last_of_run].astype(np.float64)
+
+    tpr = np.r_[0.0, tps / n_pos]
+    fpr = np.r_[0.0, fps / n_neg]
+    auroc = float(np.trapz(tpr, fpr))
+
+    # Average precision: sum of precision at each recall step weighted by the
+    # recall increment, with precision anchored at 1.0 for the empty prefix.
+    recall = np.r_[0.0, tps / n_pos]
+    precision = np.r_[1.0, tps / np.maximum(tps + fps, 1)]
+    auprc = float(np.sum(np.diff(recall) * precision[1:]))
+
+    return auroc, auprc
 
 
 def _compute_attribution_metrics_for_bboxes(attribution_map, bboxes, cam_threshold=0.5):
-    """Compute Energy / Pointing / IoU / S-AUC for a given bbox subset."""
+    """Compute Energy / Pointing / IoU / pixel AUC-ROC / AUC-PR for a bbox subset."""
     height, width = attribution_map.shape[:2]
     gt_mask = _combine_bbox_masks(bboxes, height, width)
 
@@ -110,15 +155,17 @@ def _compute_attribution_metrics_for_bboxes(attribution_map, bboxes, cam_thresho
     union = np.clip(cam_binary + gt_mask, 0, 1).sum()
     iou = float(intersection / union) if union > 0 else 0.0
 
-    # [Step 2] Threshold-integrated complement to single-cutoff S-IoU. This
-    # replaces the separate S-IoU sweep, which is no longer computed.
-    s_auc = _spatial_auc(attribution_map, gt_mask)
+    # [Step 2] Rank-based pixel-level AUC-ROC / AUC-PR. Chance AUROC is 0.5
+    # (foreground vs. background pixel ranking); chance AUPRC is the box
+    # prevalence. Replaces the single-cutoff-free but IoU-scaled S-AUC.
+    s_auroc, s_auprc = _spatial_pixel_auc(attribution_map, gt_mask)
 
     return {
         "energy_inside_bbox": energy_inside_bbox,
         "pointing_accuracy": pointing_accuracy,
         "iou": iou,
-        "s_auc": s_auc,
+        "s_auroc": s_auroc,
+        "s_auprc": s_auprc,
     }
 
 
@@ -378,7 +425,8 @@ class CocoAttributionEvaluator:
             metrics["energy_inside_bbox"] = float("nan")
             metrics["pointing_accuracy"] = float("nan")
             metrics["iou"] = float("nan")
-            metrics["s_auc"] = float("nan")  # [Step 2]
+            metrics["s_auroc"] = float("nan")  # [Step 2]
+            metrics["s_auprc"] = float("nan")  # [Step 2]
             return metrics
 
         bboxes = [a["bbox"] for a in roi_annots]
@@ -429,7 +477,8 @@ class CocoAttributionEvaluator:
                     "energy_inside_bbox": float("nan"),
                     "pointing_accuracy": float("nan"),
                     "iou": float("nan"),
-                    "s_auc": float("nan"),  # [Step 2]
+                    "s_auroc": float("nan"),  # [Step 2]
+                    "s_auprc": float("nan"),  # [Step 2]
                     "frames_with_group": 0,
                 }
         metrics["label_group_scores"] = group_scores
@@ -439,10 +488,10 @@ class CocoAttributionEvaluator:
         num_frames = attribution_maps.shape[0]
         per_frame = []
         energies, pointings, ious = [], [], []
-        s_aucs = []  # [Step 2]
+        s_aurocs, s_auprcs = [], []  # [Step 2]
         group_acc = {
             group_name: {
-                "energy": [], "pointing": [], "iou": [], "s_auc": [],
+                "energy": [], "pointing": [], "iou": [], "s_auroc": [], "s_auprc": [],
             }
             for group_name in ("small_only", "small_large", "small_large_visual_cues")
         }
@@ -462,8 +511,10 @@ class CocoAttributionEvaluator:
                 energies.append(frame_metrics["energy_inside_bbox"])
                 pointings.append(frame_metrics["pointing_accuracy"])
                 ious.append(frame_metrics["iou"])
-                if not np.isnan(frame_metrics.get("s_auc", np.nan)):  # [Step 2]
-                    s_aucs.append(frame_metrics["s_auc"])
+                if not np.isnan(frame_metrics.get("s_auroc", np.nan)):  # [Step 2]
+                    s_aurocs.append(frame_metrics["s_auroc"])
+                if not np.isnan(frame_metrics.get("s_auprc", np.nan)):  # [Step 2]
+                    s_auprcs.append(frame_metrics["s_auprc"])
 
                 for group_name, group_metrics in frame_metrics.get("label_group_scores", {}).items():
                     if not np.isnan(group_metrics.get("energy_inside_bbox", np.nan)):
@@ -472,22 +523,26 @@ class CocoAttributionEvaluator:
                         group_acc[group_name]["pointing"].append(group_metrics["pointing_accuracy"])
                     if not np.isnan(group_metrics.get("iou", np.nan)):
                         group_acc[group_name]["iou"].append(group_metrics["iou"])
-                    if not np.isnan(group_metrics.get("s_auc", np.nan)):  # [Step 2]
-                        group_acc[group_name]["s_auc"].append(group_metrics["s_auc"])
+                    if not np.isnan(group_metrics.get("s_auroc", np.nan)):  # [Step 2]
+                        group_acc[group_name]["s_auroc"].append(group_metrics["s_auroc"])
+                    if not np.isnan(group_metrics.get("s_auprc", np.nan)):  # [Step 2]
+                        group_acc[group_name]["s_auprc"].append(group_metrics["s_auprc"])
 
         if energies:
             summary = {
                 "mean_energy_inside_bbox": float(np.mean(energies)),
                 "mean_pointing_accuracy": float(np.mean(pointings)),
                 "mean_iou": float(np.mean(ious)),
-                "mean_s_auc": float(np.mean(s_aucs)) if s_aucs else float("nan"),  # [Step 2]
+                "mean_s_auroc": float(np.mean(s_aurocs)) if s_aurocs else float("nan"),  # [Step 2]
+                "mean_s_auprc": float(np.mean(s_auprcs)) if s_auprcs else float("nan"),  # [Step 2]
             }
         else:
             summary = {
                 "mean_energy_inside_bbox": float("nan"),
                 "mean_pointing_accuracy": float("nan"),
                 "mean_iou": float("nan"),
-                "mean_s_auc": float("nan"),  # [Step 2]
+                "mean_s_auroc": float("nan"),  # [Step 2]
+                "mean_s_auprc": float("nan"),  # [Step 2]
             }
 
         summary["annotated_frames"] = len(energies)
@@ -500,7 +555,8 @@ class CocoAttributionEvaluator:
                     "mean_energy_inside_bbox": float(np.mean(vals["energy"])),
                     "mean_pointing_accuracy": float(np.mean(vals["pointing"])),
                     "mean_iou": float(np.mean(vals["iou"])),
-                    "mean_s_auc": float(np.mean(vals["s_auc"])) if vals["s_auc"] else float("nan"),  # [Step 2]
+                    "mean_s_auroc": float(np.mean(vals["s_auroc"])) if vals["s_auroc"] else float("nan"),  # [Step 2]
+                    "mean_s_auprc": float(np.mean(vals["s_auprc"])) if vals["s_auprc"] else float("nan"),  # [Step 2]
                     "annotated_frames": len(vals["energy"]),
                 }
             else:
@@ -508,7 +564,8 @@ class CocoAttributionEvaluator:
                     "mean_energy_inside_bbox": float("nan"),
                     "mean_pointing_accuracy": float("nan"),
                     "mean_iou": float("nan"),
-                    "mean_s_auc": float("nan"),  # [Step 2]
+                    "mean_s_auroc": float("nan"),  # [Step 2]
+                    "mean_s_auprc": float("nan"),  # [Step 2]
                     "annotated_frames": 0,
                 }
 

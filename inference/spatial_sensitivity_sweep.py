@@ -1,11 +1,11 @@
 """[Step 4b] S-IoU sensitivity curve, recomputed from raw saliency maps.
 
-S-AUC (see ``coco_attribution_eval._spatial_auc``) is the integral of S-IoU
-over the same 0.50-0.95 threshold sweep T-IoU uses, but only the integrated
-scalar is persisted to the ``<clip>.json`` sidecars written by
-``save_clip_saliency_and_scores`` -- the per-threshold curve behind it is
-discarded after use. Unlike the temporal side, where ``tIoU_sweep.per_threshold``
-is saved directly, there is no sidecar field to read this off of.
+This is the S-IoU-vs-threshold sensitivity analysis reviewers asked for: how
+much the single-cutoff S-IoU moves as the binarization ratio sweeps 0.50-0.95.
+The headline spatial score is now the rank-based pixel AUC-ROC / AUC-PR
+(``coco_attribution_eval._spatial_pixel_auc``), which is threshold-free and has
+a proper chance baseline; this script complements it by showing the raw
+sensitivity of the thresholded metric across the sweep.
 
 This script recomputes it from source instead: the raw per-frame saliency
 maps saved in each clip's ``.npz`` sidecar (``--load_npz`` in
@@ -13,8 +13,8 @@ convergence_analysis.py only reads the 1-D ``frame_scores`` array from the
 same file; this reads the 2-D ``saliency_maps`` array), re-evaluated against
 the ROI boxes in the COCO annotation file at each ratio in the sweep, using
 the project's own ``_spatial_iou_at``/``_combine_bbox_masks`` so the result
-is methodologically identical to how S-AUC itself is computed, just without
-collapsing the curve into one number.
+is methodologically consistent with the single-cutoff S-IoU, just swept
+across the whole range instead of one point.
 
 Example:
     python inference/spatial_sensitivity_sweep.py \\

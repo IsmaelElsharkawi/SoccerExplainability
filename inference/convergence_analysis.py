@@ -48,9 +48,10 @@ def _spatial_metrics(summary, tier):
         "Energy": gs.get("mean_energy_inside_bbox", np.nan),
         "Pointing": gs.get("mean_pointing_accuracy", np.nan),
         "S-IoU": gs.get("mean_iou", np.nan),
-        # S-AUC is itself the threshold-integrated S-IoU, so there is no
-        # separate "S-IoU (sweep)" column any more.
-        "S-AUC": gs.get("mean_s_auc", np.nan),
+        # Rank-based pixel-level AUCs (chance AUROC = 0.5, chance AUPRC =
+        # foreground prevalence), replacing the IoU-integral S-AUC.
+        "S-AUROC": gs.get("mean_s_auroc", np.nan),
+        "S-AUPRC": gs.get("mean_s_auprc", np.nan),
     }
 
 
@@ -74,7 +75,7 @@ def extract_clip_metrics(summary, tier):
     return metrics
 
 
-METRIC_ORDER = ["Energy", "Pointing", "S-IoU", "S-AUC",
+METRIC_ORDER = ["Energy", "Pointing", "S-IoU", "S-AUROC", "S-AUPRC",
                 "T-IoU", "T-IoU (sweep)", "T-AUC", "T-AP"]
 
 

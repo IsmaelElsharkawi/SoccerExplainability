@@ -1,5 +1,5 @@
-<title>SoccerLens &mdash; Evidence Tables (ee51a38, current metric definitions)</title>
-<meta name="description" content="All three model/method pairs, rebuilt end to end from the ee51a38 runs: headline metrics, per-class breakdown, threshold sensitivity on the current 0.50-0.95 grid, and bootstrap confidence intervals.">
+<title>SoccerLens &mdash; Evidence Tables (ee51a38 + native-grid bundle)</title>
+<meta name="description" content="Tables 1-5 from the ee51a38 runs, plus ten native-grid model/method pairs from a separate ground-truth-explained bundle, each table described in plain language.">
 <style>
 .newm{color:var(--accent);font-size:9px;vertical-align:middle}
 /* CI table */
@@ -123,6 +123,7 @@ tfoot th.rh{background:var(--sunken)}
         color:var(--ink-faint);flex-wrap:wrap}
 .ramp{height:9px;width:132px;border-radius:2px;border:1px solid var(--rule);
       background:linear-gradient(90deg,var(--heat-0),color-mix(in oklab,var(--heat-1) 78%,var(--heat-0)))}
+.rule-major{height:2px;background:var(--rule-strong);border-radius:1px}
 footer{border-top:1px solid var(--rule);padding-top:20px;color:var(--ink-faint);font-size:13.5px;
        display:flex;flex-direction:column;gap:7px}
 code{font-family:var(--mono);font-size:.9em;background:var(--sunken);padding:1px 5px;border-radius:2px}
@@ -141,11 +142,9 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
 <header>
   <p class="eyebrow">NeurIPS 2026 &middot; Evaluations &amp; Datasets &middot; Submission #1152</p>
   <h1>SoccerLens &mdash; Evidence Tables, Rebuilt at ee51a38</h1>
-  <p class="sub">Companion page to &ldquo;Consolidated Evidence Tables&rdquo;: same five-table structure,
-  but every number below is regenerated end-to-end from the <strong>ee51a38 runs pulled from Drive</strong>
-  &mdash; the exact gap the original page's &ldquo;Open items&rdquo; section flagged as not yet done.
-  S-AUC, T-AUC, T-AP and T-IoU&nbsp;(sweep) appear here at their <em>current</em> definitions throughout,
-  with no struck-through legacy values, because this run postdates the redefinition entirely.</p>
+  <p class="sub">Six tables of results for three models &mdash; SigLIP, MatchVision and SoccerMaster
+  &mdash; measuring how well each one looks at the part of a soccer clip a person would look at. Each table
+  says up front what it holds and how to read it.</p>
   <dl class="strip">
     <div class="cell"><dt>Clips</dt><dd>200 / 200</dd></div>
     <div class="cell"><dt>Event classes</dt><dd>13</dd></div>
@@ -159,26 +158,20 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
   <h3>Provenance and integrity checks</h3>
   <p>Source: <code>SoccerExplainability-output-20260727T084020Z-1-001.zip</code>, pulled from the Drive
   output root. All 10 runs (3 SigLIP, 3 MatchVision, 4 SoccerMaster) report <code>git_commit: ee51a38</code>
-  in their <code>run_info.txt</code>, and each carries the full 200/200 saliency sidecars. Before computing
-  anything: (1) repeat runs within each model were content-checksummed and are byte-identical, matching the
-  &ldquo;deterministic pipeline&rdquo; finding from the previous page &mdash; so one representative run per
-  model was used, not an average; (2) the P+S+C headline reproduces the previously-verified values exactly
-  &mdash; SigLIP 22.71 / 27.56 / 2.98 / 28.67, MatchVision 39.11 / 44.20 / 7.47 / 14.99, SoccerMaster 37.05 /
-  50.47 / 3.62 / 14.90 (Energy / Pointing / S-IoU / T-IoU) &mdash; confirming this zip is the same lineage,
-  not a divergent or broken-weights run.</p>
+  in their <code>run_info.txt</code>, and each carries the full 200/200 saliency sidecars. Repeat runs within
+  a model were checksummed and are byte-identical, so the pipeline is deterministic and one representative
+  run per model is used rather than an average. Runs from different models are <em>not</em> identical to each
+  other, which rules out the copied-bundle mix-up seen previously.</p>
 </div>
 
 <div class="flag stale">
   <h3>SigLIP prediction distribution: worth flagging, not disqualifying</h3>
-  <p>Following the previous page's open item (&ldquo;checking the prediction distribution is how a
-  broken-weights run was caught previously&rdquo;): SigLIP's <code>prediction_text</code> collapses to a
-  single class, <code>foul lead to penalty</code>, on 168/200 clips (5 distinct predictions total,
-  7.5% classification accuracy). MatchVision and SoccerMaster show healthy spread &mdash; 16 distinct
-  predictions each, 62.5% and 66.0% accuracy. This is <strong>not a new problem introduced by this
-  zip</strong>: the grounding metrics above reproduce the already-cited values exactly, so it is the same
-  checkpoint the earlier numbers came from. But it means SigLIP's Energy/Pointing/IoU scores describe how
-  well its saliency locates cues <em>for a mostly-wrong predicted label</em>, not for the true event class
-  &mdash; worth stating explicitly if these numbers go in the rebuttal.</p>
+  <p>SigLIP guesses the same answer, <code>foul lead to penalty</code>, on 168 of the 200 clips &mdash; only
+  5 different answers in total, and it gets 7.5% right. MatchVision and SoccerMaster spread out properly:
+  16 different answers each, 62.5% and 66.0% right. This is the checkpoint&rsquo;s own behaviour, not a bad
+  download. It does mean SigLIP&rsquo;s scores below describe how well it points at cues
+  <em>for an answer that is usually wrong</em>, rather than for the event that actually happened &mdash;
+  worth saying out loud if these numbers go into the rebuttal.</p>
 </div>
 
 <section>
@@ -186,12 +179,12 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
     <p class="eyebrow">Table 1</p>
     <h2>Headline results across all cue tiers</h2>
   </div>
-  <p class="note">Cue tiers are cumulative: <strong>P</strong> primary cues only,
-  <strong>P+S</strong> adds secondary regions, <strong>P+S+C</strong> adds common visual cues.
-  Indigo marks each model&rsquo;s best tier for that metric. All eight metrics appear here at their
-  current definitions &mdash; the previous page limited this table to the four single-cutoff metrics and
-  held S-AUC/T-AUC/T-AP/T-IoU&nbsp;(sweep) back for Table&nbsp;4 only, since those four hadn't been
-  recomputed per-tier there.</p>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> Three models across the top, eight scores
+  down the side. Each model gets three columns, because we score it against three sets of marked-up
+  regions: <strong>P</strong> is the most important spots only, <strong>P+S</strong> adds the nearby
+  ones, <strong>P+S+C</strong> adds everything else worth looking at. Higher is better everywhere.
+  Indigo marks a model&rsquo;s best of its own three columns. The last two rows say how many times we
+  ran each model, and how much the answers moved between those runs.</p>
   <div class="tw"><table class="grid"><thead>
 <tr><th class="rh" rowspan="2">Metric (%)</th><th class="mg" colspan="3">SigLIP</th><th class="mg" colspan="3">MatchVision</th><th class="mg" colspan="3">SoccerMaster</th></tr>
 <tr><th class="tg">P</th><th class="">P+S</th><th class="">P+S+C</th><th class="tg">P</th><th class="">P+S</th><th class="">P+S+C</th><th class="tg">P</th><th class="">P+S</th><th class="">P+S+C</th></tr>
@@ -209,9 +202,6 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
 <tr><th class="rh">runs completed</th><td class="tg agg" colspan="3">3</td><td class="tg agg" colspan="3">3</td><td class="tg agg" colspan="3">4</td></tr>
 <tr><th class="rh">sd across runs <span class="qual">P+S+C</span></th><td class="tg agg zero" colspan="3">0.00</td><td class="tg agg zero" colspan="3">0.00</td><td class="tg agg zero" colspan="3">0.00</td></tr>
 </tfoot></table></div>
-  <p class="note">Unlike the previous page, MatchVision now has three completed runs (not one) and agrees
-  with SigLIP and SoccerMaster on run-to-run determinism: the inference pipeline still returns
-  bit-identical means across repeats, so the sd row is genuinely zero for all three models, not just two.</p>
 </section>
 
 <section>
@@ -219,10 +209,12 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
     <p class="eyebrow">Table 2 &middot; sensitivity test</p>
     <h2>T-IoU against the salient-frame threshold &mdash; current 0.50&ndash;0.95 grid</h2>
   </div>
-  <p class="note">Each row binarises the per-frame salience signal at that ratio of the per-clip maximum,
-  then takes IoU against the annotated-frame set, tier P+S+C. This is the grid <code>ee51a38</code> moved
-  the shared sweep to; the previous page's Table 2 used the pre-change 0.1&ndash;0.9 grid, which the current
-  sidecars no longer carry. The 0.50 row is identical to the Table 1/4 T-IoU value by construction.</p>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> One score from Table 1 &mdash; T-IoU, which asks
+  whether the model watched the right <em>moments</em> of the clip &mdash; worked out ten times over. Each row
+  uses a stricter rule for what counts as &ldquo;the model was paying attention here.&rdquo; The rule gets
+  stricter as you go down, so the numbers get smaller. Darker cells are higher. <strong>spread</strong> is
+  the gap between the highest and lowest model in that row. The last row says how many times over each
+  model&rsquo;s score shrank between the loosest rule at the top and the strictest at the bottom.</p>
   <div class="tw"><table class="grid heat"><thead><tr><th class="rh">Threshold (&times; max)</th><th>SigLIP</th><th>MatchVision</th><th>SoccerMaster</th><th class="spread">spread</th></tr></thead><tbody>
 <tr><th class="rh mono">0.50</th><td class="ht" style="--t:1.000">28.67</td><td class="ht" style="--t:0.467">14.99</td><td class="ht" style="--t:0.463">14.90</td><td class="spread">13.77</td></tr>
 <tr><th class="rh mono">0.55</th><td class="ht" style="--t:0.928">26.83</td><td class="ht" style="--t:0.411">13.56</td><td class="ht" style="--t:0.397">13.20</td><td class="spread">13.63</td></tr>
@@ -237,9 +229,6 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
 </tbody><tfoot><tr><th class="rh">fall 0.50&rarr;0.95</th><td class="fall">5.1&times;</td><td class="fall">3.9&times;</td><td class="fall">4.9&times;</td><td class="spread"></td></tr></tfoot></table></div>
   <div class="legend"><span>low</span><span class="ramp"></span><span>high</span>
     <span>&middot; spread = max &minus; min across models at that threshold</span></div>
-  <p class="note">Same smooth, no-cliff degradation the earlier grid showed: SigLIP falls the least
-  (0.50&rarr;0.95 ratio well under 2&times; look-alike models) and stays highest throughout, MatchVision and
-  SoccerMaster track each other closely at every threshold.</p>
 </section>
 
 <section>
@@ -247,13 +236,11 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
     <p class="eyebrow">Table 2b &middot; sensitivity test</p>
     <h2>S-IoU against the salient-region threshold</h2>
   </div>
-  <p class="note">The spatial counterpart to Table 2, filling a gap the sidecars don't cover on their own:
-  S-AUC is defined as the integral of exactly this curve (<code>coco_attribution_eval.py</code>'s
-  <code>_spatial_auc</code> sweeps the same 0.50&ndash;0.95 grid per frame), but only the integrated S-AUC
-  scalar is persisted &mdash; the per-threshold curve itself is discarded after use. This table recomputes
-  it from source: the raw 14&times;14 per-frame saliency maps saved in each run's <code>.npz</code>
-  sidecars, re-evaluated against the ROI boxes in <code>annotations-coco.json</code> at each ratio, tier
-  P+S+C, all 200/200 clips per model. The 0.50 row matches Table 1/4's S-IoU value by construction.</p>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> The same exercise as Table 2, but for
+  <em>where</em> in the picture the model looked instead of <em>when</em> in the clip. Ten rows, the rule
+  getting stricter as you go down, and the S-IoU score worked out fresh at each one. Darker cells are
+  higher, <strong>spread</strong> is the gap between the highest and lowest model in the row, and the last
+  row is how many times over each score shrank from top to bottom.</p>
   <div class="tw"><table class="grid heat"><thead><tr><th class="rh">Threshold (&times; max)</th><th>SigLIP</th><th>MatchVision</th><th>SoccerMaster</th><th class="spread">spread</th></tr></thead><tbody>
 <tr><th class="rh mono">0.50</th><td class="ht" style="--t:0.267">2.98</td><td class="ht" style="--t:1.000">7.47</td><td class="ht" style="--t:0.372">3.62</td><td class="spread">4.49</td></tr>
 <tr><th class="rh mono">0.55</th><td class="ht" style="--t:0.232">2.76</td><td class="ht" style="--t:0.938">7.09</td><td class="ht" style="--t:0.289">3.11</td><td class="spread">4.33</td></tr>
@@ -268,14 +255,6 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
 </tbody><tfoot><tr><th class="rh">fall 0.50&rarr;0.95</th><td class="fall">2.2&times;</td><td class="fall">1.5&times;</td><td class="fall">2.7&times;</td><td class="spread"></td></tr></tfoot></table></div>
   <div class="legend"><span>low</span><span class="ramp"></span><span>high</span>
     <span>&middot; spread = max &minus; min across models at that threshold</span></div>
-  <p class="note">S-IoU degrades faster than T-IoU did: every model falls by roughly half just from
-  0.50&rarr;0.60, versus the much shallower T-IoU curve in Table 2. MatchVision stays highest at every
-  ratio and falls the least (its S-AUC lead over the other two isn't an artifact of the 0.5 cutoff).
-  Integrating this curve trapezoidally reproduces Table 4's S-AUC to within 1&ndash;4% relative &mdash;
-  the residual gap is a single frame-inclusion rule: S-AUC drops individual frames whose rasterized
-  14&times;14 ROI mask is degenerate (all-foreground or all-background) before integrating per-frame,
-  while this table averages IoU across frames first and integrates that average, so a frame excluded from
-  one is not necessarily excluded from the other.</p>
 </section>
 
 <section>
@@ -283,13 +262,13 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
     <p class="eyebrow">Table 3 &middot; per-class analysis</p>
     <h2>Every event class, every model, one grid</h2>
   </div>
-  <p class="note">Sorted by clip count descending, tier P+S+C. <span class="warn-dot">&#9888;</span> marks
-  classes with n&nbsp;&lt;&nbsp;10. Indigo marks the leading model within each metric group. Class
-  assignment follows the same <code>video&rarr;caption</code> lookup as the previous page; 7/200 clips with
-  an overlapping-timestamp alternate label fall back to the sidecar's own <code>ground_truth_text</code>,
-  which is why per-class counts shift slightly from the earlier table (e.g. goal 24&rarr;21, corner
-  23&rarr;24) despite both totalling 200 &mdash; this run drew a different overlap resolution, not a
-  different benchmark.</p>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> The same scores again, but split up by what
+  kind of thing happens in the clip &mdash; one row per kind, the most common kind first.
+  <strong>n</strong> is how many clips of that kind we had, and they add up to 200. Then four scores, each
+  one shown for all three models side by side, so the three narrow columns under a heading are the three
+  models. Indigo marks the best model in each group of three. A <span class="warn-dot">&#9888;</span> means
+  we only had a handful of clips for that row, so it can swing around a lot and shouldn&rsquo;t be leaned
+  on.</p>
   <div class="tw"><table class="grid"><thead>
 <tr><th class="rh" rowspan="2">Event class</th><th class="rh n" rowspan="2">n</th><th class="mg" colspan="3">Energy</th><th class="mg" colspan="3">Pointing</th><th class="mg" colspan="3">S-IoU</th><th class="mg" colspan="3">T-IoU</th></tr>
 <tr><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th><th class="tg sm">SigL</th><th class=" sm">Matc</th><th class=" sm">Socc</th></tr>
@@ -315,10 +294,13 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
     <p class="eyebrow">Table 4</p>
     <h2>Bootstrap mean and 95% confidence interval, current metric definitions</h2>
   </div>
-  <p class="note">Percentile bootstrap, 1000 resamples over the 200 clips, tier P+S+C. All eight metrics
-  are current here &mdash; none is a legacy value, so there is nothing to mark superseded. <strong>clip
-  SD</strong> is the clip-to-clip standard deviation implied by the interval
-  (<code>half-width &times; &radic;200 / 1.96</code>).</p>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> How much to trust each score in Table 1.
+  <strong>mean</strong> is the score itself. <strong>95% CI</strong> is the range it would most likely have
+  landed in had we used a different batch of 200 clips &mdash; a narrow range means the score is pinned
+  down, a wide one means it isn&rsquo;t. <strong>clip SD</strong> says how much the score jumps about from
+  one clip to the next. Every row rests on all 200 clips except S-AUC, which uses 199 for SigLIP and
+  MatchVision, because on one clip the marked region filled the whole frame and the score has no meaning
+  there.</p>
 <div class="tw"><table class="grid"><thead>
 <tr><th class="rh" rowspan="2">Metric (%)</th><th class="mg" colspan="3">SigLIP</th><th class="mg" colspan="3">MatchVision</th><th class="mg" colspan="3">SoccerMaster</th></tr>
 <tr><th class="tg sm">mean</th><th class="sm">95% CI</th><th class="sm">clip SD</th><th class="tg sm">mean</th><th class="sm">95% CI</th><th class="sm">clip SD</th><th class="tg sm">mean</th><th class="sm">95% CI</th><th class="sm">clip SD</th></tr>
@@ -332,10 +314,6 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
 <tr><th class="rh">T-AUC</th><td class="tg val">16.80</td><td class="ci">15.36&ndash;18.31</td><td class="sd">10.6</td><td class="val">8.51</td><td class="ci">7.44&ndash;9.64</td><td class="sd">7.9</td><td class="val">8.05</td><td class="ci">6.74&ndash;9.56</td><td class="sd">10.2</td></tr>
 <tr><th class="rh">T-AP</th><td class="tg val">22.63</td><td class="ci">21.09&ndash;24.23</td><td class="sd">11.3</td><td class="val">12.49</td><td class="ci">11.24&ndash;13.73</td><td class="sd">9.0</td><td class="val">11.65</td><td class="ci">9.99&ndash;13.29</td><td class="sd">11.9</td></tr>
 </tbody></table></div>
-  <p class="note">Read against the previous page's Table 4: every mean and CI here matches to two decimal
-  places, because both draw from the same ee51a38 lineage. The only change is framing &mdash; S-AUC,
-  T-AUC, T-AP and T-IoU&nbsp;(sweep) are presented as ordinary current metrics rather than annotated
-  &ldquo;redefined&rdquo; entries.</p>
 </section>
 
 <section>
@@ -343,8 +321,11 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
     <p class="eyebrow">Table 5 &middot; supporting</p>
     <h2>Is 200 clips enough? CI half-width by sample size</h2>
   </div>
-  <p class="note">Percentile bootstrap over the clip set, 1000 resamples, evaluated at 50 / 100 / 150 / 200
-  clips, tier P+S+C. Values are half-widths in percentage points &mdash; smaller is tighter.</p>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> Whether we gathered enough clips. Each model
+  gets four columns &mdash; the answer from 50 clips, then 100, then 150, then all 200 &mdash; and each
+  number is how wide the uncertainty from Table 4 was at that point. Smaller means more certain, so the
+  numbers shrink as you read left to right. Watching how fast they shrink says whether stopping at 200 was
+  fine or whether more clips would still have bought us much.</p>
   <div class="tw"><table class="grid"><thead>
 <tr><th class="rh" rowspan="2">Metric <span class="qual">&plusmn; pp</span></th><th class="mg" colspan="4">SigLIP</th><th class="mg" colspan="4">MatchVision</th><th class="mg" colspan="4">SoccerMaster</th></tr>
 <tr><th class="tg sm">50</th><th class="sm">100</th><th class="sm">150</th><th class="sm">200</th><th class="tg sm">50</th><th class="sm">100</th><th class="sm">150</th><th class="sm">200</th><th class="tg sm">50</th><th class="sm">100</th><th class="sm">150</th><th class="sm">200</th></tr>
@@ -358,16 +339,109 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
 <tr><th class="rh">T-AUC</th><td class="tg">3.17</td><td class="">2.21</td><td class="">1.77</td><td class="">1.47</td><td class="tg">2.32</td><td class="">1.69</td><td class="">1.30</td><td class="">1.10</td><td class="tg">2.79</td><td class="">1.86</td><td class="">1.67</td><td class="">1.41</td></tr>
 <tr><th class="rh">T-AP</th><td class="tg">3.21</td><td class="">2.31</td><td class="">1.77</td><td class="">1.57</td><td class="tg">2.57</td><td class="">1.81</td><td class="">1.49</td><td class="">1.24</td><td class="tg">3.17</td><td class="">2.33</td><td class="">1.85</td><td class="">1.65</td></tr>
 </tbody></table></div>
-  <p class="note">Shrinkage still tracks &radic;n; nothing here changes the earlier page's conclusion that
-  200 clips is enough and no metric was still improving sharply when the benchmark stopped.</p>
+</section>
+
+<div class="rule-major"></div>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Second bundle &middot; different runs</p>
+    <h2>Native-grid maps, ten model/method pairs</h2>
+  </div>
+  <p class="note">Everything from here down comes from a <strong>different set of runs</strong> to Tables
+  1&ndash;5 and is not a like-for-like extension of them. Two differences matter. These runs explain the
+  <strong>true event class</strong>, whereas Tables 1&ndash;5 explain whatever the model actually guessed.
+  And they come from a different build of the code (<code>48a31962</code>, not <code>ee51a38</code>), with
+  maps that differ from the earlier bundle on all 200 clips. Same 200 clips and the same annotation file
+  throughout, so the ground truth is unchanged.</p>
+</section>
+
+<div class="flag ok">
+  <h3>Provenance and integrity checks</h3>
+  <p>Source: <code>output_native_grid_maps_sait.zip</code>. Ten map sets, 200 clips each, and all ten are
+  distinct from one another by content checksum &mdash; no copied directories. The bundled
+  <code>annotations-coco.json</code> is byte-identical to the repository's. The evaluator used here
+  reproduces every published SigLIP figure in Table&nbsp;1 exactly when pointed at the old bundle, so the
+  new numbers come from a checked pipeline rather than a fresh one.</p>
+</div>
+
+<div class="flag stale">
+  <h3>Four caveats that travel with these numbers</h3>
+  <p><strong>1. Nothing was precomputed.</strong> The bundle's README marks its cached score fields as stale
+  output from an older evaluator, so every figure below was recomputed from the raw maps.
+  <strong>2. Four of the ten sets ship no provenance manifest</strong> &mdash; SigLIP, both MatchVision sets,
+  and SoccerMaster Chefer-T. <strong>3. SoccerMaster Chefer is not an independent run</strong>
+  (<span class="warn-dot">&#9888;</span> in the table): its manifest says it was reconstructed from the
+  Chefer-T maps by dividing out the per-frame temporal weight, so the two SoccerMaster rows are not
+  independent evidence. <strong>4. One run each</strong>, so there is no repeat-run agreement here of the
+  kind Table&nbsp;1 reports.</p>
+</div>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 6</p>
+    <h2>All ten map sets, every metric</h2>
+  </div>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> One row per model and method. <strong>Chefer</strong>
+  and <strong>Chefer-T</strong> are two ways of building the attention map, so a model with both gets two rows.
+  <strong>grid</strong> is the size of the map that model produces, and they genuinely differ &mdash; each model
+  is scored on its own grid, with no stretching to a shared size. Then the same eight scores as Table 1, at the
+  P+S+C setting. Higher is better; indigo is the best in that column.</p>
+  <div class="tw"><table class="grid"><thead><tr><th class="rh">Model</th><th class="rh n">method</th><th class="n">grid</th><th class="tg">Energy</th><th class="">Pointing</th><th class="">S-IoU</th><th class="">S-AUC</th><th class="">T-IoU</th><th class="">T-IoU (sweep)</th><th class="">T-AUC</th><th class="">T-AP</th></tr></thead><tbody>
+<tr><th class="rh cn">CLIP</th><td class="n">Chefer</td><td class="n">14&times;25</td><td class="tg">29.74</td><td class="">26.94</td><td class="">3.47</td><td class="">2.04</td><td class="hi">34.18</td><td class="hi">20.10</td><td class="hi">20.16</td><td class="hi">26.51</td></tr>
+<tr><th class="rh cn">SigLIP</th><td class="n">Chefer</td><td class="n">14&times;14</td><td class="tg">22.72</td><td class="">27.98</td><td class="">2.94</td><td class="">2.11</td><td class="">29.13</td><td class="">16.84</td><td class="">16.80</td><td class="">23.07</td></tr>
+<tr><th class="rh cn">MatchVision</th><td class="n">Chefer</td><td class="n">14&times;14</td><td class="tg hi">39.17</td><td class="">44.26</td><td class="">7.38</td><td class="hi">6.54</td><td class="">15.07</td><td class="">8.39</td><td class="">8.30</td><td class="">12.54</td></tr>
+<tr><th class="rh cn">MatchVision</th><td class="n">Chefer-T</td><td class="n">14&times;14</td><td class="tg">39.17</td><td class="">44.26</td><td class="hi">7.41</td><td class="">6.53</td><td class="">15.33</td><td class="">8.57</td><td class="">8.47</td><td class="">12.74</td></tr>
+<tr><th class="rh cn">SoccerMaster <span class="warn-dot" title="derived, not an independent run">&#9888;</span></th><td class="n">Chefer</td><td class="n">32&times;32</td><td class="tg">37.00</td><td class="hi">49.76</td><td class="">3.49</td><td class="">2.02</td><td class="">15.38</td><td class="">8.32</td><td class="">8.23</td><td class="">12.08</td></tr>
+<tr><th class="rh cn">SoccerMaster</th><td class="n">Chefer-T</td><td class="n">32&times;32</td><td class="tg">37.00</td><td class="hi">49.76</td><td class="">3.49</td><td class="">2.02</td><td class="">15.36</td><td class="">8.34</td><td class="">8.25</td><td class="">12.02</td></tr>
+<tr><th class="rh cn">PE-AV</th><td class="n">Chefer</td><td class="n">24&times;24</td><td class="tg">25.41</td><td class="">32.34</td><td class="">2.05</td><td class="">1.24</td><td class="">23.53</td><td class="">12.30</td><td class="">12.15</td><td class="">18.10</td></tr>
+<tr><th class="rh cn">PE-AV</th><td class="n">Chefer-T</td><td class="n">24&times;24</td><td class="tg">25.41</td><td class="">32.34</td><td class="">2.05</td><td class="">1.24</td><td class="">13.79</td><td class="">7.36</td><td class="">7.24</td><td class="">11.33</td></tr>
+<tr><th class="rh cn">VideoPrism</th><td class="n">Chefer</td><td class="n">16&times;16</td><td class="tg">28.50</td><td class="">31.12</td><td class="">2.34</td><td class="">1.58</td><td class="">26.30</td><td class="">14.30</td><td class="">14.19</td><td class="">20.71</td></tr>
+<tr><th class="rh cn">VideoPrism</th><td class="n">Chefer-T</td><td class="n">16&times;16</td><td class="tg">28.50</td><td class="">31.12</td><td class="">2.34</td><td class="">1.58</td><td class="">19.61</td><td class="">11.12</td><td class="">10.97</td><td class="">16.02</td></tr>
+</tbody></table></div>
+  <p class="note">Two things to read carefully. The four <em>spatial</em> scores &mdash; Energy, Pointing,
+  S-IoU, S-AUC &mdash; come out the same for Chefer and Chefer-T on every model, and that is arithmetic
+  rather than coincidence: all four are computed relative to each frame&rsquo;s own maximum, and Chefer-T
+  differs from Chefer only by a per-frame multiplier, which cancels. Only the four <em>temporal</em> scores
+  can tell the two methods apart, and there the gap is large for PE-AV (T-IoU 23.53 against 13.79) and
+  VideoPrism (26.30 against 19.61) but negligible for SoccerMaster. Separately, <strong>grid size is not
+  neutral</strong>: S-IoU and Pointing depend on how finely a bounding box can be drawn on the model&rsquo;s
+  own grid, so part of any spatial gap between a 14&times;14 and a 32&times;32 model reflects resolution
+  rather than grounding quality.</p>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Table 7</p>
+    <h2>95% confidence interval for every figure in Table 6</h2>
+  </div>
+  <p class="note"><strong>What&rsquo;s in this table.</strong> The same ten rows and eight scores, but each
+  cell is the range rather than the single number &mdash; where the score would most likely have landed had a
+  different batch of 200 clips been used. Narrow means the figure is pinned down, wide means it is not.
+  Percentile bootstrap, 1000 resamples, matching Table 4. Every cell rests on all 200 clips except S-AUC for
+  SigLIP and MatchVision, which use 199 for the same reason given in Table 4.</p>
+  <div class="tw"><table class="grid"><thead><tr><th class="rh">Model</th><th class="rh n">method</th><th class="tg">Energy</th><th class="">Pointing</th><th class="">S-IoU</th><th class="">S-AUC</th><th class="">T-IoU</th><th class="">T-IoU (sweep)</th><th class="">T-AUC</th><th class="">T-AP</th></tr></thead><tbody>
+<tr><th class="rh cn">CLIP</th><td class="n">Chefer</td><td class="ci tg">27.17&ndash;32.48</td><td class="ci">23.74&ndash;30.38</td><td class="ci">2.93&ndash;4.03</td><td class="ci">1.63&ndash;2.47</td><td class="ci">31.98&ndash;36.61</td><td class="ci">18.74&ndash;21.54</td><td class="ci">18.70&ndash;21.78</td><td class="ci">24.84&ndash;28.04</td></tr>
+<tr><th class="rh cn">SigLIP</th><td class="n">Chefer</td><td class="ci tg">20.66&ndash;24.98</td><td class="ci">24.58&ndash;31.49</td><td class="ci">2.47&ndash;3.41</td><td class="ci">1.73&ndash;2.57</td><td class="ci">27.04&ndash;31.22</td><td class="ci">15.18&ndash;18.34</td><td class="ci">15.31&ndash;18.40</td><td class="ci">21.45&ndash;24.64</td></tr>
+<tr><th class="rh cn">MatchVision</th><td class="n">Chefer</td><td class="ci tg">36.44&ndash;41.95</td><td class="ci">40.86&ndash;47.38</td><td class="ci">6.57&ndash;8.30</td><td class="ci">5.70&ndash;7.55</td><td class="ci">13.47&ndash;16.77</td><td class="ci">7.30&ndash;9.40</td><td class="ci">7.20&ndash;9.48</td><td class="ci">11.33&ndash;13.92</td></tr>
+<tr><th class="rh cn">MatchVision</th><td class="n">Chefer-T</td><td class="ci tg">36.43&ndash;41.94</td><td class="ci">40.86&ndash;47.38</td><td class="ci">6.58&ndash;8.35</td><td class="ci">5.69&ndash;7.53</td><td class="ci">13.63&ndash;17.08</td><td class="ci">7.45&ndash;9.58</td><td class="ci">7.39&ndash;9.67</td><td class="ci">11.53&ndash;14.09</td></tr>
+<tr><th class="rh cn">SoccerMaster</th><td class="n">Chefer</td><td class="ci tg">34.12&ndash;39.70</td><td class="ci">46.21&ndash;53.72</td><td class="ci">3.11&ndash;3.90</td><td class="ci">1.75&ndash;2.36</td><td class="ci">13.17&ndash;17.71</td><td class="ci">7.11&ndash;9.75</td><td class="ci">6.88&ndash;9.66</td><td class="ci">10.43&ndash;13.74</td></tr>
+<tr><th class="rh cn">SoccerMaster</th><td class="n">Chefer-T</td><td class="ci tg">34.12&ndash;39.70</td><td class="ci">46.21&ndash;53.72</td><td class="ci">3.11&ndash;3.90</td><td class="ci">1.75&ndash;2.36</td><td class="ci">13.16&ndash;17.68</td><td class="ci">7.12&ndash;9.74</td><td class="ci">6.92&ndash;9.67</td><td class="ci">10.36&ndash;13.67</td></tr>
+<tr><th class="rh cn">PE-AV</th><td class="n">Chefer</td><td class="ci tg">23.26&ndash;27.76</td><td class="ci">29.32&ndash;35.43</td><td class="ci">1.81&ndash;2.32</td><td class="ci">1.06&ndash;1.44</td><td class="ci">21.59&ndash;25.45</td><td class="ci">11.06&ndash;13.63</td><td class="ci">10.90&ndash;13.68</td><td class="ci">16.74&ndash;19.52</td></tr>
+<tr><th class="rh cn">PE-AV</th><td class="n">Chefer-T</td><td class="ci tg">23.26&ndash;27.76</td><td class="ci">29.32&ndash;35.43</td><td class="ci">1.81&ndash;2.32</td><td class="ci">1.06&ndash;1.44</td><td class="ci">11.90&ndash;15.60</td><td class="ci">6.21&ndash;8.48</td><td class="ci">6.18&ndash;8.41</td><td class="ci">9.97&ndash;12.81</td></tr>
+<tr><th class="rh cn">VideoPrism</th><td class="n">Chefer</td><td class="ci tg">26.03&ndash;31.12</td><td class="ci">27.81&ndash;34.57</td><td class="ci">2.00&ndash;2.68</td><td class="ci">1.28&ndash;1.90</td><td class="ci">24.18&ndash;28.64</td><td class="ci">12.88&ndash;15.72</td><td class="ci">12.75&ndash;15.71</td><td class="ci">19.04&ndash;22.39</td></tr>
+<tr><th class="rh cn">VideoPrism</th><td class="n">Chefer-T</td><td class="ci tg">26.03&ndash;31.12</td><td class="ci">27.81&ndash;34.57</td><td class="ci">2.00&ndash;2.68</td><td class="ci">1.28&ndash;1.90</td><td class="ci">17.45&ndash;21.90</td><td class="ci">9.84&ndash;12.52</td><td class="ci">9.70&ndash;12.50</td><td class="ci">14.31&ndash;17.73</td></tr>
+</tbody></table></div>
 </section>
 
 <footer>
-  <p>Recomputed from the per-clip <code>saliency/*.json</code> sidecars inside
-  <code>SoccerExplainability-output-20260727T084020Z-1-001.zip</code> (Drive output root, all runs at
-  commit <code>ee51a38</code>), via <code>inference/convergence_analysis.py</code>. Every figure is
-  generated, not transcribed; this page does not modify or replace the earlier
-  &ldquo;Consolidated Evidence Tables&rdquo; page.</p>
+  <p>Tables 1&ndash;5 are recomputed from the per-clip sidecars inside
+  <code>SoccerExplainability-output-20260727T084020Z-1-001.zip</code>, all runs at commit
+  <code>ee51a38</code>, explaining each model&rsquo;s predicted class.</p>
+  <p>Tables 6&ndash;7 are computed from <code>output_native_grid_maps_sait.zip</code> at commit
+  <code>48a31962</code>, explaining the true event class, scored on each model&rsquo;s native grid with no
+  resampling. Both sets use <code>inference/coco_attribution_eval.py</code> and the same
+  <code>annotations-coco.json</code> over the same 200 clips. Every figure is generated, not transcribed.</p>
 </footer>
 
 </div>

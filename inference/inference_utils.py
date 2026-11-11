@@ -480,13 +480,14 @@ def save_clip_saliency_and_scores(save_dir, clip_id, video_name, heatmaps,
     frame_scores = np.mean(heatmaps_np.reshape(num_frames, -1), axis=1)
 
     # Per-frame spatial metric arrays (NaN where a frame has no ROI/annotation).
-    energy_arr, pointing_arr, iou_arr, sauc_arr = [], [], [], []
+    energy_arr, pointing_arr, iou_arr, sauroc_arr, sauprc_arr = [], [], [], [], []
     for frame_item in eval_result.get('per_frame', []):
         fm = frame_item.get('metrics') or {}
         energy_arr.append(fm.get('energy_inside_bbox', np.nan))
         pointing_arr.append(fm.get('pointing_accuracy', np.nan))
         iou_arr.append(fm.get('iou', np.nan))
-        sauc_arr.append(fm.get('s_auc', np.nan))
+        sauroc_arr.append(fm.get('s_auroc', np.nan))
+        sauprc_arr.append(fm.get('s_auprc', np.nan))
 
     npz_payload = {
         'saliency_maps': heatmaps_np,
@@ -494,7 +495,8 @@ def save_clip_saliency_and_scores(save_dir, clip_id, video_name, heatmaps,
         'frame_energy': np.asarray(energy_arr, dtype=np.float32),
         'frame_pointing': np.asarray(pointing_arr, dtype=np.float32),
         'frame_s_iou': np.asarray(iou_arr, dtype=np.float32),
-        'frame_s_auc': np.asarray(sauc_arr, dtype=np.float32),
+        'frame_s_auroc': np.asarray(sauroc_arr, dtype=np.float32),
+        'frame_s_auprc': np.asarray(sauprc_arr, dtype=np.float32),
     }
     if attribution_scores is not None:
         npz_payload['attribution_scores'] = np.asarray(attribution_scores, dtype=np.float32)
@@ -581,7 +583,8 @@ def evaluate_and_print_video(attribution_evaluator, heatmaps, matched_video_ids,
                 f"Energy={gs['mean_energy_inside_bbox']:.3f}  "
                 f"Pointing={gs['mean_pointing_accuracy']:.3f}  "
                 f"IoU={gs['mean_iou']:.3f}  "
-                f"S-AUC={gs.get('mean_s_auc', float('nan')):.3f}  "
+                f"S-AUROC={gs.get('mean_s_auroc', float('nan')):.3f}  "
+                f"S-AUPRC={gs.get('mean_s_auprc', float('nan')):.3f}  "
                 f"({gs['annotated_frames']} frames)"
             )
 
@@ -618,7 +621,7 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
     print(f'\n===== {summary_title} =====')
     group_video_means = {
         group_name: {
-            'energy': [], 'pointing': [], 'iou': [], 's_auc': [], 'frames': 0,
+            'energy': [], 'pointing': [], 'iou': [], 's_auroc': [], 's_auprc': [], 'frames': 0,
         }
         for group_name in ('small_only', 'small_large', 'small_large_visual_cues')
     }
@@ -643,8 +646,10 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 group_video_means[group_name]['pointing'].append(gs['mean_pointing_accuracy'])
             if not np.isnan(gs['mean_iou']):
                 group_video_means[group_name]['iou'].append(gs['mean_iou'])
-            if not np.isnan(gs.get('mean_s_auc', np.nan)):  # [Step 2]
-                group_video_means[group_name]['s_auc'].append(gs['mean_s_auc'])
+            if not np.isnan(gs.get('mean_s_auroc', np.nan)):  # [Step 2]
+                group_video_means[group_name]['s_auroc'].append(gs['mean_s_auroc'])
+            if not np.isnan(gs.get('mean_s_auprc', np.nan)):  # [Step 2]
+                group_video_means[group_name]['s_auprc'].append(gs['mean_s_auprc'])
             group_video_means[group_name]['frames'] += int(gs.get('annotated_frames', 0))
         if has_group_data:
             videos_with_any_group += 1
@@ -678,7 +683,8 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 'mean_energy_inside_bbox': float(np.mean(vals['energy'])),
                 'mean_pointing_accuracy': float(np.mean(vals['pointing'])),
                 'mean_iou': float(np.mean(vals['iou'])),
-                'mean_s_auc': float(np.mean(vals['s_auc'])) if vals['s_auc'] else float('nan'),  # [Step 2]
+                'mean_s_auroc': float(np.mean(vals['s_auroc'])) if vals['s_auroc'] else float('nan'),  # [Step 2]
+                'mean_s_auprc': float(np.mean(vals['s_auprc'])) if vals['s_auprc'] else float('nan'),  # [Step 2]
                 'annotated_frames': int(vals['frames']),
             }
             print(
@@ -686,7 +692,8 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 f"Energy={global_group_summary[group_name]['mean_energy_inside_bbox']:.4f}  "
                 f"Pointing={global_group_summary[group_name]['mean_pointing_accuracy']:.4f}  "
                 f"IoU={global_group_summary[group_name]['mean_iou']:.4f}  "
-                f"S-AUC={global_group_summary[group_name]['mean_s_auc']:.4f}  "
+                f"S-AUROC={global_group_summary[group_name]['mean_s_auroc']:.4f}  "
+                f"S-AUPRC={global_group_summary[group_name]['mean_s_auprc']:.4f}  "
                 f"(frames={global_group_summary[group_name]['annotated_frames']})"
             )
         else:
@@ -694,7 +701,8 @@ def print_and_save_eval_summary(all_eval_results, eval_output_path=None,
                 'mean_energy_inside_bbox': float('nan'),
                 'mean_pointing_accuracy': float('nan'),
                 'mean_iou': float('nan'),
-                'mean_s_auc': float('nan'),  # [Step 2]
+                'mean_s_auroc': float('nan'),  # [Step 2]
+                'mean_s_auprc': float('nan'),  # [Step 2]
                 'annotated_frames': 0,
             }
             print(f'  {group_name}: no matching annotated frames')
