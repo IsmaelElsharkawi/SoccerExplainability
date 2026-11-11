@@ -40,6 +40,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from grounding_metrics import (  # noqa: E402
     DEFAULT_CANVAS,
     SPATIAL_METRICS,
+    TEMPORAL_METRICS,
     TIER_SHORT,
     TIERS,
     GroundingScorer,
@@ -53,6 +54,8 @@ TABLE_METRICS = [
     ("s_auroc", "S-AUROC"),
     ("s_auprc", "S-AUPRC"),
     ("t_iou", "T-IoU"),
+    ("t_auroc", "T-AUROC"),
+    ("t_auprc", "T-AUPRC"),
 ]
 # Tolerance (percentage points) for "reproduces the paper" in the validation report.
 VALIDATION_TOLERANCE = 0.05
@@ -135,7 +138,19 @@ def chance_row(per_clip_by_run):
     any run with all clips gives the same value."""
     best = max(per_clip_by_run.values(), key=len)
     summary = aggregate(list(best.values()))
-    return {tier: summary[tier]["box_fraction"] for tier in TIERS}
+    return {tier: {"box": summary[tier]["box_fraction"], "frames": summary[tier]["frame_fraction"]}
+            for tier in TIERS}
+
+
+def chance_value(key, tier, chance):
+    """Expected score of a flat (uniform) attribution map, in [0, 1]."""
+    if key in ("energy", "pointing", "s_auprc"):
+        return chance[tier]["box"]
+    if key in ("t_iou", "t_auprc"):
+        return chance[tier]["frames"]  # a flat map marks every frame salient
+    if key in ("s_auroc", "t_auroc"):
+        return 0.5
+    return None
 
 
 def fmt(value, digits=2):
@@ -145,7 +160,7 @@ def fmt(value, digits=2):
 def write_per_clip_csv(path, per_clip_by_run):
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
-        cols = list(SPATIAL_METRICS) + ["t_iou", "n_frames", "n_gt_frames", "n_pred_frames"]
+        cols = list(SPATIAL_METRICS) + list(TEMPORAL_METRICS) + ["n_frames", "n_gt_frames", "n_pred_frames"]
         writer.writerow(["model", "clip_id", "tier"] + cols)
         for label, per_clip in per_clip_by_run.items():
             for clip_id, result in sorted(per_clip.items()):
@@ -167,7 +182,8 @@ def table_markdown(summaries, accuracies, chance, resolution, canvas, image_mode
     chance_cells = ["Chance", "–"]
     for key, _ in TABLE_METRICS:
         for tier in TIERS:
-            chance_cells.append(fmt(50.0) if key == "s_auroc" else fmt(100 * chance[tier]) if key == "s_auprc" else "–")
+            value = chance_value(key, tier, chance)
+            chance_cells.append(fmt(100 * value) if value is not None else "–")
     lines.append("| " + " | ".join(chance_cells) + " |")
     for label, summary in summaries.items():
         name = label + ("†" if label in image_models else "")
@@ -205,7 +221,8 @@ def table_latex(summaries, accuracies, chance, image_models):
     chance_cells = []
     for key, _ in TABLE_METRICS:
         for tier in TIERS:
-            chance_cells.append("50.0" if key == "s_auroc" else f"{100 * chance[tier]:.1f}" if key == "s_auprc" else "--")
+            value = chance_value(key, tier, chance)
+            chance_cells.append(f"{100 * value:.1f}" if value is not None else "--")
     lines.append("Chance & -- & " + " & ".join(chance_cells) + r" \\")
     lines.append(r"\midrule")
     for label, summary in summaries.items():
@@ -255,8 +272,8 @@ def validation_report(summaries, accuracies, chance, reference, resolution):
     for i, tier in enumerate(TIERS):
         paper = reference.get("chance", {}).get("s_auprc", [None] * 3)[i]
         if paper is not None:
-            delta = 100 * chance[tier] - paper
-            lines.append(f"| Chance | s_auprc | {TIER_SHORT[tier]} | {paper:.1f} | {100 * chance[tier]:.2f} | {delta:+.2f} |")
+            delta = 100 * chance[tier]["box"] - paper
+            lines.append(f"| Chance | s_auprc | {TIER_SHORT[tier]} | {paper:.1f} | {100 * chance[tier]['box']:.2f} | {delta:+.2f} |")
     lines.insert(1, f"Reproduced {n_ok}/{n_checked} paper cells.")
     return "\n".join(lines) + "\n"
 

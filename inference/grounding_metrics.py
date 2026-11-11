@@ -48,6 +48,7 @@ TIER_LABELS = {
     "small_large_visual_cues": {"small label", "large label", "visual cue"},
 }
 SPATIAL_METRICS = ("energy", "pointing", "s_iou", "s_auroc", "s_auprc", "box_fraction")
+TEMPORAL_METRICS = ("t_iou", "t_auroc", "t_auprc", "frame_fraction")
 
 DEFAULT_CANVAS = (720, 1280)  # (height, width); SoccerNet broadcast frames are 16:9.
 CAM_THRESHOLD = 0.5
@@ -140,6 +141,20 @@ def frame_tier_metrics(attribution_map, tier_masks, cam_threshold=CAM_THRESHOLD)
     return out
 
 
+def temporal_ranking(frame_scores, gt_frames):
+    """T-AUROC and T-AUPRC: how well the per-frame mean attribution ranks the
+    clip's annotated frames above its unannotated ones. Threshold-free, so
+    unlike T-IoU it is not inflated by marking most frames salient; a flat
+    map scores 0.5 AUROC and the annotated-frame fraction AUPRC."""
+    scores = np.asarray(frame_scores, dtype=np.float64)
+    labels = np.zeros(scores.size, dtype=bool)
+    labels[list(gt_frames)] = True
+    order = np.argsort(-scores)
+    scores_sorted = scores[order]
+    run_ends = np.r_[np.flatnonzero(np.diff(scores_sorted)), scores_sorted.size - 1]
+    return ranking_curves(run_ends, labels[order])
+
+
 def temporal_iou(frame_scores, gt_frames, cam_threshold=CAM_THRESHOLD):
     """T-IoU between annotated frames and frames whose mean attribution is at
     least `cam_threshold` x the clip's maximum frame mean (paper Eq. 2)."""
@@ -213,8 +228,12 @@ class GroundingScorer:
             row["n_frames"] = len(per_tier[tier]["energy"])
             if gt_frames[tier]:
                 row["t_iou"], row["n_pred_frames"] = temporal_iou(frame_scores, gt_frames[tier], self.cam_threshold)
+                row["t_auroc"], row["t_auprc"] = temporal_ranking(frame_scores, gt_frames[tier])
             else:
                 row["t_iou"], row["n_pred_frames"] = float("nan"), 0
+                row["t_auroc"], row["t_auprc"] = float("nan"), float("nan")
+            # T-AUPRC chance: the clip's annotated-frame fraction.
+            row["frame_fraction"] = len(gt_frames[tier]) / num_frames if gt_frames[tier] else float("nan")
             row["n_gt_frames"] = len(gt_frames[tier])
             result[tier] = row
         return result
@@ -226,7 +245,7 @@ def aggregate(clip_results):
     for tier in TIERS:
         rows = [r[tier] for r in clip_results if tier in r]
         tier_summary = {}
-        for name in SPATIAL_METRICS + ("t_iou",):
+        for name in SPATIAL_METRICS + TEMPORAL_METRICS:
             values = [r[name] for r in rows if not np.isnan(r[name])]
             tier_summary[name] = float(np.mean(values)) if values else float("nan")
             tier_summary[f"n_clips_{name}"] = len(values)
