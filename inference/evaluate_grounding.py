@@ -45,6 +45,7 @@ from grounding_metrics import (  # noqa: E402
     TIERS,
     GroundingScorer,
     aggregate,
+    random_ranking_temporal_chance,
     load_saliency_dir,
 )
 
@@ -132,24 +133,39 @@ def score_run(run, coco_json, resolution, canvas, workers):
     return dict(results)
 
 
-def chance_row(per_clip_by_run):
-    """S-AUPRC chance is the cue-box share of the frame, aggregated like the
-    metric itself; it depends only on the annotations and the resolution, so
-    any run with all clips gives the same value."""
+def chance_row(per_clip_by_run, temporal_chance):
+    """Expected scores of a random attribution map, per tier.
+
+    Spatial: with ~10^5-10^6 pixels per frame, a random (or flat) map scores
+    the cue-box share of the frame on Energy, Pointing and S-AUPRC, and 50 on
+    S-AUROC; the share is aggregated like the metrics (frames, then clips).
+    Temporal: frames get independent random scores (`temporal_chance`)."""
     best = max(per_clip_by_run.values(), key=len)
     summary = aggregate(list(best.values()))
-    return {tier: {"box": summary[tier]["box_fraction"], "frames": summary[tier]["frame_fraction"]}
-            for tier in TIERS}
+    return {tier: dict(box=summary[tier]["box_fraction"], **temporal_chance[tier]) for tier in TIERS}
+
+
+def compute_temporal_chance(coco_json, clip_ids, num_frames=30):
+    scorer = GroundingScorer(coco_json, resolution="native")
+    values = {tier: {"t_iou": [], "t_auroc": [], "t_auprc": []} for tier in TIERS}
+    for index, clip_id in enumerate(sorted(clip_ids)):
+        for tier, frames in scorer.gt_frame_sets(clip_id, num_frames).items():
+            if frames:
+                tiou, _, auprc = random_ranking_temporal_chance(frames, num_frames, seed=index)
+                values[tier]["t_iou"].append(tiou)
+                values[tier]["t_auroc"].append(0.5)  # exact for a random ranking
+                values[tier]["t_auprc"].append(auprc)
+    return {tier: {k: float(np.mean(v)) for k, v in vals.items()} for tier, vals in values.items()}
 
 
 def chance_value(key, tier, chance):
-    """Expected score of a flat (uniform) attribution map, in [0, 1]."""
+    """Expected score of a random attribution map, in [0, 1]."""
     if key in ("energy", "pointing", "s_auprc"):
         return chance[tier]["box"]
-    if key in ("t_iou", "t_auprc"):
-        return chance[tier]["frames"]  # a flat map marks every frame salient
-    if key in ("s_auroc", "t_auroc"):
+    if key == "s_auroc":
         return 0.5
+    if key in ("t_iou", "t_auroc", "t_auprc"):
+        return chance[tier][key]
     return None
 
 
@@ -333,6 +349,9 @@ def main():
                                                       "n_predictions", "n_distinct_predictions", "warnings")}
                   for run in runs}
 
+    print("Computing random-ranking chance for the temporal metrics...")
+    temporal_chance = compute_temporal_chance(args.coco_json, annotated_ids)
+
     for resolution in args.resolution:
         print(f"\n=== Scoring at {resolution} resolution ===")
         per_clip_by_run, summaries = {}, {}
@@ -341,7 +360,7 @@ def main():
             per_clip_by_run[run["label"]] = per_clip
             summaries[run["label"]] = aggregate(list(per_clip.values()))
             print(f"  {run['label']}: done ({len(per_clip)} clips)")
-        chance = chance_row(per_clip_by_run)
+        chance = chance_row(per_clip_by_run, temporal_chance)
 
         suffix = resolution
         write_per_clip_csv(os.path.join(args.out_dir, f"per_clip_{suffix}.csv"), per_clip_by_run)
@@ -356,7 +375,7 @@ def main():
                 "canvas": list(canvas) if resolution == "frame" else None,
                 "map_key": args.map_key,
                 "accuracy": accuracies,
-                "chance_box_fraction": chance,
+                "chance": chance,
                 "summary": summaries,
                 "provenance": provenance,
             }, f, indent=2)

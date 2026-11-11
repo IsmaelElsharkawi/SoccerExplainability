@@ -166,6 +166,22 @@ def temporal_iou(frame_scores, gt_frames, cam_threshold=CAM_THRESHOLD):
     return len(gt_frames & pred) / len(union), len(pred)
 
 
+def random_ranking_temporal_chance(gt_frames, num_frames, draws=2000, seed=0):
+    """Expected T-IoU, T-AUROC and T-AUPRC of a clip whose frames get
+    independent random scores. With only `num_frames` frames, the AP of a
+    random ranking sits well above the annotated-frame fraction (a lucky early
+    hit counts a lot), so the fraction is not a fair T-AUPRC baseline."""
+    rng = np.random.default_rng(seed)
+    tiou, auroc, auprc = [], [], []
+    for _ in range(draws):
+        scores = rng.random(num_frames)
+        tiou.append(temporal_iou(scores, gt_frames)[0])
+        roc, ap = temporal_ranking(scores, gt_frames)
+        auroc.append(roc)
+        auprc.append(ap)
+    return float(np.mean(tiou)), float(np.mean(auroc)), float(np.mean(auprc))
+
+
 class GroundingScorer:
     """Scores saved saliency maps against the SoccerLens cue boxes."""
 
@@ -189,6 +205,14 @@ class GroundingScorer:
             if tier_boxes:
                 boxes[tier] = tier_boxes
         return boxes
+
+    def gt_frame_sets(self, clip_id, num_frames):
+        """{tier: set of frame indices carrying a box of that tier}."""
+        sets = {tier: set() for tier in TIERS}
+        for t in range(num_frames):
+            for tier in self._tier_boxes(clip_id, t):
+                sets[tier].add(t)
+        return sets
 
     def score_clip(self, clip_id, saliency_maps):
         """Per-clip, per-tier metrics for one (T, h, w) stack of maps.
