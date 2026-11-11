@@ -207,6 +207,45 @@ class VideoPrismAdapter:
         }
 
 
+def load_pe_video_branch(name, revision):
+    """The video-text branch of a PE-AV checkpoint as a `PeVideoModel`.
+
+    `PeAudioVideoModel.from_pretrained` cannot load facebook/pe-av-base under
+    transformers 5.22.2: the nested video config is rebuilt without its 1024
+    timm label names (so the PE-Core head comes out 2-wide), and an audio
+    weight-tying step crashes. The audio side is not needed here, so build
+    `PeVideoModel` from the checkpoint's own video config and load its
+    weights by hand: `video_model.*`, plus the shared `text_model.*` that
+    `PeAudioVideoModel` ties into `video_model.text_model`.
+    """
+    from huggingface_hub import hf_hub_download
+    from safetensors import safe_open
+    from transformers import AutoConfig, PeVideoModel
+
+    weights_path = hf_hub_download(name, "model.safetensors", revision=revision)
+    state = {}
+    with safe_open(weights_path, framework="pt") as f:
+        for key in f.keys():
+            if key.startswith("video_model."):
+                state[key[len("video_model."):]] = f.get_tensor(key)
+            elif key.startswith("text_model."):
+                state[key] = f.get_tensor(key)
+
+    config = AutoConfig.from_pretrained(name, revision=revision).video_config
+    head = state["video_encoder.embedder.vision_model.timm_model.head.weight"]
+    config.video_config.vision_config.num_labels = head.shape[0]
+    model = PeVideoModel._from_config(config, attn_implementation="eager")
+
+    result = model.load_state_dict(state, strict=False)
+    # Rotary inverse frequencies are recomputed buffers, never stored.
+    missing = [k for k in result.missing_keys if not k.endswith("inv_freq")]
+    if missing or result.unexpected_keys:
+        raise RuntimeError(f"PE-AV video branch did not load cleanly: missing={missing[:10]} "
+                           f"({len(missing)} total), unexpected={result.unexpected_keys[:10]}")
+    print(f"Loaded PE-AV video branch: {len(state)} tensors, head {tuple(head.shape)}")
+    return model
+
+
 class PeAvAdapter:
     """PE-AV base, video-text branch of `PeVideoModel.forward`: the temporal
     CLS embedding through `video_head` against `text_video_head` text
@@ -220,14 +259,12 @@ class PeAvAdapter:
     std = torch.tensor([0.5, 0.5, 0.5])
 
     def __init__(self, keywords, device, recorder, name, revision):
-        from transformers import AutoTokenizer, PeAudioVideoModel
+        from transformers import AutoTokenizer
         from transformers.models.pe_video import modeling_pe_video
 
         self.device = device
         self.recorder = recorder
-        full = PeAudioVideoModel.from_pretrained(name, revision=revision, attn_implementation="eager")
-        self.model = full.video_model.to(device).eval()
-        del full
+        self.model = load_pe_video_branch(name, revision).to(device).eval()
         self.model.requires_grad_(False)
 
         patch_hf_eager(modeling_pe_video, recorder)
