@@ -110,10 +110,14 @@ needs_run() {
     return 0
 }
 
-install_torch_cu128() {
-    # The G4 (Blackwell) GPUs need a CUDA 12.8 build; harmless on older GPUs.
-    pip uninstall -q -y torch torchvision torchaudio
-    pip install -q torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+install_repo_env() {
+    # environment.txt pins torch==2.3.1, which current Colab Pythons cannot
+    # install and which has no Blackwell (G4) kernels anyway. Install every
+    # other pin, then a CUDA 12.8 torch build (harmless on older GPUs).
+    grep -viE '^(torch|torchvision|torchaudio)([=<>~ ]|$)' "${SOCCER_DIR}/environment.txt" > /tmp/env_no_torch.txt
+    pip install -q -r /tmp/env_no_torch.txt
+    pip install -q --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+    python -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, torch.cuda.get_device_name(0))"
 }
 
 # ---------------------------------------------------------------------------
@@ -121,8 +125,7 @@ install_torch_cu128() {
 # ---------------------------------------------------------------------------
 if wants siglip || wants matchvision || wants soccermaster; then
     echo "=== Stage 1: repo environment ==="
-    pip install -q -r "${SOCCER_DIR}/environment.txt"
-    install_torch_cu128
+    install_repo_env
     cd "${SOCCER_DIR}/inference"
 
     if wants siglip && needs_run siglip; then
@@ -176,8 +179,7 @@ fi
 if wants clip || wants peav || wants videoprism; then
     echo "=== Stage 2: transformers 5.22.2 / timm 1.0.31 ==="
     # decord, einops, imageio etc. come from the repo environment.
-    pip install -q -r "${SOCCER_DIR}/environment.txt"
-    install_torch_cu128
+    install_repo_env
     pip install -q "transformers==5.22.2" "timm==1.0.31" sentencepiece protobuf
     cd "${SOCCER_DIR}/inference"
 
