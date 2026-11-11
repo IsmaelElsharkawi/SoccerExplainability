@@ -116,6 +116,44 @@ The script reads `output_*/` directories and prints a table of Energy / Pointing
 
 ---
 
+## Reproducing Table 1 (all six models)
+
+`colab/run_table1.sh` runs the whole Table 1 pipeline on Colab: SigLIP,
+MatchVision and SoccerMaster through their existing scripts, then CLIP, PE-AV
+and VideoPrism through `inference/chefer_baselines.py`. That script needs
+transformers 5.22.2 and timm 1.0.31, so it runs as a second stage after the
+repo environment. It then scores everything with
+`inference/evaluate_grounding.py`:
+
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+!git clone -b table1-eval https://github.com/IsmaelElsharkawi/SoccerExplainability.git /content/SoccerExplainability
+!bash /content/SoccerExplainability/colab/run_table1.sh
+```
+
+All Table 1 metrics (Energy, Pointing, S-AUROC, S-AUPRC, T-IoU, plus S-IoU)
+come from one module, `inference/grounding_metrics.py`. It reads only the saved
+`saliency/*.npz` maps and `annotations-coco.json`, so any finished run can be
+rescored without a GPU:
+
+```bash
+python inference/evaluate_grounding.py --coco_json annotations-coco.json \
+    --run SigLIP=<dir> --run CLIP=<dir> --run PE-AV=<dir> \
+    --run VideoPrism=<dir> --run MatchVision=<dir> --run SoccerMaster=<dir> \
+    --resolution frame native --out_dir <out>
+```
+
+The evaluator scores at two resolutions:
+
+- `frame` upsamples every map bilinearly to a 720×1280 canvas before scoring
+  (paper Sec. 4.2).
+- `native` scores each model on its own token grid, as the inference scripts'
+  built-in evaluator does. `validation_native.md` compares every cell against
+  the paper values in `inference/table1_reference.json`.
+
+---
+
 ## Convergence Analysis & Per-Class Tables
 
 Pass `--saliency_save_dir <dir>` to any inference script to persist per-clip

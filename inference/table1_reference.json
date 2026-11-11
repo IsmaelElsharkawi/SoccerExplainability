@@ -1,0 +1,58 @@
+{
+  "_source": "CVPR 2027 submission v1 (_CVPR_2027__SoccerLens_v1.pdf), Table 1. Values in percent; null where the paper shows a dash.",
+  "_tiers": ["P", "P+S", "P+S+C"],
+  "chance": {
+    "s_auroc": [50.0, 50.0, 50.0],
+    "s_auprc": [11.9, 16.7, 18.9]
+  },
+  "models": {
+    "SigLIP": {
+      "accuracy": 7.5,
+      "energy": [16.54, 22.09, 22.72],
+      "pointing": [24.67, 30.58, 28.01],
+      "s_auroc": [63.22, 61.56, 62.03],
+      "s_auprc": [20.92, 24.93, 26.73],
+      "t_iou": [19.27, 19.34, 28.67]
+    },
+    "CLIP": {
+      "accuracy": 10.0,
+      "energy": [20.17, 26.77, 29.74],
+      "pointing": [17.15, 23.28, 26.94],
+      "s_auroc": [null, null, null],
+      "s_auprc": [null, null, null],
+      "t_iou": [23.49, 23.71, 34.18]
+    },
+    "PE-AV": {
+      "accuracy": 0.5,
+      "energy": [17.09, 22.86, 25.41],
+      "pointing": [22.24, 28.89, 32.34],
+      "s_auroc": [null, null, null],
+      "s_auprc": [null, null, null],
+      "t_iou": [10.82, 10.80, 13.79]
+    },
+    "VideoPrism": {
+      "accuracy": 8.0,
+      "energy": [20.87, 27.93, 28.50],
+      "pointing": [27.18, 35.11, 31.12],
+      "s_auroc": [null, null, null],
+      "s_auprc": [null, null, null],
+      "t_iou": [19.50, 19.80, 19.61]
+    },
+    "MatchVision": {
+      "accuracy": 62.5,
+      "energy": [26.25, 34.67, 39.17],
+      "pointing": [30.31, 39.07, 44.26],
+      "s_auroc": [80.34, 77.29, 78.77],
+      "s_auprc": [35.37, 39.52, 44.14],
+      "t_iou": [11.85, 11.88, 15.33]
+    },
+    "SoccerMaster": {
+      "accuracy": 66.0,
+      "energy": [24.41, 34.43, 37.00],
+      "pointing": [35.57, 47.22, 49.77],
+      "s_auroc": [75.34, 75.59, 73.37],
+      "s_auprc": [27.97, 35.87, 38.27],
+      "t_iou": [8.08, 8.10, 15.36]
+    }
+  }
+}
