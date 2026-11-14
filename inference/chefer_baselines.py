@@ -117,15 +117,25 @@ class ClipAdapter:
             self.text_embeds = F.normalize(self.model.text_projection(text), dim=-1)
         self.size = self.model.config.vision_config.image_size
         self.grid = self.size // self.model.config.vision_config.patch_size
+        # CLIP's learned softmax temperature (perturbation_faithfulness.py).
+        self.logit_scale = self.model.logit_scale.exp().item()
 
-    def explain(self, frames_uint8, target):
+    def preprocess(self, frames_uint8):
+        """(T, 3, H, W) uint8 -> normalized (T, 3, size, size) on the device."""
         x = resize_frames(frames_uint8, self.size, "bicubic")
-        x = ((x - self.mean[:, None, None]) / self.std[:, None, None]).to(self.device).requires_grad_(True)
-        num_frames = x.shape[0]
+        return ((x - self.mean[:, None, None]) / self.std[:, None, None]).to(self.device)
 
+    def forward_logits(self, x):
+        """Class scores (C,) of a preprocessed clip (cosine similarities)."""
         pooled = self.model.vision_model(pixel_values=x).pooler_output
         image_embeds = F.normalize(self.model.visual_projection(pooled).mean(dim=0, keepdim=True), dim=-1)
-        logits = (image_embeds @ self.text_embeds.t())[0]
+        return (image_embeds @ self.text_embeds.t())[0]
+
+    def explain(self, frames_uint8, target):
+        x = self.preprocess(frames_uint8).requires_grad_(True)
+        num_frames = x.shape[0]
+
+        logits = self.forward_logits(x)
         logits[target].backward()
 
         cams = self.recorder.cams("spatial.")
@@ -174,14 +184,25 @@ class VideoPrismAdapter:
         config = self.model.config.vision_config
         self.size = config.image_size if isinstance(config.image_size, int) else config.image_size[0]
         self.grid = self.size // config.tubelet_size[1]
+        # VideoPrismClipModel.forward exponentiates the raw similarities
+        # (temperature 1), so that is the temperature of its own probabilities.
+        self.logit_scale = 1.0
+
+    def preprocess(self, frames_uint8):
+        """(T, 3, H, W) uint8 -> (T, 3, size, size) in [0, 1] on the device."""
+        return resize_frames(frames_uint8, self.size, "bilinear").to(self.device)
+
+    def forward_logits(self, x):
+        """Class scores (C,) of a preprocessed clip."""
+        video = self.model.video_model(pixel_values_videos=x[None], interpolate_pos_encoding=True)
+        video_embeds = video.pooler_output.reshape(1, -1)
+        return (video_embeds @ self.text_embeds.t())[0]
 
     def explain(self, frames_uint8, target):
-        x = resize_frames(frames_uint8, self.size, "bilinear")[None].to(self.device).requires_grad_(True)
-        num_frames, num_patches = x.shape[1], self.grid * self.grid
+        x = self.preprocess(frames_uint8).requires_grad_(True)
+        num_frames, num_patches = x.shape[0], self.grid * self.grid
 
-        video = self.model.video_model(pixel_values_videos=x, interpolate_pos_encoding=True)
-        video_embeds = video.pooler_output.reshape(1, -1)
-        logits = (video_embeds @ self.text_embeds.t())[0]
+        logits = self.forward_logits(x)
         logits[target].backward()
 
         # Per-frame spatial rollout: cams (T, N, N).
@@ -283,15 +304,26 @@ class PeAvAdapter:
             text = self.model.text_model(input_ids=tokens["input_ids"], attention_mask=tokens["attention_mask"],
                                          output_hidden_states=True)
             self.text_embeds = self.model.text_video_head(text.hidden_states[-1][:, 0])
+        # PeVideoModel.forward applies this as a plain multiplier (no exp);
+        # the bias cancels in a softmax over classes.
+        self.logit_scale = float(self.model.text_video_logit_scale.reshape(-1)[0].item())
+
+    def preprocess(self, frames_uint8):
+        """(T, 3, H, W) uint8 -> normalized (T, 3, size, size) on the device."""
+        x = resize_frames(frames_uint8, self.size, "bilinear")
+        return ((x - self.mean[:, None, None]) / self.std[:, None, None]).to(self.device)
+
+    def forward_logits(self, x):
+        """Class scores (C,) of a preprocessed clip (raw dot products, see above)."""
+        video = self.model.video_encoder(pixel_values_videos=x[None])
+        video_embeds = self.model.video_head(video.pooler_output)
+        return (video_embeds @ self.text_embeds.t())[0]
 
     def explain(self, frames_uint8, target):
-        x = resize_frames(frames_uint8, self.size, "bilinear")
-        x = ((x - self.mean[:, None, None]) / self.std[:, None, None])[None].to(self.device).requires_grad_(True)
-        num_frames = x.shape[1]
+        x = self.preprocess(frames_uint8).requires_grad_(True)
+        num_frames = x.shape[0]
 
-        video = self.model.video_encoder(pixel_values_videos=x)
-        video_embeds = self.model.video_head(video.pooler_output)
-        logits = (video_embeds @ self.text_embeds.t())[0]
+        logits = self.forward_logits(x)
         logits[target].backward()
 
         spatial_cams = self.recorder.cams("spatial.")  # (T, 1+N, 1+N)

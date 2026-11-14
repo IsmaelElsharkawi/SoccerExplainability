@@ -169,7 +169,51 @@ per-class metrics table grouped by soccer event, under `<dir>/analysis/`.
 
 ---
 
+## Perturbation Faithfulness (does the model use what the map highlights?)
+
+Grounding metrics compare maps against human boxes. `inference/perturbation_faithfulness.py`
+tests the maps against the model instead: it reads the saved `saliency/*.npz`
+of a run, re-loads the same frames, masks model patches ranked by the map and
+re-runs the forward pass. Tokens are split into K equal salience groups
+(default K=10, i.e. 10% bins) and three perturbation families are scored with
+the explained class' softmax probability:
+
+- **Independent groups** (one bin at a time) → **SaCo**, the Salience-guided
+  Faithfulness Coefficient of Wu et al. (CVPR 2024): a Kendall-style
+  coefficient in [-1, 1] of whether the probability drops are ordered like the
+  salience, weighted by the salience differences. A random map scores 0.
+- **MoRF** (cumulative, most relevant first) → deletion curve, AOPC (mean
+  probability drop), top-1 flip rate per masked fraction, and the smallest
+  masked fraction at which the prediction flips.
+- **LeRF** (cumulative, least relevant first) → the control curve; a faithful
+  map has a large LeRF − MoRF area gap.
+
+Every clip is also run with a uniformly random map under the same protocol
+so that the masking artifact alone (an off-manifold input) can be subtracted.
+Masked patches are filled with the per-clip channel mean (`--fill mean`) or
+zero. Results are reported for all clips and for correctly classified clips,
+with bootstrap CIs.
+
+```bash
+# one model (its saliency dir comes from a Table 1 run)
+python inference/perturbation_faithfulness.py --model soccermaster \
+    --config_path config/pretrain_classification.py \
+    --saliency_dir <run>/soccermaster/saliency --out_dir <run>/soccermaster/perturbation \
+    --checkpoint_dir <SoccerMaster ckpt dir> --groups 10 --ranking clip --fill mean
+
+# combine finished runs into one table
+python inference/perturbation_faithfulness.py --out_dir <run>/perturbation \
+    --summarize_runs SigLIP=<run>/siglip/perturbation SoccerMaster=<run>/soccermaster/perturbation
+```
+
+`colab/run_perturbation.sh` runs all six models of a Table 1 run directory
+(`RUN_DIR=... bash colab/run_perturbation.sh`). Per-clip results are written
+to `<out_dir>/clips/` and the run resumes from them.
+
+---
+
 ## References
 
 - Chefer, H., Gur, S., & Wolf, L. (2021). *Generic Attention-model Explainability for Interpreting Bi-Modal and Encoder-Decoder Transformers.* ICCV 2021. [[arXiv]](https://arxiv.org/abs/2103.15679)
+- Wu, J., Kang, W., Tang, H., Hong, Y., & Yan, Y. (2024). *On the Faithfulness of Vision Transformer Explanations.* CVPR 2024. [[arXiv]](https://arxiv.org/abs/2404.01415)
 - SoccerNet-v2 dataset and event taxonomy: [[SoccerNet]](https://www.soccer-net.org/)
