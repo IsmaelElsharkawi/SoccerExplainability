@@ -212,6 +212,52 @@ to `<out_dir>/clips/` and the run resumes from them.
 
 ---
 
+## Relevance-Guided Frame Selection (a practical use of the maps)
+
+If the maps are faithful, they tell us *which frames* a decision rests on
+(per-frame relevance = the saliency volume summed over a frame, i.e. the
+`frame_scores` of each saved npz). `inference/frame_selection.py` turns this
+into a frame-budget experiment: for k = 1, 3, 5, 10 of the 30 frames
+(`--budgets`) it keeps only k frames and re-classifies the clip, comparing
+
+- **relevance**: the k most relevant frames by the model's own map,
+- **uniform**: k evenly spaced frames (what a k-frame sampler would take),
+- **random**: k random frames,
+- **least**: the k least relevant frames (negative control),
+- **transfer** (optional, `--rank_saliency_dir`): the top-k frames by *another*
+  model's map, i.e. a cheap model selecting frames for an expensive one.
+
+The readout is agreement with the full-clip prediction (and accuracy) per
+budget, the smallest budget reaching 90% agreement, and the per-clip minimal
+sufficient number of frames. Unselected frames are either mean-filled
+(`--mode mask`, every model, same operation as the perturbation test) or
+really removed (`--mode drop`, the compute saving; SigLIP and CLIP only,
+since the other models have a fixed-length temporal embedding).
+
+The saved maps explain the ground-truth class, so frame selection by the map
+leaks the label on misclassified clips. The primary table is therefore the
+correctly classified subset (explained class == predicted class); the
+uniform and random rows are leakage-free everywhere.
+
+```bash
+python inference/frame_selection.py --model matchvision --config_path config/pretrain_classification.py\
+    --saliency_dir <run>/matchvision/saliency --out_dir <run>/matchvision/frame_selection\
+    --checkpoint_path <MatchVision ckpt> --mode mask
+
+# SoccerMaster with frames chosen by MatchVision's maps (transfer condition)
+python inference/frame_selection.py --model soccermaster ...\
+    --rank_saliency_dir <run>/matchvision/saliency --rank_label MatchVision
+
+python inference/frame_selection.py --out_dir <run>/frame_selection\
+    --summarize_runs MatchVision=<run>/matchvision/frame_selection SoccerMaster=<run>/soccermaster/frame_selection
+```
+
+`colab/run_frame_selection.sh` runs all six models of a Table 1 run directory
+(`RUN_DIR=... [MODE=mask|drop] [RANK_FROM=matchvision] bash colab/run_frame_selection.sh`)
+and writes `<run>/frame_selection/summary_all.md` and `curves_all.png`.
+
+---
+
 ## References
 
 - Chefer, H., Gur, S., & Wolf, L. (2021). *Generic Attention-model Explainability for Interpreting Bi-Modal and Encoder-Decoder Transformers.* ICCV 2021. [[arXiv]](https://arxiv.org/abs/2103.15679)

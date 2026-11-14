@@ -573,6 +573,23 @@ def forwards_per_clip(num_groups, random_seeds):
     return 2 + (3 * num_groups - 2) * (1 + random_seeds)
 
 
+def add_model_args(parser):
+    """Checkpoint / preprocessing arguments shared by every script that builds a predictor."""
+    parser.add_argument("--num_frames", type=int, default=30)
+    # SigLIP
+    parser.add_argument("--model_name", default="google/siglip-base-patch16-224")
+    parser.add_argument("--siglip_temporal_aggregation", default="mean", choices=("mean", "max"))
+    # MatchVision
+    parser.add_argument("--checkpoint_path", default=None)
+    # SoccerMaster
+    parser.add_argument("--checkpoint_dir", default=None)
+    parser.add_argument("--siglip2_path", default="google/siglip2-large-patch16-512")
+    parser.add_argument("--input_size", type=int, default=512)
+    # Baselines
+    parser.add_argument("--checkpoint", default=None, help="Override the pinned Hub checkpoint.")
+    parser.add_argument("--revision", default=None)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", choices=MODELS, help="Model whose saved maps are tested.")
@@ -591,25 +608,13 @@ def parse_args():
     parser.add_argument("--random_seeds", type=int, default=1, help="Random-map controls per clip (default 1).")
     parser.add_argument("--logit_scale", type=float, default=None,
                         help="Override the softmax temperature applied to the logits.")
-    parser.add_argument("--num_frames", type=int, default=30)
     parser.add_argument("--max_clips", type=int, default=None, help="Debug: stop after this many clips.")
     parser.add_argument("--overwrite", action="store_true", help="Recompute clips that already have results.")
     parser.add_argument("--summarize_only", action="store_true",
                         help="Rebuild summary.* from <out_dir>/clips without loading a model.")
     parser.add_argument("--summarize_runs", nargs="*", default=None, metavar="LABEL=OUT_DIR",
                         help="Combine several finished runs into one table written to --out_dir.")
-    # SigLIP
-    parser.add_argument("--model_name", default="google/siglip-base-patch16-224")
-    parser.add_argument("--siglip_temporal_aggregation", default="mean", choices=("mean", "max"))
-    # MatchVision
-    parser.add_argument("--checkpoint_path", default=None)
-    # SoccerMaster
-    parser.add_argument("--checkpoint_dir", default=None)
-    parser.add_argument("--siglip2_path", default="google/siglip2-large-patch16-512")
-    parser.add_argument("--input_size", type=int, default=512)
-    # Baselines
-    parser.add_argument("--checkpoint", default=None, help="Override the pinned Hub checkpoint.")
-    parser.add_argument("--revision", default=None)
+    add_model_args(parser)
     return parser.parse_args()
 
 
