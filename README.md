@@ -162,6 +162,33 @@ The evaluator scores at two resolutions:
   built-in evaluator does. `validation_native.md` compares every cell against
   the paper values in `inference/table1_reference.json`.
 
+### Table 1 on the 800 extra clips (silver annotations)
+
+The same driver runs on the 800 extra clips. They have no human boxes, so inference
+uses a placeholder COCO file that only lists their frames, and scoring uses the Gemini
+annotations (`annotations-coco-extra800.json`, see `silver_annotation/README.md`):
+
+```bash
+python colab/make_placeholder_coco.py \
+    train_data/json/selected_videos_for_annotations_800.json /content/placeholder_800-coco.json
+CONFIG=config/pretrain_classification_800.py \
+COCO_JSON=/content/placeholder_800-coco.json \
+EVAL_COCO_JSON=annotations-coco-extra800.json \
+EXPECTED_CLIPS=800 REFERENCE="" \
+bash colab/run_table1.sh
+```
+
+`REFERENCE=""` skips the comparison with the paper values, which are for the 200
+human-annotated clips. Other variables (`CLIP_ROOT`, `SOCCER_DIR`, `HF_HOME`, `VENV_REPO`,
+`VENV_NEW`, `MODELS`) let the driver run outside Colab. SoccerMaster at 512 px with 30 frames
+needs about 96 GB of GPU memory. To rescore finished runs without a GPU, pass
+`--coco_json annotations-coco-extra800.json --reference ""` to `inference/evaluate_grounding.py`;
+it uses every CPU core.
+
+The table now includes an S-IoU column. Its chance row is `b / (1 + b)` per frame for box
+fraction `b`, the expected S-IoU of an i.i.d. random map; real maps are much sparser than that,
+so treat it as a reference value and not as a floor.
+
 ---
 
 ## Convergence Analysis & Per-Class Tables

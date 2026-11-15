@@ -47,7 +47,7 @@ TIER_LABELS = {
     "small_large": {"small label", "large label"},
     "small_large_visual_cues": {"small label", "large label", "visual cue"},
 }
-SPATIAL_METRICS = ("energy", "pointing", "s_iou", "s_auroc", "s_auprc", "box_fraction")
+SPATIAL_METRICS = ("energy", "pointing", "s_iou", "s_auroc", "s_auprc", "box_fraction", "s_iou_chance")
 TEMPORAL_METRICS = ("t_iou", "t_auroc", "t_auprc", "frame_fraction")
 
 DEFAULT_CANVAS = (720, 1280)  # (height, width); SoccerNet broadcast frames are 16:9.
@@ -137,6 +137,10 @@ def frame_tier_metrics(attribution_map, tier_masks, cam_threshold=CAM_THRESHOLD)
             "s_auroc": auroc,
             "s_auprc": auprc,
             "box_fraction": float(labels.mean()),
+            # S-IoU of a random map: with i.i.d. scores, half the pixels clear
+            # cam_threshold x max, independently of the boxes, so the expected
+            # IoU is (b/2) / (b + (1-b)/2) = b / (1 + b) for box fraction b.
+            "s_iou_chance": float(labels.mean()) / (1.0 + float(labels.mean())),
         }
     return out
 
