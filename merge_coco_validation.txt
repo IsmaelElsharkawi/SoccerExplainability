@@ -1,0 +1,13 @@
+inputs: A clips=200 imgs=2711 anns=5189 boxes=4687
+inputs: B clips=800 imgs=23997 anns=36964 boxes=24442
+collision check: video ids overlap=0, image ids overlap=0
+output: images by source={'human': 2711, 'gemini-4-argon': 23997} clips by source={'human': 200, 'gemini-4-argon': 800}
+PASS: clip count = 1000
+PASS: image count = 26708
+PASS: annotation rows = 42153
+PASS: box count = 29129
+PASS: every image_id exists in images
+PASS: every image has source; 200 human / 800 gemini clips
+PASS: every annotation has source
+PASS: no duplicate annotation/image ids
+PASS: category ids of box rows in categories (no_roi rows have category_id null by design)
