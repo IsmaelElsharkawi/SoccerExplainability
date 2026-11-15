@@ -13,7 +13,7 @@
 #   from google.colab import drive
 #   drive.mount('/content/drive')
 #
-#   !git clone -b table1-eval https://github.com/IsmaelElsharkawi/SoccerExplainability.git /content/SoccerExplainability
+#   !git clone -b table1-eval <ANONYMIZED_REPO_URL> /content/SoccerExplainability
 #   !bash /content/SoccerExplainability/colab/run_table1.sh
 #
 # Clips are read from /content/drive/MyDrive/SoccerLens/ (config/pretrain_classification.py).

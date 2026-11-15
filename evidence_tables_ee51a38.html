@@ -358,7 +358,7 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
 
 <div class="flag ok">
   <h3>Provenance and integrity checks</h3>
-  <p>Source: <code>output_native_grid_maps_sait.zip</code>. Ten map sets, 200 clips each, and all ten are
+  <p>Source: <code>output_native_grid_maps.zip</code>. Ten map sets, 200 clips each, and all ten are
   distinct from one another by content checksum &mdash; no copied directories. The bundled
   <code>annotations-coco.json</code> is byte-identical to the repository's. The evaluator used here
   reproduces every published SigLIP figure in Table&nbsp;1 exactly when pointed at the old bundle, so the
@@ -438,7 +438,7 @@ a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:
   <p>Tables 1&ndash;5 are recomputed from the per-clip sidecars inside
   <code>SoccerExplainability-output-20260727T084020Z-1-001.zip</code>, all runs at commit
   <code>ee51a38</code>, explaining each model&rsquo;s predicted class.</p>
-  <p>Tables 6&ndash;7 are computed from <code>output_native_grid_maps_sait.zip</code> at commit
+  <p>Tables 6&ndash;7 are computed from <code>output_native_grid_maps.zip</code> at commit
   <code>48a31962</code>, explaining the true event class, scored on each model&rsquo;s native grid with no
   resampling. Both sets use <code>inference/coco_attribution_eval.py</code> and the same
   <code>annotations-coco.json</code> over the same 200 clips. Every figure is generated, not transcribed.</p>

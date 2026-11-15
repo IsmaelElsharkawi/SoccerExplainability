@@ -78,8 +78,8 @@ The page shows the old values struck through, purely so the change is auditable.
   are ~5 MB each and were not pulled for this page. Rebuilding Tables 1–4 against them is
   the next step.
 - **Chefer-Spatial vs Chefer-Temporal** is still missing. Only temporal runs exist for
-  MatchVision and SoccerMaster; `ismael/run_chefer_matchvision.sh` and
-  `ismael/run_chefer_soccermaster.sh` would produce the counterpart.
+  MatchVision and SoccerMaster; `colab/jobs/run_chefer_matchvision.sh` and
+  `colab/jobs/run_chefer_soccermaster.sh` would produce the counterpart.
 - **Run-to-run error bars are still not available.** Repeat runs so far have produced
   byte-identical eval JSONs, so the measured variance is zero by construction. Genuine
   replicates need a varying seed or non-deterministic kernels left enabled.
