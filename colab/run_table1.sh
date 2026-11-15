@@ -30,17 +30,25 @@
 #   SKIP_EVAL=1                           stop after inference
 #   EXTRA_RUNS="Label=/path/to/saliency"  more rows for the table, e.g. an older bundle
 #   CANVAS=720x1280                       frame-resolution canvas (HEIGHTxWIDTH)
+#   CONFIG, COCO_JSON, EVAL_COCO_JSON, EXPECTED_CLIPS, CLIP_ROOT, REFERENCE, HF_HOME,
+#   SOCCER_DIR, VENV_REPO, VENV_NEW      run outside Colab or on another clip set
+#                                         (REFERENCE="" skips the paper validation)
 
 set -euo pipefail
 
-SOCCER_DIR="/content/SoccerExplainability"
+SOCCER_DIR="${SOCCER_DIR:-/content/SoccerExplainability}"
 DRIVE_ROOT="${DRIVE_ROOT:-/content/drive/MyDrive/SoccerExplainability-output}"
 MODELS="${MODELS:-siglip matchvision soccermaster clip peav videoprism}"
 CANVAS="${CANVAS:-720x1280}"
-CONFIG="${SOCCER_DIR}/config/pretrain_classification.py"
-COCO_JSON="${SOCCER_DIR}/annotations-coco.json"
-EXPECTED_CLIPS=200
-export HF_HOME="/content/huggingface_cache"
+CONFIG="${CONFIG:-${SOCCER_DIR}/config/pretrain_classification.py}"
+# COCO_JSON decides which clips get saliency maps saved (inference);
+# EVAL_COCO_JSON holds the boxes that stage 3 scores against.
+COCO_JSON="${COCO_JSON:-${SOCCER_DIR}/annotations-coco.json}"
+EVAL_COCO_JSON="${EVAL_COCO_JSON:-${COCO_JSON}}"
+REFERENCE="${REFERENCE-${SOCCER_DIR}/inference/table1_reference.json}"
+EXPECTED_CLIPS="${EXPECTED_CLIPS:-200}"
+CLIP_ROOT="${CLIP_ROOT:-/content/drive/MyDrive/SoccerLens}"
+export HF_HOME="${HF_HOME:-/content/huggingface_cache}"
 export PYTHONUNBUFFERED=1
 # Colab exports its notebook backend (matplotlib_inline), which the venvs do not have.
 export MPLBACKEND=Agg
@@ -53,12 +61,8 @@ if [ ! -d "${SOCCER_DIR}/inference" ]; then
     echo "ERROR: repo not found at ${SOCCER_DIR} (the config hard-codes this path)." >&2
     exit 1
 fi
-if [ ! -d "/content/drive/MyDrive" ]; then
-    echo "ERROR: Google Drive is not mounted. Run drive.mount('/content/drive') in a cell first." >&2
-    exit 1
-fi
-if [ ! -d "/content/drive/MyDrive/SoccerLens" ]; then
-    echo "ERROR: clip folder /content/drive/MyDrive/SoccerLens not found." >&2
+if [ ! -d "${CLIP_ROOT}" ]; then
+    echo "ERROR: clip folder ${CLIP_ROOT} not found (mount Drive on Colab, or set CLIP_ROOT)." >&2
     exit 1
 fi
 nvidia-smi -L || { echo "ERROR: no GPU visible." >&2; exit 1; }
@@ -119,8 +123,8 @@ needs_run() {
 # torch is not taken from environment.txt (2.3.1 has no Blackwell kernels);
 # both venvs get a CUDA 12.8 build instead, which also works on older GPUs.
 PY_VERSION="3.11"
-VENV_REPO="/content/venv_repo"
-VENV_NEW="/content/venv_baselines"
+VENV_REPO="${VENV_REPO:-/content/venv_repo}"
+VENV_NEW="${VENV_NEW:-/content/venv_baselines}"
 
 # make_venv VENV REQUIREMENTS_FILE [extra packages...]
 make_venv() {
@@ -262,7 +266,8 @@ PY="${VENV_REPO}/bin/python"
 [ -x "${PY}" ] || PY="${VENV_NEW}/bin/python"
 [ -x "${PY}" ] || PY=python3
 "${PY}" evaluate_grounding.py \
-    --coco_json "${COCO_JSON}" \
+    --coco_json "${EVAL_COCO_JSON}" \
+    --reference "${REFERENCE}" \
     "${RUN_ARGS[@]}" \
     --resolution frame native \
     --canvas "${CANVAS}" \

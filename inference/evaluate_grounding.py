@@ -52,6 +52,7 @@ from grounding_metrics import (  # noqa: E402
 TABLE_METRICS = [
     ("energy", "Energy"),
     ("pointing", "Pointing"),
+    ("s_iou", "S-IoU"),
     ("s_auroc", "S-AUROC"),
     ("s_auprc", "S-AUPRC"),
     ("t_iou", "T-IoU"),
@@ -142,7 +143,8 @@ def chance_row(per_clip_by_run, temporal_chance):
     Temporal: frames get independent random scores (`temporal_chance`)."""
     best = max(per_clip_by_run.values(), key=len)
     summary = aggregate(list(best.values()))
-    return {tier: dict(box=summary[tier]["box_fraction"], **temporal_chance[tier]) for tier in TIERS}
+    return {tier: dict(box=summary[tier]["box_fraction"], s_iou=summary[tier]["s_iou_chance"], **temporal_chance[tier])
+            for tier in TIERS}
 
 
 def compute_temporal_chance(coco_json, clip_ids, num_frames=30):
@@ -162,6 +164,8 @@ def chance_value(key, tier, chance):
     """Expected score of a random attribution map, in [0, 1]."""
     if key in ("energy", "pointing", "s_auprc"):
         return chance[tier]["box"]
+    if key == "s_iou":
+        return chance[tier].get("s_iou")
     if key == "s_auroc":
         return 0.5
     if key in ("t_iou", "t_auroc", "t_auprc"):
