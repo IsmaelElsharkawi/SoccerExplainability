@@ -157,7 +157,10 @@ def compute_temporal_chance(coco_json, clip_ids, num_frames=30):
                 values[tier]["t_iou"].append(tiou)
                 values[tier]["t_auroc"].append(0.5)  # exact for a random ranking
                 values[tier]["t_auprc"].append(auprc)
-    return {tier: {k: float(np.mean(v)) for k, v in vals.items()} for tier, vals in values.items()}
+    # A clip whose frames all carry a cue has no temporal ranking, so its chance T-AUROC / T-AUPRC
+    # is undefined (NaN); skip those clips instead of letting one NaN blank the whole chance cell.
+    return {tier: {k: (float(np.nanmean(v)) if len(v) else float("nan")) for k, v in vals.items()}
+            for tier, vals in values.items()}
 
 
 def chance_value(key, tier, chance):
