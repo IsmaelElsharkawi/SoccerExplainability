@@ -182,6 +182,7 @@ def generate_per_frame_heatmaps_soccermaster(
     num_frames: int = 30,
     patch_size: int = 32,
     input_size: int = 512,
+    propagation_mode: str = 'legacy_scalar',
 ) -> np.ndarray:
     """
     Generate per-frame spatial heatmaps using Chefer method on SoccerMaster.
@@ -204,6 +205,8 @@ def generate_per_frame_heatmaps_soccermaster(
     Returns:
         Heatmaps [T, patch_size, patch_size] with values in [0, 1]
     """
+    if propagation_mode not in {'legacy_scalar', 'joint_spatiotemporal'}:
+        raise ValueError(f"Unknown propagation_mode: {propagation_mode}")
     model.eval()
     wrapped = wrap_soccermaster_model(model)
 
@@ -226,7 +229,9 @@ def generate_per_frame_heatmaps_soccermaster(
     T = num_frames
     num_patches = patch_size * patch_size  # 1024
 
-    R_pp_per_frame = [torch.eye(num_patches, device=device, dtype=torch.float16) for _ in range(T)]
+    R_pp_per_frame = None
+    if propagation_mode == 'legacy_scalar':
+        R_pp_per_frame = [torch.eye(num_patches, device=device, dtype=torch.float16) for _ in range(T)]
 
     model.zero_grad()
 
@@ -285,7 +290,12 @@ def generate_per_frame_heatmaps_soccermaster(
     print(f"Chefer class-logit backprop: class_idx={target_label}, logit={target.item():.4f}")
 
     # CRITICAL: Backward pass to compute gradients through attention
-    target.backward(retain_graph=True)
+    target.backward(retain_graph=propagation_mode != 'joint_spatiotemporal')
+
+    if propagation_mode == 'joint_spatiotemporal':
+        from joint_spatiotemporal_chefer import generate_joint_spatiotemporal_relevance
+        return generate_joint_spatiotemporal_relevance(
+            wrapped, num_frames, patch_size)
 
     print(f"Computed backward pass. Target value: {target.item():.4f}")
 
@@ -420,6 +430,8 @@ def main():
                         help='Directory to save attribution visualization outputs')
     parser.add_argument('--input_size', type=int, default=512,
                         help='Input resolution for SoccerMaster (default: 512)')
+    parser.add_argument('--propagation_mode', choices=['legacy_scalar', 'joint_spatiotemporal'],
+                        default='legacy_scalar', help='Use joint_spatiotemporal for raw Joint-ST heatmaps')
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -493,6 +505,7 @@ def main():
             target_label=target_label_idx,
             device=str(device),
             num_frames=frames.shape[2],
+            propagation_mode=args.propagation_mode,
             patch_size=patch_size,
             input_size=args.input_size,
         )

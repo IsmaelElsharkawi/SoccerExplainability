@@ -86,8 +86,13 @@ def generate_per_frame_heatmaps_siglip(
     device: str = 'cuda',
     num_frames: Optional[int] = None,
     patch_size: int = 14,
+    propagation_mode: str = 'spatial',
 ) -> np.ndarray:
     """Generate per-frame spatial heatmaps using Chefer on plain SigLIP."""
+    if propagation_mode not in {'spatial', 'joint_spatiotemporal'}:
+        raise ValueError(f'Unknown propagation_mode: {propagation_mode}')
+    if propagation_mode == 'joint_spatiotemporal' and model.temporal_aggregation != 'mean':
+        raise ValueError('Joint-ST SigLIP requires mean frame aggregation')
     model.eval()
     wrapped = wrap_siglip_model(model)
 
@@ -107,7 +112,9 @@ def generate_per_frame_heatmaps_siglip(
     if num_frames != total_frames:
         raise ValueError(f'num_frames={num_frames} does not match input frames={total_frames}')
 
-    r_pp_per_frame = [torch.eye(num_patches, device=device) for _ in range(num_frames)]
+    r_pp_per_frame = None
+    if propagation_mode == 'spatial':
+        r_pp_per_frame = [torch.eye(num_patches, device=device) for _ in range(num_frames)]
 
     model.zero_grad()
 
@@ -131,7 +138,12 @@ def generate_per_frame_heatmaps_siglip(
     target = cls_logits[0, target_label]
     print(f"Chefer class-logit backprop: class_idx={target_label}, logit={target.item():.4f}")
 
-    target.backward(retain_graph=True)
+    target.backward(retain_graph=propagation_mode != 'joint_spatiotemporal')
+
+    if propagation_mode == 'joint_spatiotemporal':
+        from joint_spatiotemporal_chefer import generate_joint_spatiotemporal_relevance
+        return generate_joint_spatiotemporal_relevance(
+            {**wrapped, 'temporal_attn': [], 'head_te_attn': []}, num_frames, patch_size)
     print(f"Computed backward pass. Target value: {target.item():.4f}")
 
     for _, attn_module in wrapped['spatial_attn']:
@@ -209,6 +221,8 @@ def main():
                         help='Directory to save attribution visualization outputs')
     parser.add_argument('--siglip_temporal_aggregation', type=str, default='mean', choices=['mean', 'max'],
                         help='Temporal aggregation for SigLIP frame embeddings (default: mean)')
+    parser.add_argument('--propagation_mode', choices=['spatial', 'joint_spatiotemporal'],
+                        default='spatial', help='Use joint_spatiotemporal for raw Joint-ST heatmaps')
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -269,6 +283,7 @@ def main():
             target_label=target_label_idx,
             device=str(devices[0]),
             num_frames=frames.shape[2],
+            propagation_mode=args.propagation_mode,
         )
         print(f'Chefer SigLIP heatmap shape: {chefer_heatmaps.shape}')
 

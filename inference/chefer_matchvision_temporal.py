@@ -140,6 +140,7 @@ def generate_per_frame_heatmaps(
     device: str = 'cuda',
     num_frames: int = 30,
     patch_size: int = 14,  # 14x14 = 196 patches for 224x224 input
+    propagation_mode: str = 'legacy_scalar',
 ) -> np.ndarray:
     """
     Generate per-frame spatial heatmaps using the Chefer method (ICCV 2021).
@@ -170,6 +171,8 @@ def generate_per_frame_heatmaps(
     Returns:
         Heatmaps array [T, patch_size, patch_size] with values in [0, 1]
     """
+    if propagation_mode not in {'legacy_scalar', 'joint_spatiotemporal'}:
+        raise ValueError(f"Unknown propagation_mode: {propagation_mode}")
     model.eval()
     wrapped = wrap_matchvision_model(model)
 
@@ -180,7 +183,9 @@ def generate_per_frame_heatmaps(
     T = num_frames
     num_patches = patch_size * patch_size  # 196
 
-    R_pp_per_frame = [torch.eye(num_patches, device=device) for _ in range(T)]
+    R_pp_per_frame = None
+    if propagation_mode == 'legacy_scalar':
+        R_pp_per_frame = [torch.eye(num_patches, device=device) for _ in range(T)]
 
     model.zero_grad()
 
@@ -226,7 +231,12 @@ def generate_per_frame_heatmaps(
     print(f"Chefer class-logit backprop: class_idx={target_label}, logit={target.item():.4f}")
     
     # CRITICAL: Backward pass to compute gradients through attention
-    target.backward(retain_graph=True)
+    target.backward(retain_graph=propagation_mode != 'joint_spatiotemporal')
+
+    if propagation_mode == 'joint_spatiotemporal':
+        from joint_spatiotemporal_chefer import generate_joint_spatiotemporal_relevance
+        return generate_joint_spatiotemporal_relevance(
+            wrapped, num_frames, patch_size)
     
     print(f"Computed backward pass. Target value: {target.item():.4f}")
     
@@ -388,6 +398,8 @@ def main():
     parser.add_argument('--output_dir', type=str,
                         default='../output_chefer_soccer/',
                         help='Directory to save attribution visualization outputs')
+    parser.add_argument('--propagation_mode', choices=['legacy_scalar', 'joint_spatiotemporal'],
+                        default='legacy_scalar', help='Use joint_spatiotemporal for raw Joint-ST heatmaps')
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -460,6 +472,7 @@ def main():
             target_label=target_label_idx,
             device=str(devices[0]),
             num_frames=frames.shape[2],
+            propagation_mode=args.propagation_mode,
         )
         # chefer_heatmaps: [T, 14, 14] numpy float32 in [0, 1]
         print(f'Chefer per-frame heatmap shape: {chefer_heatmaps.shape}')

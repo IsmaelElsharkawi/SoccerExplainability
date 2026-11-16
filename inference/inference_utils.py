@@ -197,6 +197,68 @@ def wrap_transformer_encoder_layer(te_layer):
     return self_attn
 
 
+def wrap_clip_attention_module(attn_module):
+    """Capture CLIP attention probabilities and their gradients.
+
+    This wrapper preserves the executable CLIP attention equation while
+    forcing the eager path required by Chefer. Spatial attention is captured as ``[B*T,H,N,N]``.
+    """
+    if hasattr(attn_module, '_chefer_wrapped'):
+        return attn_module
+
+    embed_dim = attn_module.embed_dim
+    num_heads = attn_module.num_heads
+    head_dim = attn_module.head_dim
+    scale = attn_module.scale
+    dropout = attn_module.dropout
+    attn_storage = {}
+    grad_storage = {}
+
+    def wrapped_forward(
+        hidden_states,
+        attention_mask=None,
+        causal_attention_mask=None,
+        output_attentions=False,
+    ):
+        batch_size, target_len, _ = hidden_states.shape
+
+        query = attn_module.q_proj(hidden_states) * scale
+        key = attn_module.k_proj(hidden_states)
+        value = attn_module.v_proj(hidden_states)
+
+        query = query.view(batch_size, target_len, num_heads, head_dim).transpose(1, 2)
+        key = key.view(batch_size, target_len, num_heads, head_dim).transpose(1, 2)
+        value = value.view(batch_size, target_len, num_heads, head_dim).transpose(1, 2)
+
+        attn_weights = query @ key.transpose(-2, -1)
+        if causal_attention_mask is not None:
+            attn_weights = attn_weights + causal_attention_mask
+        if attention_mask is not None:
+            attn_weights = attn_weights + attention_mask
+
+        attn_weights = torch.softmax(attn_weights, dim=-1)
+        attn_probs = F.dropout(attn_weights, p=dropout, training=attn_module.training)
+        attn_storage['attn'] = attn_probs.detach()
+        if attn_probs.requires_grad:
+            def grad_hook(grad):
+                grad_storage['grad'] = grad.detach()
+            attn_probs.register_hook(grad_hook)
+
+        output = (attn_probs @ value).transpose(1, 2).reshape(
+            batch_size,
+            target_len,
+            embed_dim,
+        )
+        output = attn_module.out_proj(output)
+        return output, attn_weights if output_attentions else None
+
+    attn_module.forward = wrapped_forward
+    attn_module.get_attn = lambda: attn_storage.get('attn')
+    attn_module.get_attn_gradients = lambda: grad_storage.get('grad')
+    attn_module._chefer_wrapped = True
+    return attn_module
+
+
 def wrap_pooling_head_attention(mha_module):
     """
     Wrap SigLIP's pooling head nn.MultiheadAttention for cross-attention capture.
