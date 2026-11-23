@@ -189,6 +189,45 @@ The table now includes an S-IoU column. Its chance row is `b / (1 + b)` per fram
 fraction `b`, the expected S-IoU of an i.i.d. random map; real maps are much sparser than that,
 so treat it as a reference value and not as a floor.
 
+### The 1,000 merged clips (200 human + 800 silver)
+
+`annotations-coco-merged.json` and `train_data/json/selected_videos_for_annotations_merged.json`
+hold both sets; every image and annotation carries a `source` field (`human` or
+`gemini-4-argon`). `config/pretrain_classification_1000.py` points the loaders at the merged list.
+
+**Table 1.** Saliency maps are saved per clip, so the table is rescored on CPU from the maps of
+the two runs (pass each model's map folder with `--run`):
+
+```bash
+python inference/evaluate_grounding.py --coco_json annotations-coco-merged.json --reference "" \
+    --run SigLIP=<maps>/siglip/saliency --run CLIP=<maps>/clip/saliency \
+    --run PE-AV=<maps>/peav/saliency --run VideoPrism=<maps>/videoprism/saliency \
+    --run MatchVision=<maps>/matchvision/saliency --run SoccerMaster=<maps>/soccermaster/saliency \
+    --resolution frame native --canvas 720x1280 --out_dir <out>/table1_1000
+```
+
+Pass `--coco_json annotations-coco.json` or `annotations-coco-extra800.json` with the same map
+folders for the human-only and silver-only tables. The temporal chance row skips clips whose
+frames all carry a cue (no temporal ranking exists for them).
+
+**Convergence with the number of clips.**
+`python inference/convergence_subsampling.py <out>/table1_1000/per_clip_native.csv <out>/convergence`
+recomputes the bootstrap 95% interval of every model and metric on random subsets of 1..N clips.
+
+**Perturbation faithfulness, Chefer-T and Grad-CAM** (`colab/extra1000/`):
+
+| Script | Runs |
+|---|---|
+| `perturbation_chefer_gradcam.sh` | MatchVision and SoccerMaster with Chefer-T, MatchVision with Grad-CAM, combined table and subset breakdown |
+| `soccermaster_gradcam_perturbation.sh` | SoccerMaster with Grad-CAM, in resumable chunks of 100 clips |
+| `frame_selection_and_gradcam_check.sh` | frame selection (k = 1, 3, 5, 10 of 30 frames) for both soccer models, and a count of empty Grad-CAM maps |
+
+Grad-CAM maps are saved at 224x224; `inference/pool_saliency_maps.py` averages them to the
+model's token grid (14x14 for MatchVision, 32x32 for SoccerMaster) before the test. Settings are
+those of `colab/run_perturbation.sh`: 10 salience groups ranked over the whole clip, mean fill,
+one random control per clip. `inference/perturbation_subsets.py` splits finished runs into
+human-annotated and silver clips and, for Grad-CAM, sets aside clips whose map is empty.
+
 ---
 
 ## Convergence Analysis & Per-Class Tables
