@@ -23,3 +23,6 @@ slurm_outputs/
 
 NEURIPS_REVIEWS.md
 inference/chat_new_metrics.json
+
+# generated attribution explorer (build with demo/build_demo.py)
+demo/site/

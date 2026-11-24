@@ -43,7 +43,7 @@ CANVAS="${CANVAS:-720x1280}"
 CONFIG="${CONFIG:-${SOCCER_DIR}/config/pretrain_classification.py}"
 # COCO_JSON decides which clips get saliency maps saved (inference);
 # EVAL_COCO_JSON holds the boxes that stage 3 scores against.
-COCO_JSON="${COCO_JSON:-${SOCCER_DIR}/annotations-coco.json}"
+COCO_JSON="${COCO_JSON:-${SOCCER_DIR}/data/annotations/annotations-coco.json}"
 EVAL_COCO_JSON="${EVAL_COCO_JSON:-${COCO_JSON}}"
 REFERENCE="${REFERENCE-${SOCCER_DIR}/inference/table1_reference.json}"
 EXPECTED_CLIPS="${EXPECTED_CLIPS:-200}"

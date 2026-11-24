@@ -16,7 +16,6 @@
 set -e
 
 cd /content/SoccerExplainability
-git checkout Rebuttal
 cd /content/
 
 pip install -r /content/SoccerExplainability/environment.txt
@@ -78,7 +77,7 @@ python chefer_soccermaster_temporal.py \
     --config_path "${SOCCER_DIR}/config/pretrain_classification.py" \
     --checkpoint_dir "${CHECKPOINT_DIR}" \
     --siglip2_path "google/siglip2-large-patch16-512" \
-    --coco_json "${SOCCER_DIR}/annotations-coco.json" \
+    --coco_json "${SOCCER_DIR}/data/annotations/annotations-coco.json" \
     --cam_threshold 0.5 \
     --eval_output_json "${OUTPUT_DIR}/chefer_soccermaster_temporal_eval_results.json" \
     --output_dir "${OUTPUT_DIR}" \
@@ -87,4 +86,4 @@ python chefer_soccermaster_temporal.py \
 
 python convergence_analysis.py \
     --saliency_dir "${SALIENCY_DIR}" \
-    --selected_videos_json "${SOCCER_DIR}/train_data/json/selected_videos_for_annotations.json"
+    --selected_videos_json "${SOCCER_DIR}/data/clips/selected_videos_for_annotations.json"

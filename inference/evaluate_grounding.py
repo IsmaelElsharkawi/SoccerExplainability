@@ -10,7 +10,7 @@ any attribution script's `--saliency_save_dir`. Pass them as LABEL=DIR, in
 the order the rows should appear:
 
     python evaluate_grounding.py \
-        --coco_json ../annotations-coco.json \
+        --coco_json ../data/annotations/annotations-coco.json \
         --run SigLIP=/runs/siglip/saliency \
         --run CLIP=/runs/clip/saliency \
         --run PE-AV=/runs/peav/saliency \

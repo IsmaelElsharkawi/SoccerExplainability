@@ -9,8 +9,8 @@ rare classes are over-sampled relative to their natural frequency.
 
     python sample_annotation_clips.py \
         --upstream path/to/classification_test.json \
-        --exclude train_data/json/selected_videos_for_annotations.json \
-        --out train_data/json/selected_videos_for_annotations_800.json \
+        --exclude data/clips/selected_videos_for_annotations.json \
+        --out data/clips/selected_videos_for_annotations_800.json \
         --n 800 --seed 0
 """
 import argparse
@@ -49,8 +49,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--upstream", required=True)
     ap.add_argument("--exclude", nargs="*",
-                    default=["train_data/json/selected_videos_for_annotations.json"])
-    ap.add_argument("--out", default="train_data/json/selected_videos_for_annotations_800.json")
+                    default=["data/clips/selected_videos_for_annotations.json"])
+    ap.add_argument("--out", default="data/clips/selected_videos_for_annotations_800.json")
     ap.add_argument("--n", type=int, default=800)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--classes", nargs="*", default=DEFAULT_CLASSES,

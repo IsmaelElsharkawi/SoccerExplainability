@@ -7,9 +7,9 @@ and scores that were persisted during inference (instruction/step 3, via
   1. Runs a *convergence analysis*: using bootstrap resampling over the set of
      evaluated clips, it estimates the mean of every grounding metric together
      with a 95% confidence interval, and traces how the estimate (and its CI
-     half-width) stabilizes as more clips are included. This directly answers
-     reviewer requests for confidence intervals and for evidence that the
-     conclusions are stable despite the benchmark's small size.
+     half-width) stabilizes as more clips are included. This gives confidence
+     intervals and shows that the conclusions are stable despite the
+     benchmark's small size.
 
   2. Builds a *per-class metrics table*: it groups clips by their soccer event
      class and reports mean +/- std (and clip counts) per metric, so that
@@ -360,7 +360,7 @@ def main():
     parser.add_argument("--saliency_dir", type=str, required=True,
                         help="Directory of per-clip artifacts saved during inference (Step 3).")
     parser.add_argument("--selected_videos_json", type=str,
-                        default="train_data/json/selected_videos_for_annotations.json",
+                        default="data/clips/selected_videos_for_annotations.json",
                         help="JSON mapping video_id -> event caption (for per-class grouping).")
     parser.add_argument("--tier", type=str, default="small_large_visual_cues", choices=TIERS,
                         help="Cue tier whose metrics are analyzed (default: P+S+C).")

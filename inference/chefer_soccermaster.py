@@ -339,7 +339,7 @@ def main():
                         default='google/siglip2-large-patch16-512',
                         help='HuggingFace model ID or local path for SigLIP2 backbone')
     parser.add_argument('--coco_json', type=str,
-                        default=os.path.join(os.path.dirname(__file__), '..', 'annotations-coco.json'),
+                        default=os.path.join(os.path.dirname(__file__), '..', 'data', 'annotations', 'annotations-coco.json'),
                         help='Path to annotations-coco.json for attribution evaluation')
     parser.add_argument('--cam_threshold', type=float, default=0.5,
                         help='Fraction of max to binarise heatmap for IoU (default: 0.5)')

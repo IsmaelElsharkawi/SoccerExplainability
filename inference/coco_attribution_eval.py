@@ -92,14 +92,14 @@ def _spatial_pixel_auc(attribution_map, gt_mask):
 
     * **AUROC** is the area under the TPR-vs-FPR curve swept over all score
       levels. It equals the probability that a random in-box pixel outranks a
-      random out-of-box pixel, so a random heatmap scores 0.5 — the 50% chance
-      baseline reviewers expected.
+      random out-of-box pixel, so a random heatmap scores 0.5 (the 50% chance
+      level).
     * **AUPRC** (average precision) is the area under the precision-recall
       curve. Its chance level is the foreground prevalence (fraction of pixels
       inside a box), not 0.5, so it should be read against that prevalence.
 
-    Both are rank-based, so the arbitrary single-cutoff dependence that reviewers
-    flagged for S-IoU disappears. Ties in score are handled by collapsing equal
+    Both are rank-based, so the dependence of S-IoU on a single arbitrary
+    cutoff disappears. Ties in score are handled by collapsing equal
     scores into one operating point (the scikit-learn convention), so the result
     matches ``roc_auc_score`` / ``average_precision_score`` without the
     dependency. Returns (NaN, NaN) when the mask is all-foreground or

@@ -1,6 +1,6 @@
 """[Step 4b] S-IoU sensitivity curve, recomputed from raw saliency maps.
 
-This is the S-IoU-vs-threshold sensitivity analysis reviewers asked for: how
+This is the S-IoU-vs-threshold sensitivity analysis: how
 much the single-cutoff S-IoU moves as the binarization ratio sweeps 0.50-0.95.
 The headline spatial score is now the rank-based pixel AUC-ROC / AUC-PR
 (``coco_attribution_eval._spatial_pixel_auc``), which is threshold-free and has
@@ -19,7 +19,7 @@ across the whole range instead of one point.
 Example:
     python inference/spatial_sensitivity_sweep.py \\
         --saliency_dir <run>/saliency \\
-        --annotations_coco_json annotations-coco.json \\
+        --annotations_coco_json data/annotations/annotations-coco.json \\
         --output_csv <run>/saliency/analysis/spatial_sensitivity.csv
 """
 
@@ -110,7 +110,7 @@ def main():
     parser.add_argument("--saliency_dir", type=str, required=True,
                         help="Directory of per-clip artifacts saved during inference (Step 3), "
                              "including the .npz sidecars with 'saliency_maps'.")
-    parser.add_argument("--annotations_coco_json", type=str, default="annotations-coco.json",
+    parser.add_argument("--annotations_coco_json", type=str, default="data/annotations/annotations-coco.json",
                         help="COCO-format ROI annotations to score against.")
     parser.add_argument("--tier", type=str, default="small_large_visual_cues",
                         choices=list(TIER_TO_LABELS),

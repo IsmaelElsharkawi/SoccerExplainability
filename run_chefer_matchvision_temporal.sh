@@ -31,7 +31,7 @@ cd "${SOCCER_DIR}/inference"
 python chefer_matchvision_temporal.py \
     --config_path "${SOCCER_DIR}/config/pretrain_classification_cluster.py" \
     --checkpoint_path "/path/to/UniSoccer/pretrained_classification.pth" \
-    --coco_json "${SOCCER_DIR}/annotations-coco.json" \
+    --coco_json "${SOCCER_DIR}/data/annotations/annotations-coco.json" \
     --cam_threshold 0.5 \
     --eval_output_json "${OUTPUT_DIR}/chefer_matchvision_temporal_eval_results.json" \
     --output_dir "${OUTPUT_DIR}"

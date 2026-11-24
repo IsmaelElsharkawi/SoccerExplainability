@@ -6,7 +6,7 @@ file passed as COCO_JSON. To run them on clips that have no human annotations
 afterwards against the real annotations with EVAL_COCO_JSON.
 
     python colab/make_placeholder_coco.py \
-        train_data/json/selected_videos_for_annotations_800.json /content/placeholder_800-coco.json
+        data/clips/selected_videos_for_annotations_800.json /content/placeholder_800-coco.json
 """
 import json
 import sys

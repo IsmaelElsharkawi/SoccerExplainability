@@ -31,7 +31,7 @@ python gradcam_inference.py \
     --model_type soccermaster \
     --config_path "${SOCCER_DIR}/config/pretrain_classification_cluster.py" \
     --soccermaster_checkpoint_dir "${CHECKPOINT_DIR}" \
-    --coco_json "${SOCCER_DIR}/annotations-coco.json" \
+    --coco_json "${SOCCER_DIR}/data/annotations/annotations-coco.json" \
     --cam_threshold 0.5 \
     --eval_output_json "${OUTPUT_DIR}/gradcam_soccermaster_eval_results.json" \
     --output_dir "${OUTPUT_DIR}"

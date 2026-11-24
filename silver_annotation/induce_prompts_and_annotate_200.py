@@ -144,8 +144,8 @@ if os.path.exists(FRAMES_TAR) and not os.listdir(FRAME_CACHE):
 print(f"outputs -> {OUT_DIR} | frames -> {FRAME_CACHE} ({len(os.listdir(FRAME_CACHE))} clips cached)")
 
 # ----------------------------- data (same as the Qwen script) -----------------------------
-sel = json.load(open(f"{REPO}/train_data/json/selected_videos_for_annotations.json"))
-coco = json.load(open(f"{REPO}/annotations-coco.json"))
+sel = json.load(open(f"{REPO}/data/clips/selected_videos_for_annotations.json"))
+coco = json.load(open(f"{REPO}/data/annotations/annotations-coco.json"))
 imgs_by_video = defaultdict(dict)
 for im in coco["images"]:
     imgs_by_video[im["video_id"]][im["second"]] = im

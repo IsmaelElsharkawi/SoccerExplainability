@@ -1,6 +1,6 @@
 # Silver annotations for the 800 extra clips
 
-`annotations-coco-extra800.json` (repo root) was produced by Gemini 4 Argon in two stages.
+`data/annotations/annotations-coco-extra800.json` was produced by Gemini 4 Argon in two stages.
 No written cue definitions or per-event criteria are given to the model at any stage.
 
 | Stage | Script | What it does |

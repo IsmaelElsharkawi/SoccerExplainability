@@ -31,7 +31,7 @@ python chefer_soccermaster.py \
     --config_path "${SOCCER_DIR}/config/pretrain_classification_cluster.py" \
     --checkpoint_dir "${CHECKPOINT_DIR}" \
     --siglip2_path "google/siglip2-large-patch16-512" \
-    --coco_json "${SOCCER_DIR}/annotations-coco.json" \
+    --coco_json "${SOCCER_DIR}/data/annotations/annotations-coco.json" \
     --cam_threshold 0.5 \
     --eval_output_json "${OUTPUT_DIR}/chefer_soccermaster_eval_results.json" \
     --output_dir "${OUTPUT_DIR}" \

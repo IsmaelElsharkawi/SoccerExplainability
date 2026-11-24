@@ -6,7 +6,7 @@
 
 Needs a newer stack than the soccer models: transformers==5.22.2 and
 timm==1.0.31 (the versions the hooks in attention_recorder.py mirror).
-Checkpoints are pinned to the revisions the rebuttal runs used.
+Checkpoints are pinned to fixed revisions for reproducibility.
 
 Every model sees the same 30 frames as the soccer models (the repo's
 `read_frames_decord`, 'middle' sampling) and is fed the full frame squashed to
