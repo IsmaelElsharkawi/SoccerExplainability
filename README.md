@@ -40,6 +40,52 @@ explains how to obtain and cut them, and where to point the code at them.
 
 ---
 
+## Attribution explorer (demo)
+
+> **Open [`demo/site/index.html`](demo/site/index.html) in a browser** (double-click it). It
+> runs offline from the file, with no server and no installation.
+
+The explorer shows the attribution maps of **MatchVision** (Chefer-T), **SigLIP** (Chefer)
+and **SoccerMaster** (Chefer-T) on **51 human-annotated clips**: 4 per event class (3 for Red
+Card), including every clip shown in the paper figures (marked with the figure number).
+
+For each clip you see, frame by frame:
+
+- the input frame with the annotated cue boxes (Primary, Secondary, Common),
+- each model's attribution map over the frame, with its prediction and grounding metrics,
+- a timeline of each model's per-frame temporal relevance against the annotated cue windows.
+
+**Controls**
+
+| Action | How |
+|---|---|
+| Choose a clip | click it in the clip list (the URL updates, so a clip can be linked directly) |
+| Step through frames | <kbd>&larr;</kbd> / <kbd>&rarr;</kbd>, or click the timeline or the film strip |
+| Play / pause | <kbd>Space</kbd> or the play button (speed 1x / 2x / 4x) |
+| Enlarge a panel | click it, or press <kbd>1</kbd>-<kbd>4</kbd>; <kbd>Esc</kbd> returns to the grid |
+| Change the cue tier scored | P / P+S / P+S+C buttons |
+
+The page also has a short "How to read this page" box.
+
+**Files.** `demo/site/` is the built explorer (`index.html`, `data.js` with the maps and
+metrics, and one frame sheet per clip in `frames/`). It is included in the supplementary
+material; in the git repository it is not tracked, so build it as below.
+
+**Rebuilding it.** `demo/template.html` is the page itself (layout, style and code, no data).
+`demo/build_demo.py` fills it with data: it samples the clips' frames, reads the saved
+saliency maps of the three models, and writes `demo/site/`:
+
+```bash
+python demo/build_demo.py --raw <folder with the clips> --outputs <root of the inference outputs> \
+    [--per_class 4] [--out demo/site]
+```
+
+`--outputs` must contain `output_chefer_{matchvision_temporal,siglip,soccermaster_temporal}/saliency/`,
+i.e. inference runs with `--saliency_save_dir`. Boxes are read from
+`data/annotations/annotations-coco.json`.
+
+---
+
 ## Repository structure
 
 ```
@@ -64,7 +110,10 @@ explains how to obtain and cut them, and where to point the code at them.
 ├── silver_annotation/        how the 800 Gemini annotations were produced
 ├── sample_annotation_clips.py  how the 800 extra clips were sampled
 ├── build_baseline_table.py   LaTeX table from evaluation outputs
-├── demo/site/index.html      interactive attribution explorer (open in a browser)
+├── demo/                     attribution explorer, see "Attribution explorer (demo)" above
+│   ├── site/index.html       the built explorer: open in a browser
+│   ├── template.html         the page source (no data)
+│   └── build_demo.py         builds site/ from saved saliency maps
 ├── extracted_frames/, paper_figure_*.png, assets/   figure material
 └── environment.txt, requirements_environment.txt    dependencies
 ```
