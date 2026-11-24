@@ -17,12 +17,8 @@ slurm_outputs/
 /dcgm/
 /inference/dcgm/
 
-# PNG outputs
+# PNG outputs (figure material and the built explorer are kept)
 *.png
 !assets/*.png
-
-NEURIPS_REVIEWS.md
-inference/chat_new_metrics.json
-
-# generated attribution explorer (build with demo/build_demo.py)
-demo/site/
+!extracted_frames/*.png
+!paper_figure_*.png

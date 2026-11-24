@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>SoccerLens Attribution Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: broadcast-monitor wall. Clip rail on the left, a 2x2 wall of synchronized panels, a shared timeline under it. */
+:root {
+  --bg: #eef2f4; --panel: #ffffff; --sunken: #e3e9ec; --line: #cdd7dc;
+  --fg: #0f1d26; --muted: #556773; --accent: #007f9c;
+  --cue: #00D9FF; --common: #8B7BFF;
+  --good: #0f8a55; --bad: #c8343b;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --f-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0a1015; --panel: #111a21; --sunken: #0d151b; --line: #22313b;
+  --fg: #e4edf1; --muted: #8b9ea9; --accent: #3fd3f0;
+  --good: #3ccf8e; --bad: #ff6b70;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0a1015; --panel: #111a21; --sunken: #0d151b; --line: #22313b;
+  --fg: #e4edf1; --muted: #8b9ea9; --accent: #3fd3f0;
+  --good: #3ccf8e; --bad: #ff6b70;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; color-scheme: dark }
+
+* { box-sizing: border-box }
+html, body { margin: 0 }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; text-wrap: balance; margin: 0 }
+button, select, input { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums }
+.eyebrow { font: 500 11px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 18px }
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px }
+header.top h1 { font-size: clamp(22px, 3vw, 30px); letter-spacing: -.01em }
+header.top p { margin: 4px 0 0; color: var(--muted); max-width: 72ch }
+.legend-key { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 12.5px; color: var(--muted) }
+.legend-key span { display: inline-flex; align-items: center; gap: 7px }
+.sw { width: 18px; height: 11px; border-radius: 2px; border: 2px solid var(--cue); box-shadow: 0 0 0 1px #fff8 }
+.sw.s { border-style: dashed } .sw.c { border-color: var(--common) }
+.jet { width: 90px; height: 9px; border-radius: 5px; background: linear-gradient(90deg, #00007f, #0000ff 12%, #00ffff 37%, #ffff00 62%, #ff0000 87%, #7f0000) }
+
+.app { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 18px; align-items: start }
+@media (max-width: 1000px) { .app { grid-template-columns: minmax(0, 1fr) } }
+
+/* clip rail */
+.rail { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); display: grid; grid-template-rows: auto 1fr; max-height: calc(100vh - 40px); position: sticky; top: 20px; overflow: hidden }
+@media (max-width: 1000px) { .rail { position: static; max-height: 340px } }
+.rail-head { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px }
+.rail-head select { width: 100%; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--sunken) }
+.rail-head .count { font-size: 12px; color: var(--muted) }
+.clips { overflow-y: auto; padding: 6px; display: grid; gap: 2px; align-content: start }
+.clip { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: center; text-align: left; padding: 7px; border-radius: 8px; border: 1px solid transparent; background: none; cursor: pointer }
+.clip:hover { background: var(--sunken) }
+.clip[aria-current="true"] { background: var(--sunken); border-color: var(--accent) }
+.clip .th { width: 64px; aspect-ratio: 16/9; border-radius: 4px; background-repeat: no-repeat; background-size: 600% 500%; background-color: var(--sunken) }
+.clip b { display: block; font-weight: 600; font-size: 13px; text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.clip small { display: block; color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.dots { display: flex; gap: 4px; margin-top: 3px; align-items: center }
+.dot { font: 500 10px/1 var(--f-mono); padding: 2px 4px; border-radius: 3px; border: 1px solid currentColor }
+.dot.ok { color: var(--good) } .dot.no { color: var(--bad); opacity: .85 }
+.tag { font: 500 10px/1 var(--f-mono); padding: 2px 5px; border-radius: 3px; background: var(--accent); color: var(--panel) }
+
+/* stage */
+.stage { display: grid; gap: 14px; min-width: 0 }
+.clip-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 10px 20px }
+.clip-head h2 { font-size: 22px; text-transform: capitalize }
+.clip-head .meta { color: var(--muted); font-size: 13px }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 9px 12px }
+.group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap }
+.group > .eyebrow { margin-right: 2px }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--sunken); cursor: pointer; font-size: 12.5px; user-select: none }
+.chip input { position: absolute; opacity: 0; pointer-events: none }
+.chip:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel)) }
+.chip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px }
+.chip .sw { width: 14px; height: 9px }
+.sep { width: 1px; align-self: stretch; background: var(--line) }
+input[type=range] { accent-color: var(--accent); width: 110px }
+
+.wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+@media (max-width: 640px) { .wall { grid-template-columns: minmax(0, 1fr) } }
+.wall.focus { grid-template-columns: minmax(0, 1fr) }
+.wall.focus .pane:not(.on) { display: none }
+.pane { position: relative; border-radius: var(--r); overflow: hidden; background: #000; aspect-ratio: 16/9; max-width: 100%; cursor: zoom-in }
+.wall.focus .pane { cursor: zoom-out }
+.pane canvas { display: block; width: 100%; height: 100% }
+.pane .lab { position: absolute; left: 8px; top: 8px; display: flex; gap: 6px; align-items: center; pointer-events: none }
+.pane .name { font: 600 12.5px/1 var(--f-display); color: #fff; background: #0009; padding: 5px 8px; border-radius: 6px; backdrop-filter: blur(4px) }
+.pane .name i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0 }
+.pane .method { font: 500 10.5px/1 var(--f-mono); color: #dfe; background: #0007; padding: 5px 6px; border-radius: 6px }
+.pane .pred { position: absolute; left: 8px; bottom: 8px; font-size: 12px; color: #fff; background: #000a; padding: 4px 8px; border-radius: 6px; pointer-events: none }
+.pane .pred .ok { color: #5fe3a6 } .pane .pred .no { color: #ff8f93 }
+.pane .fm { position: absolute; right: 8px; top: 8px; font: 500 11px/1.35 var(--f-mono); color: #fff; background: #000a; padding: 5px 7px; border-radius: 6px; pointer-events: none; text-align: right }
+.pane .fm.dim { color: #bbb }
+
+/* timeline */
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; min-width: 0 }
+.tl-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--sunken); cursor: pointer }
+.btn:hover { border-color: var(--accent) }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); font-weight: 600 }
+.tl-ctrl .time { margin-left: auto; color: var(--muted); font-size: 12.5px }
+.strip { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 2px; position: relative }
+.strip button { aspect-ratio: 16/9; padding: 0; border: 0; border-radius: 2px; background-repeat: no-repeat; background-size: 600% 500%; background-color: var(--sunken); cursor: pointer; opacity: .55; position: relative }
+.strip button:hover { opacity: .85 }
+.strip button[aria-current="true"] { opacity: 1; outline: 2px solid var(--accent); outline-offset: 1px; z-index: 1 }
+.chart-wrap { position: relative; margin-top: 8px }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 12px; box-shadow: 0 6px 20px #0003; white-space: nowrap; z-index: 3 }
+.tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between }
+.tip i { width: 10px; height: 2px; display: inline-block; margin-right: 6px; vertical-align: middle }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); margin-top: 6px }
+.chart-legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px }
+
+/* metrics */
+.metrics-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 8px }
+.metrics-head h3 { font-size: 15px }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.seg button { border: 0; background: var(--sunken); padding: 5px 11px; cursor: pointer; font-size: 12.5px }
+.seg button + button { border-left: 1px solid var(--line) }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--panel); font-weight: 600 }
+.tbl { overflow-x: auto }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 640px }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left }
+thead th { font: 500 11px/1.2 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted) }
+thead tr.grp th { border-bottom: 0; padding-bottom: 0 }
+td.best { font-weight: 600 }
+td .pill { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 12px; border: 1px solid currentColor }
+.note { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; max-width: 100ch }
+
+.about { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px }
+.about h3 { font-size: 14px; margin-bottom: 4px }
+.about p { margin: 0; color: var(--muted); font-size: 13px; max-width: 65ch }
+kbd { font: 500 11px var(--f-mono); padding: 1px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--sunken) }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">SoccerLens · Supplementary material</div>
+      <h1>Attribution Explorer</h1>
+      <p>Browse human-annotated clips from the SoccerLens benchmark and compare where three video models put their relevancy, frame by frame, against the annotated visual cues.</p>
+    </div>
+    <div class="legend-key" aria-label="Legend">
+      <span><i class="sw"></i>Primary cue</span>
+      <span><i class="sw s"></i>Secondary cue</span>
+      <span><i class="sw c"></i>Common cue</span>
+      <span>Relevancy: low <i class="jet"></i> high</span>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="rail" aria-label="Clips">
+      <div class="rail-head">
+        <label class="eyebrow" for="cls">Event class</label>
+        <select id="cls"></select>
+        <div class="count" id="count"></div>
+      </div>
+      <div class="clips" id="clips" role="list"></div>
+    </aside>
+
+    <main class="stage">
+      <div class="clip-head">
+        <div>
+          <div class="eyebrow">Ground-truth event</div>
+          <h2 id="title">…</h2>
+        </div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="toolbar" role="group" aria-label="Display options">
+        <div class="group"><span class="eyebrow">Cues</span>
+          <label class="chip"><input type="checkbox" id="cueP" checked><i class="sw"></i>Primary</label>
+          <label class="chip"><input type="checkbox" id="cueS" checked><i class="sw s"></i>Secondary</label>
+          <label class="chip"><input type="checkbox" id="cueC" checked><i class="sw c"></i>Common</label>
+        </div>
+        <span class="sep"></span>
+        <div class="group"><span class="eyebrow">Map</span>
+          <label class="chip"><input type="checkbox" id="showMap" checked>Relevancy</label>
+          <label class="chip"><input type="checkbox" id="showPeak">Peak</label>
+          <label class="chip" for="opacity" style="cursor:default">Opacity <input type="range" id="opacity" min="0.2" max="1.2" step="0.05" value="1" style="position:static;opacity:1;pointer-events:auto"></label>
+        </div>
+      </div>
+
+      <div class="wall" id="wall"></div>
+
+      <section class="card" aria-label="Timeline">
+        <div class="tl-ctrl">
+          <button class="btn" id="prev" aria-label="Previous frame">◀</button>
+          <button class="btn primary" id="play" aria-label="Play">▶ Play</button>
+          <button class="btn" id="next" aria-label="Next frame">▶</button>
+          <div class="seg" role="group" aria-label="Playback speed">
+            <button data-fps="1" aria-pressed="true">1×</button><button data-fps="2" aria-pressed="false">2×</button><button data-fps="4" aria-pressed="false">4×</button>
+          </div>
+          <span class="time mono" id="time"></span>
+        </div>
+        <div class="strip" id="strip"></div>
+        <div class="chart-wrap" id="chartWrap">
+          <svg id="chart" viewBox="0 0 1000 170" role="img" aria-label="Per-frame temporal relevance of each model with annotated cue windows"></svg>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <div class="chart-legend" id="chartLegend"></div>
+      </section>
+
+      <section class="card" aria-label="Metrics">
+        <div class="metrics-head">
+          <h3>Grounding scores for this clip</h3>
+          <div class="seg" role="group" aria-label="Cue tier" id="tierSeg">
+            <button data-tier="P" aria-pressed="false">P</button><button data-tier="PS" aria-pressed="false">P+S</button><button data-tier="PSC" aria-pressed="true">P+S+C</button>
+          </div>
+        </div>
+        <div class="tbl"><table id="mt"></table></div>
+        <p class="note">Spatial scores average the annotated frames of the clip; temporal scores compare each model's per-frame relevance with the frames that carry a cue of the selected tier. Values in %. Best model per column in bold. The paper reports means over all 1,000 clips; single clips vary widely.</p>
+      </section>
+
+      <section class="card about" aria-label="How to read this page">
+        <div><h3>What you see</h3><p>Each clip is sampled at one frame per second (30 frames). The input panel shows the annotated cues. Each model panel shows its attribution map for the selected frame over a dimmed copy of the frame, with the same cues on top. Relevancy is shown on the jet scale, and low values are left transparent.</p></div>
+        <div><h3>Attribution method</h3><p>MatchVision and SoccerMaster use Chefer-T, which propagates relevance through both spatial and temporal attention. SigLIP has no temporal attention and uses standard Chefer per frame. Maps are 14×14 (MatchVision, SigLIP) or 32×32 (SoccerMaster) patch grids, upsampled and smoothed for display only.</p></div>
+        <div><h3>Controls</h3><p>Click a panel to enlarge it. <kbd>←</kbd> <kbd>→</kbd> step through frames, <kbd>Space</kbd> plays, <kbd>1</kbd>–<kbd>4</kbd> enlarge a panel, <kbd>Esc</kbd> returns to the grid. Click the chart or the film strip to jump to a frame. The link updates to the selected clip so it can be shared.</p></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+  const D = window.SOCCERLENS;
+  if (!D) { document.getElementById("title").textContent = "data.js is missing next to this page."; return; }
+  const F = D.frame, N = F.n;
+  const MODELS = D.models;
+  const SER = ["--s1", "--s2", "--s3"];
+  const PANES = [{ key: "input", name: "Input" }, ...MODELS.map((m, i) => ({ key: m.key, name: m.name, method: m.method, ser: SER[i] }))];
+  const $ = id => document.getElementById(id);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const norm = s => (s || "").toLowerCase().replace(/[^a-z]/g, "");
+  const CUE = "#00D9FF", COMMON = "#8B7BFF";
+  const cap = s => (s || "").charAt(0).toUpperCase() + (s || "").slice(1);
+  const ABBR = { matchvision: "MV", siglip: "SL", soccermaster: "SM" };
+
+  const S = { clip: null, t: 0, playing: false, fps: 1, tier: "PSC", focus: null, timer: null };
+  const imgs = {}, heatCache = new Map();
+
+  // decode uint8 maps once per clip
+  function maps(clip, mk) {
+    const m = clip.models[mk];
+    if (!m._u8) { const b = atob(m.maps); m._u8 = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) m._u8[i] = b.charCodeAt(i); }
+    return m._u8;
+  }
+  function sprite(clip, cb) {
+    if (imgs[clip.id]) { if (imgs[clip.id].complete) cb && cb(); else imgs[clip.id].addEventListener("load", () => cb && cb(), { once: true }); return imgs[clip.id]; }
+    const im = new Image(); im.src = `frames/${clip.id}.jpg`; imgs[clip.id] = im;
+    im.addEventListener("load", () => cb && cb(), { once: true });
+    return im;
+  }
+  const thumbPos = t => `${(t % F.cols) / (F.cols - 1) * 100}% ${Math.floor(t / F.cols) / (F.rows - 1) * 100}%`;
+
+  // matplotlib "jet"
+  const jet = x => [1.5 - Math.abs(4 * x - 3), 1.5 - Math.abs(4 * x - 2), 1.5 - Math.abs(4 * x - 1)].map(v => Math.round(255 * Math.min(1, Math.max(0, v))));
+
+  // Low-res relevancy layer: bilinear upsample of the patch grid to 16:9, gaussian blur, jet colour, alpha that follows relevancy
+  // (same recipe as the paper figures).
+  const LW = 192, LH = 108;
+  function heat(clip, mk, t) {
+    const key = `${clip.id}|${mk}|${t}`;
+    if (heatCache.has(key)) return heatCache.get(key);
+    const n = clip.models[mk].n, u8 = maps(clip, mk), off = t * n * n;
+    let r = new Float32Array(LW * LH);
+    for (let y = 0; y < LH; y++) {
+      const v = Math.min(n - 1, Math.max(0, (y + .5) / LH * n - .5)), y0 = Math.floor(v), y1 = Math.min(n - 1, y0 + 1), fy = v - y0;
+      for (let x = 0; x < LW; x++) {
+        const u = Math.min(n - 1, Math.max(0, (x + .5) / LW * n - .5)), x0 = Math.floor(u), x1 = Math.min(n - 1, x0 + 1), fx = u - x0;
+        const a = u8[off + y0 * n + x0], b = u8[off + y0 * n + x1], c = u8[off + y1 * n + x0], d = u8[off + y1 * n + x1];
+        r[y * LW + x] = ((a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy) / 255;
+      }
+    }
+    const sig = 0.18 * LW / n, rad = Math.ceil(sig * 3), k = [];
+    let ks = 0; for (let i = -rad; i <= rad; i++) { const w = Math.exp(-i * i / (2 * sig * sig)); k.push(w); ks += w; }
+    const tmp = new Float32Array(LW * LH);
+    for (let y = 0; y < LH; y++) for (let x = 0; x < LW; x++) { let s = 0; for (let i = -rad; i <= rad; i++) s += k[i + rad] * r[y * LW + Math.min(LW - 1, Math.max(0, x + i))]; tmp[y * LW + x] = s / ks; }
+    for (let y = 0; y < LH; y++) for (let x = 0; x < LW; x++) { let s = 0; for (let i = -rad; i <= rad; i++) s += k[i + rad] * tmp[Math.min(LH - 1, Math.max(0, y + i)) * LW + x]; r[y * LW + x] = s / ks; }
+    const cv = document.createElement("canvas"); cv.width = LW; cv.height = LH;
+    const cx = cv.getContext("2d"), id = cx.createImageData(LW, LH);
+    for (let i = 0; i < r.length; i++) {
+      const v = Math.min(1, Math.max(0, r[i])), [R, G, B] = jet(v);
+      id.data[i * 4] = R; id.data[i * 4 + 1] = G; id.data[i * 4 + 2] = B;
+      id.data[i * 4 + 3] = Math.round(255 * 0.8 * Math.pow(Math.min(1, Math.max(0, (v - 0.10) / 0.40)), 0.9));
+    }
+    cx.putImageData(id, 0, 0);
+    let pk = 0; for (let i = 1; i < n * n; i++) if (u8[off + i] > u8[off + pk]) pk = i;
+    const out = { cv, peak: [((pk % n) + .5) / n, (Math.floor(pk / n) + .5) / n] };
+    if (heatCache.size > 600) heatCache.clear();
+    heatCache.set(key, out);
+    return out;
+  }
+
+  // ---------- wall ----------
+  const wall = $("wall");
+  const paneEls = PANES.map((p, i) => {
+    const el = document.createElement("div");
+    el.className = "pane"; el.tabIndex = 0; el.setAttribute("role", "button");
+    el.setAttribute("aria-label", `${p.name} panel, press to enlarge`);
+    el.innerHTML = `<canvas></canvas><div class="lab"><span class="name">${p.ser ? `<i style="background:var(${p.ser})"></i>` : ""}${p.name}</span>${p.method ? `<span class="method">${p.method}</span>` : ""}</div>` +
+      (p.key === "input" ? "" : `<div class="pred"></div><div class="fm"></div>`);
+    const toggle = () => setFocus(S.focus === i ? null : i);
+    el.addEventListener("click", toggle);
+    el.addEventListener("keydown", e => { if (e.key === "Enter") toggle(); });
+    wall.appendChild(el);
+    return { p, el, cv: el.querySelector("canvas"), pred: el.querySelector(".pred"), fm: el.querySelector(".fm") };
+  });
+  function setFocus(i) {
+    S.focus = i;
+    wall.classList.toggle("focus", i !== null);
+    paneEls.forEach((pe, j) => pe.el.classList.toggle("on", j === i));
+    requestAnimationFrame(drawAll);
+  }
+  const ro = new ResizeObserver(() => drawAll());
+  ro.observe(wall);
+
+  let filterOK = null;
+  function drawPane(pe) {
+    const clip = S.clip, im = imgs[clip.id];
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = Math.max(1, Math.round(pe.cv.clientWidth * dpr)), H = Math.round(W * 9 / 16);
+    if (pe.cv.width !== W || pe.cv.height !== H) { pe.cv.width = W; pe.cv.height = H; }
+    const ctx = pe.cv.getContext("2d");
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+    if (!im || !im.complete || !im.naturalWidth) return;
+    const t = S.t, sx = (t % F.cols) * F.w, sy = Math.floor(t / F.cols) * F.h;
+    const isModel = pe.p.key !== "input", showMap = isModel && $("showMap").checked;
+    if (showMap) {
+      if (filterOK === null) { ctx.filter = "saturate(0.55) brightness(0.7)"; filterOK = ctx.filter !== "none" && ctx.filter !== ""; ctx.filter = "none"; }
+      if (filterOK) ctx.filter = "saturate(0.55) brightness(0.7)";
+      ctx.drawImage(im, sx, sy, F.w, F.h, 0, 0, W, H);
+      ctx.filter = "none";
+      if (!filterOK) { ctx.fillStyle = "rgba(0,0,0,.32)"; ctx.fillRect(0, 0, W, H); }
+      const h = heat(clip, pe.p.key, t);
+      ctx.globalAlpha = Math.min(1, +$("opacity").value);
+      ctx.drawImage(h.cv, 0, 0, W, H);
+      ctx.globalAlpha = 1;
+      if (+$("opacity").value > 1) { ctx.globalAlpha = +$("opacity").value - 1; ctx.drawImage(h.cv, 0, 0, W, H); ctx.globalAlpha = 1; }
+      if ($("showPeak").checked) {
+        const [px, py] = h.peak, R = Math.max(6, W * 0.012);
+        ctx.lineWidth = Math.max(2, W * 0.003);
+        ctx.strokeStyle = "#000"; ctx.beginPath(); ctx.arc(px * W, py * H, R + 1, 0, 7); ctx.stroke();
+        ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.arc(px * W, py * H, R, 0, 7); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px * W - R * 1.8, py * H); ctx.lineTo(px * W - R * .5, py * H); ctx.moveTo(px * W + R * .5, py * H); ctx.lineTo(px * W + R * 1.8, py * H); ctx.stroke();
+      }
+    } else {
+      ctx.drawImage(im, sx, sy, F.w, F.h, 0, 0, W, H);
+    }
+    // cue boxes
+    const on = { P: $("cueP").checked, S: $("cueS").checked, C: $("cueC").checked };
+    const bx = (clip.boxes[t] || []).filter(b => on[b[0]]);
+    const order = { C: 0, S: 1, P: 2 };
+    bx.sort((a, b) => order[a[0]] - order[b[0]]);
+    const lw = Math.max(1.6, W * 0.0028), pad = 0.004 * W;
+    for (const [tier, x, y, w, h] of bx) {
+      const rx = x * W - pad, ry = y * H - pad, rw = w * W + 2 * pad, rh = h * H + 2 * pad;
+      ctx.setLineDash(tier === "S" ? [lw * 3.2, lw * 2] : []);
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(255,255,255,.92)"; ctx.lineWidth = lw * 2.4; ctx.strokeRect(rx, ry, rw, rh);
+      ctx.strokeStyle = tier === "C" ? COMMON : CUE; ctx.lineWidth = lw; ctx.strokeRect(rx, ry, rw, rh);
+    }
+    ctx.setLineDash([]);
+  }
+  function drawAll() { if (S.clip) paneEls.forEach(pe => { if (S.focus === null || pe === paneEls[S.focus]) drawPane(pe); }); }
+
+  const pct = v => v == null ? "–" : (100 * v).toFixed(1);
+  function updateLabels() {
+    const clip = S.clip, t = S.t, nb = (clip.boxes[t] || []).length;
+    paneEls.forEach(pe => {
+      if (pe.p.key === "input") return;
+      const m = clip.models[pe.p.key], ok = norm(m.pred) === norm(clip.label);
+      pe.pred.innerHTML = `Predicted <b>${cap(m.pred)}</b> <span class="${ok ? "ok" : "no"}">${ok ? "✓ correct" : "✗ wrong"}</span>`;
+      const fr = m.frame, e = fr.energy[t];
+      if (e == null) { pe.fm.className = "fm dim"; pe.fm.textContent = nb ? "no scored cue in this frame" : "no cue annotated"; }
+      else {
+        pe.fm.className = "fm";
+        pe.fm.innerHTML = `Energy ${pct(e)}%<br>Pointing ${fr.pointing[t] ? "hit" : "miss"}<br>S-AUC ${pct(fr.s_auc[t])}`;
+      }
+    });
+    $("time").textContent = `frame ${String(t + 1).padStart(2, "0")} / ${N} · ${t}s`;
+    stripBtns.forEach((b, i) => b.setAttribute("aria-current", i === t ? "true" : "false"));
+    drawPlayhead();
+  }
+
+  // ---------- film strip ----------
+  const strip = $("strip");
+  const stripBtns = Array.from({ length: N }, (_, t) => {
+    const b = document.createElement("button");
+    b.setAttribute("aria-label", `Frame ${t + 1}`);
+    b.style.backgroundPosition = thumbPos(t);
+    b.addEventListener("click", () => setT(t));
+    strip.appendChild(b); return b;
+  });
+
+  // ---------- temporal chart ----------
+  const svg = $("chart"), NS = "http://www.w3.org/2000/svg";
+  const CW = 1000, PL = 34, PR = 8, PT = 8, PH = 104, BAND = 9;
+  const xOf = t => PL + (t + .5) * (CW - PL - PR) / N;
+  const el = (tag, at, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); parent.appendChild(e); return e; };
+  let playhead = null;
+  function drawChart() {
+    const clip = S.clip; svg.innerHTML = "";
+    const ink = css("--muted"), line = css("--line"), fg = css("--fg");
+    const colW = (CW - PL - PR) / N;
+    // cue bands
+    const tiers = [["P", "Primary", CUE, ""], ["S", "Secondary", CUE, "3 2"], ["C", "Common", COMMON, ""]];
+    const by = PT + PH + 18;
+    tiers.forEach(([k, name, col], i) => {
+      const y = by + i * (BAND + 3);
+      el("text", { x: PL - 6, y: y + BAND - 1, "text-anchor": "end", "font-size": 10, fill: ink, "font-family": "IBM Plex Mono, monospace" }).textContent = k;
+      for (let t = 0; t < N; t++) {
+        const has = (clip.boxes[t] || []).some(b => b[0] === k);
+        el("rect", { x: PL + t * colW + 1, y, width: colW - 2, height: BAND, rx: 2, fill: has ? col : line, opacity: has ? (k === "S" ? .55 : .9) : .5 });
+      }
+    });
+    // annotated window shading behind lines
+    for (let t = 0; t < N; t++) if ((clip.boxes[t] || []).length) el("rect", { x: PL + t * colW, y: PT, width: colW, height: PH, fill: CUE, opacity: .09 });
+    // grid
+    [0, .5, 1].forEach(v => {
+      const y = PT + PH * (1 - v);
+      el("line", { x1: PL, x2: CW - PR, y1: y, y2: y, stroke: line, "stroke-width": 1 });
+      el("text", { x: PL - 6, y: y + 3.5, "text-anchor": "end", "font-size": 10, fill: ink, "font-family": "IBM Plex Mono, monospace" }).textContent = v.toFixed(1);
+    });
+    for (let t = 0; t < N; t += 5) el("text", { x: xOf(t), y: PT + PH + 12, "text-anchor": "middle", "font-size": 10, fill: ink, "font-family": "IBM Plex Mono, monospace" }).textContent = `${t}s`;
+    // series (min-max normalised per model for display)
+    MODELS.forEach((m, i) => {
+      const sc = clip.models[m.key].scores.map(v => v ?? 0), lo = Math.min(...sc), hi = Math.max(...sc), rg = hi - lo || 1;
+      clip.models[m.key]._n = sc.map(v => (v - lo) / rg);
+      const d = clip.models[m.key]._n.map((v, t) => `${t ? "L" : "M"}${xOf(t).toFixed(1)},${(PT + PH * (1 - v)).toFixed(1)}`).join("");
+      el("path", { d, fill: "none", stroke: css(SER[i]), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" });
+    });
+    playhead = el("g", {});
+    el("line", { y1: PT - 4, y2: by + 3 * (BAND + 3) - 3, stroke: fg, "stroke-width": 1.5 }, playhead);
+    MODELS.forEach((m, i) => el("circle", { r: 4.5, fill: css(SER[i]), stroke: css("--panel"), "stroke-width": 2, "data-i": i }, playhead));
+    el("rect", { x: PL, y: 0, width: CW - PL - PR, height: by + 3 * (BAND + 3), fill: "transparent", id: "hit", style: "cursor:pointer" });
+    svg.setAttribute("viewBox", `0 0 ${CW} ${by + 3 * (BAND + 3) + 2}`);
+    drawPlayhead();
+    $("chartLegend").innerHTML = MODELS.map((m, i) => `<span><i style="background:var(${SER[i]})"></i>${m.name}</span>`).join("") +
+      `<span>Lines: per-frame temporal relevance, rescaled to 0–1 per model. Shaded columns: frames with an annotated cue.</span>`;
+  }
+  function drawPlayhead() {
+    if (!playhead || !S.clip) return;
+    const x = xOf(S.t);
+    const ln = playhead.querySelector("line"); ln.setAttribute("x1", x); ln.setAttribute("x2", x);
+    playhead.querySelectorAll("circle").forEach(c => {
+      const v = S.clip.models[MODELS[+c.dataset.i].key]._n[S.t];
+      c.setAttribute("cx", x); c.setAttribute("cy", PT + PH * (1 - v));
+    });
+  }
+  const tip = $("tip");
+  function tFromEvent(e) {
+    const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) / r.width * svg.viewBox.baseVal.width;
+    return Math.max(0, Math.min(N - 1, Math.floor((vx - PL) / ((CW - PL - PR) / N))));
+  }
+  svg.addEventListener("pointermove", e => {
+    const t = tFromEvent(e), clip = S.clip, wrap = $("chartWrap").getBoundingClientRect();
+    const cues = (clip.boxes[t] || []).map(b => b[0]);
+    const tiers = ["P", "S", "C"].filter(k => cues.includes(k)).join(", ") || "none";
+    tip.innerHTML = `<div class="mono" style="margin-bottom:4px">${t}s · cues: ${tiers}</div>` +
+      MODELS.map((m, i) => `<div class="row"><span><i style="background:var(${SER[i]})"></i>${m.name}</span><span class="mono">${clip.models[m.key]._n[t].toFixed(2)}</span></div>`).join("");
+    tip.hidden = false;
+    const x = e.clientX - wrap.left;
+    tip.style.left = Math.min(wrap.width - tip.offsetWidth - 4, Math.max(4, x + 12)) + "px";
+    tip.style.top = "4px";
+  });
+  svg.addEventListener("pointerleave", () => tip.hidden = true);
+  svg.addEventListener("click", e => setT(tFromEvent(e)));
+
+  // ---------- metrics table ----------
+  function drawTable() {
+    const clip = S.clip, tier = S.tier;
+    const cols = [["energy", "Energy"], ["pointing", "Pointing"], ["s_iou", "S-IoU"], ["s_auc", "S-AUC"], ["t_iou", "T-IoU"], ["t_auc", "T-AUROC"], ["t_ap", "T-AUPRC"]];
+    const best = {};
+    cols.forEach(([k]) => { const vs = MODELS.map(m => clip.models[m.key].tiers[tier][k]).filter(v => v != null); best[k] = vs.length ? Math.max(...vs) : null; });
+    let h = `<thead><tr class="grp"><th></th><th></th><th colspan="4" style="text-align:center">Spatial</th><th colspan="3" style="text-align:center">Temporal</th></tr>` +
+      `<tr><th>Model</th><th>Prediction</th>${cols.map(c => `<th>${c[1]}</th>`).join("")}</tr></thead><tbody>`;
+    MODELS.forEach((m, i) => {
+      const mm = clip.models[m.key], ok = norm(mm.pred) === norm(clip.label), tv = mm.tiers[tier];
+      h += `<tr><td><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(${SER[i]});margin-right:7px"></i>${m.name}</td>` +
+        `<td><span class="pill" style="color:var(${ok ? "--good" : "--bad"})">${ok ? "✓" : "✗"} ${cap(mm.pred)}</span></td>` +
+        cols.map(([k]) => `<td class="mono${tv[k] != null && tv[k] === best[k] ? " best" : ""}">${pct(tv[k])}</td>`).join("") + `</tr>`;
+    });
+    $("mt").innerHTML = h + "</tbody>";
+    document.querySelectorAll("#tierSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.tier === tier ? "true" : "false"));
+  }
+
+  // ---------- clip rail ----------
+  const classes = [...new Set(D.clips.map(c => c.label))].sort();
+  $("cls").innerHTML = `<option value="">All events (${D.clips.length} clips)</option>` + classes.map(c => `<option value="${c}">${c} (${D.clips.filter(x => x.label === c).length})</option>`).join("");
+  function drawRail() {
+    const f = $("cls").value, list = D.clips.filter(c => !f || c.label === f);
+    $("count").textContent = `${list.length} clip${list.length === 1 ? "" : "s"} · human-annotated`;
+    $("clips").innerHTML = "";
+    list.forEach(c => {
+      const b = document.createElement("button");
+      b.className = "clip"; b.setAttribute("role", "listitem"); b.dataset.id = c.id;
+      b.setAttribute("aria-current", S.clip && S.clip.id === c.id ? "true" : "false");
+      const dots = MODELS.map(m => { const ok = norm(c.models[m.key].pred) === norm(c.label); return `<span class="dot ${ok ? "ok" : "no"}" title="${m.name}: ${ok ? "correct" : "wrong"} (${c.models[m.key].pred})">${ABBR[m.key] || m.name.slice(0, 2)} ${ok ? "✓" : "✗"}</span>`; }).join("");
+      b.innerHTML = `<span class="th" style="background-image:url(frames/${c.id}.jpg);background-position:${thumbPos(14)}"></span>` +
+        `<span style="min-width:0"><b>${c.label}</b><small>${c.match}</small><span class="dots">${dots}${c.paper ? `<span class="tag">${c.paper}</span>` : ""}</span></span>`;
+      b.addEventListener("click", () => selectClip(c.id));
+      $("clips").appendChild(b);
+    });
+  }
+  $("cls").addEventListener("change", () => { try { localStorage.setItem("sl-cls", $("cls").value); } catch (e) {} drawRail(); });
+
+  function firstCueFrame(clip) { const ks = Object.keys(clip.boxes).map(Number).sort((a, b) => a - b); return ks.length ? ks[Math.floor(ks.length / 2)] : 14; }
+  function selectClip(id, keepT) {
+    const clip = D.clips.find(c => c.id === id) || D.clips[0];
+    stop();
+    S.clip = clip; if (!keepT) S.t = firstCueFrame(clip);
+    $("title").textContent = clip.label;
+    $("meta").innerHTML = `${clip.match} · ${clip.time} · <span class="mono">${clip.league}</span>${clip.paper ? ` · shown in ${clip.paper}` : ""}`;
+    stripBtns.forEach(b => b.style.backgroundImage = `url(frames/${clip.id}.jpg)`);
+    document.querySelectorAll(".clip").forEach(b => b.setAttribute("aria-current", b.dataset.id === clip.id ? "true" : "false"));
+    if (location.hash.slice(1) !== clip.id) history.replaceState(null, "", "#" + clip.id);
+    sprite(clip, () => { if (S.clip === clip) drawAll(); });
+    const nxt = D.clips[D.clips.indexOf(clip) + 1]; if (nxt) sprite(nxt);
+    drawChart(); drawTable(); updateLabels(); drawAll();
+  }
+  function setT(t) { S.t = (t + N) % N; updateLabels(); drawAll(); }
+
+  // ---------- playback ----------
+  function stop() { S.playing = false; clearInterval(S.timer); $("play").innerHTML = "▶ Play"; $("play").setAttribute("aria-label", "Play"); }
+  function play() { S.playing = true; $("play").innerHTML = "❚❚ Pause"; $("play").setAttribute("aria-label", "Pause"); clearInterval(S.timer); S.timer = setInterval(() => setT(S.t + 1), 1000 / S.fps); }
+  $("play").addEventListener("click", () => S.playing ? stop() : play());
+  $("prev").addEventListener("click", () => { stop(); setT(S.t - 1); });
+  $("next").addEventListener("click", () => { stop(); setT(S.t + 1); });
+  document.querySelectorAll("[data-fps]").forEach(b => b.addEventListener("click", () => {
+    S.fps = +b.dataset.fps; document.querySelectorAll("[data-fps]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    if (S.playing) play();
+  }));
+  document.querySelectorAll("#tierSeg button").forEach(b => b.addEventListener("click", () => { S.tier = b.dataset.tier; drawTable(); }));
+  ["cueP", "cueS", "cueC", "showMap", "showPeak", "opacity"].forEach(id => $(id).addEventListener("input", drawAll));
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input, select, textarea")) return;
+    if (e.key === "ArrowRight") { stop(); setT(S.t + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { stop(); setT(S.t - 1); e.preventDefault(); }
+    else if (e.key === " ") { S.playing ? stop() : play(); e.preventDefault(); }
+    else if (e.key === "Escape") setFocus(null);
+    else if (/^[1-4]$/.test(e.key)) setFocus(+e.key - 1);
+  });
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const redrawTheme = () => { if (S.clip) { drawChart(); } };
+  mq.addEventListener && mq.addEventListener("change", redrawTheme);
+  new MutationObserver(redrawTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  try { const c = localStorage.getItem("sl-cls"); if (c && classes.includes(c)) $("cls").value = c; } catch (e) {}
+  drawRail();
+  const fromHash = () => { const id = location.hash.slice(1); return D.clips.some(c => c.id === id) ? id : null; };
+  const start = fromHash() || (D.clips.find(c => c.paper === "Fig. 4") || D.clips[0]).id;
+  if (fromHash() && $("cls").value && D.clips.find(c => c.id === start).label !== $("cls").value) { $("cls").value = ""; drawRail(); }
+  selectClip(start);
+  window.addEventListener("hashchange", () => { const id = fromHash(); if (id && id !== S.clip.id) selectClip(id); });
+})();
+</script>
+
+</body>
+</html>

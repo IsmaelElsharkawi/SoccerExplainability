@@ -68,8 +68,8 @@ For each clip you see, frame by frame:
 The page also has a short "How to read this page" box.
 
 **Files.** `demo/site/` is the built explorer (`index.html`, `data.js` with the maps and
-metrics, and one frame sheet per clip in `frames/`). It is included in the supplementary
-material; in the git repository it is not tracked, so build it as below.
+metrics, and one frame sheet per clip in `frames/`). It is ready to open; rebuild it only if
+you change the maps or the page.
 
 **Rebuilding it.** `demo/template.html` is the page itself (layout, style and code, no data).
 `demo/build_demo.py` fills it with data: it samples the clips' frames, reads the saved
